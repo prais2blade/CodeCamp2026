@@ -188,20 +188,27 @@ def login_view(request):
     if request.method == 'POST':
         print("LOGIN ATTEMPT")
 
-        username = request.POST.get('username', '').strip()
+        login_input = request.POST.get('username', '').strip()
         password = request.POST.get('password')
 
-        print("USERNAME INPUT:", username)
-        print("PASSWORD INPUT:", password)
+        # Flexible student & staff lookup: username, email, or Student ID
+        matched_user = authenticate(request, username=login_input, password=password)
 
-        user = authenticate(request, username=username, password=password)
+        if not matched_user and '@' in login_input:
+            user_by_email = User.objects.filter(email__iexact=login_input).first()
+            if user_by_email:
+                matched_user = authenticate(request, username=user_by_email.username, password=password)
 
-        print("AUTH RESULT:", user)
+        if not matched_user:
+            profile_by_id = Profile.objects.filter(external_attendance_id__iexact=login_input).select_related('user').first()
+            if profile_by_id:
+                matched_user = authenticate(request, username=profile_by_id.user.username, password=password)
+
+        user = matched_user
 
         # ❌ Invalid login
         if not user:
-            print("AUTH FAILED")
-            messages.error(request, "Invalid username or password.")
+            messages.error(request, "Invalid username, student ID, or password.")
             return redirect('login')
 
         # 🔥 SUPERUSER BYPASS (CEO / ADMIN CONTROL)
@@ -420,9 +427,40 @@ def student_dashboard(request):
         "attendance_present": attendance_present,
         "attendance_absent": attendance_absent,
         "total_subjects": subjects.count(),
+        "is_temporary_password": user.check_password('CodeCamp@2026'),
     }
 
     return render(request, "accounts/student_dashboard.html", context)
+
+
+@login_required
+def change_password_view(request):
+    from django.contrib.auth import update_session_auth_hash
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        if not new_password or len(new_password) < 6:
+            messages.error(request, "Password must be at least 6 characters long.")
+            return redirect(request.META.get('HTTP_REFERER', 'student_dashboard'))
+
+        if new_password != confirm_password:
+            messages.error(request, "New passwords do not match.")
+            return redirect(request.META.get('HTTP_REFERER', 'student_dashboard'))
+
+        request.user.set_password(new_password)
+        request.user.save()
+        update_session_auth_hash(request, request.user)
+        messages.success(request, "🎉 Your password has been successfully updated! You can now log in with your new password.")
+
+        if hasattr(request.user, 'profile') and request.user.profile.role == 'student':
+            return redirect('student_dashboard')
+        return redirect('admin_dashboard')
+
+    is_temp = request.user.check_password('CodeCamp@2026')
+    return render(request, 'accounts/change_password.html', {
+        'is_temp_password': is_temp,
+    })
 
 # ---------------------------------------------------------
 # ---------------------------------------------------------

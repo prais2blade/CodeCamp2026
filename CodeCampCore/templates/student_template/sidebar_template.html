@@ -73,6 +73,14 @@
           </a>
         </li>
 
+        <!-- Change Password -->
+        <li class="nav-item">
+          <a href="{% url 'change_password' %}" class="nav-link {% if request.resolver_match.url_name == 'change_password' %}active{% endif %}">
+            <i class="nav-icon fas fa-key text-warning"></i>
+            <p>Change Password</p>
+          </a>
+        </li>
+
         <!-- Logout -->
         <li class="nav-item mt-3">
           <a href="{% url 'logout_user' %}" class="nav-link text-danger">
