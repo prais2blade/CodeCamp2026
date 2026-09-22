@@ -161,13 +161,12 @@ class Command(BaseCommand):
 
         # Ensure all courses have a primary Subject so attendance can link cleanly
         for c in Course.objects.all():
-            Subject.objects.get_or_create(
-                course=c,
-                defaults={
-                    "name": f"{c.name} - Core Lecture & Practical",
-                    "description": f"Core training and practical modules for {c.name}.",
-                }
-            )
+            if not Subject.objects.filter(course=c).exists():
+                Subject.objects.create(
+                    course=c,
+                    name=f"{c.name} - Core Lecture & Practical",
+                    description=f"Core training and practical modules for {c.name}.",
+                )
 
         stats = {
             "summer_payments_synced": 0,
@@ -245,29 +244,39 @@ class Command(BaseCommand):
                         p_status = 'pending'
 
                     # Create or update Payment
-                    payment, created = Payment.objects.update_or_create(
-                        student=user,
-                        defaults={
-                            "course": course,
-                            "batch": profile.batch,
-                            "amount_due": amount_due,
-                            "amount_paid": amount_paid,
-                            "monthly_payment": default_fee,
-                            "status": p_status,
-                        }
-                    )
+                    payment = Payment.objects.filter(student=user, course=course).first()
+                    if not payment:
+                        payment = Payment.objects.filter(student=user).first()
+                    if payment:
+                        payment.course = course
+                        payment.batch = profile.batch
+                        payment.amount_due = amount_due
+                        payment.amount_paid = amount_paid
+                        payment.monthly_payment = default_fee
+                        payment.status = p_status
+                        payment.save()
+                    else:
+                        payment = Payment.objects.create(
+                            student=user,
+                            course=course,
+                            batch=profile.batch,
+                            amount_due=amount_due,
+                            amount_paid=amount_paid,
+                            monthly_payment=default_fee,
+                            status=p_status,
+                        )
                     stats["summer_payments_synced"] += 1
 
                     # Generate Receipt if paid
                     if amount_paid > 0:
-                        Receipt.objects.get_or_create(
-                            payment=payment,
-                            amount=amount_paid,
-                            defaults={
-                                "reference": uuid.uuid4(),
-                                "issued_date": reg["created_at"] or timezone.now(),
-                            }
-                        )
+                        receipt = Receipt.objects.filter(payment=payment).first()
+                        if not receipt:
+                            Receipt.objects.create(
+                                payment=payment,
+                                amount=amount_paid,
+                                reference=uuid.uuid4(),
+                                issued_date=reg["created_at"] or timezone.now(),
+                            )
                         stats["receipts_generated"] += 1
 
                     # Update Profile
@@ -308,27 +317,38 @@ class Command(BaseCommand):
                         amount_paid = Decimal('0.00')
                         p_status = 'pending'
 
-                    payment, created = Payment.objects.update_or_create(
-                        student=user,
-                        defaults={
-                            "course": course,
-                            "batch": profile.batch,
-                            "amount_due": amount_due,
-                            "amount_paid": amount_paid,
-                            "monthly_payment": default_fee,
-                            "status": p_status,
-                        }
-                    )
+                    payment = Payment.objects.filter(student=user, course=course).first()
+                    if not payment:
+                        payment = Payment.objects.filter(student=user).first()
+                    if payment:
+                        payment.course = course
+                        payment.batch = profile.batch
+                        payment.amount_due = amount_due
+                        payment.amount_paid = amount_paid
+                        payment.monthly_payment = default_fee
+                        payment.status = p_status
+                        payment.save()
+                    else:
+                        payment = Payment.objects.create(
+                            student=user,
+                            course=course,
+                            batch=profile.batch,
+                            amount_due=amount_due,
+                            amount_paid=amount_paid,
+                            monthly_payment=default_fee,
+                            status=p_status,
+                        )
                     stats["regular_payments_synced"] += 1
 
                     if amount_paid > 0:
-                        Receipt.objects.get_or_create(
-                            payment=payment,
-                            amount=amount_paid,
-                            defaults={
-                                "reference": uuid.uuid4(),
-                            }
-                        )
+                        receipt = Receipt.objects.filter(payment=payment).first()
+                        if not receipt:
+                            Receipt.objects.create(
+                                payment=payment,
+                                amount=amount_paid,
+                                reference=uuid.uuid4(),
+                            )
+                        stats["receipts_generated"] += 1
                         stats["receipts_generated"] += 1
 
                     profile.has_paid = (p_status in ['paid', 'partial'])
