@@ -1,105 +1,220 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Home — CodeCamp{% endblock %}
+{% block title %}CodeCamp Innovation Hub — Empowering Tech Careers & Smart Software{% endblock %}
 
-{% block meta_description %}Industry-leading tech training programs and practical software solutions for individuals and
-businesses in Nigeria.{% endblock %}
+{% block meta_description %}
+Join CodeCamp Innovation Hub 2026 Intake. 12-week practical engineering programmes in Data Science, Cloud/DevOps, Cybersecurity, Web, Mobile, AI and Robotics at NGN 35,000/month.
+{% endblock %}
 
 {% block content %}
 {% include "components/hero.html" %}
-<section class="p-4 text-white rounded-xl animate-glow-pulse" 
-         style="background: linear-gradient(145deg, #5b21b6, #7c3aed);">
-  <div class="container mx-auto px-6 py-20">
-    <div class="grid md:grid-cols-2 gap-10 items-center">
-      <div>
-        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">Empowering People & Businesses With Skills and
-          Software That Drive Results</h1>
-        <p class="mt-6 text-lg max-w-2xl">We run project-based tech training and build practical software — from Estate
-          Management systems to Inventory & Barcode tools.</p>
 
-        <div class="mt-8 flex flex-wrap gap-3">
-          <a href="{% url 'website:training_programs' %}"
-            class="px-6 py-3 bg-white text-blue-700 rounded-full font-semibold shadow">Enroll in a Training Program</a>
-          <a href="{% url 'website:software_solutions' %}"
-            class="px-6 py-3 bg-transparent border border-white rounded-full font-semibold">Request Software Demo</a>
+<!-- ======================================================== -->
+<!-- 📢 ARCHIVE NOTICE: SUMMER CAMP 2026 CONCLUDED -->
+<!-- ======================================================== -->
+<section class="bg-slate-900 border-y border-slate-800 py-6">
+  <div class="container mx-auto px-6">
+    <div class="bg-slate-800/60 rounded-xl p-5 border border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xl shrink-0">
+          <i class="fas fa-campground"></i>
         </div>
-
-        <div class="mt-8 flex gap-6 text-sm">
-          <div>
-            <div class="text-2xl font-bold">50+</div>
-            <div class="text-gray-200">Students trained yearly</div>
-          </div>
-          <div>
-            <div class="text-2xl font-bold">10+</div>
-            <div class="text-gray-200">Active software deployments</div>
-          </div>
-          <div>
-            <div class="text-2xl font-bold">98%</div>
-            <div class="text-gray-200">Satisfaction rate</div>
-          </div>
+        <div>
+          <h4 class="font-bold text-white text-base">Summer Coding Camp 2026 Archive</h4>
+          <p class="text-sm text-gray-400">
+            The 2026 summer bootcamps have concluded. Summer registration is currently <strong class="text-rose-400">inactive</strong>. 
+            All new enrollments are directed to the year-round <strong>Innovation Hub Programmes</strong> below.
+          </p>
         </div>
       </div>
-
-      <div>
-        <div class="bg-white rounded-xl p-6 shadow-lg">
-          <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
-          <ul class="mt-4 space-y-3 text-gray-700">
-            <li><a href="{% url 'website:training_programs' %}" class="underline">Explore Training Programs</a></li>
-            <li><a href="{% url 'website:software_solutions' %}" class="underline">View Software Solutions</a></li>
-            <li><a href="{% url 'website:contact' %}" class="underline">Contact Sales</a></li>
-          </ul>
-        </div>
-
-        <div class="mt-6">
-          <img src="{% static 'images/home-illustration.png' %}" alt="home-illustration"
-            class="rounded-xl object-cover w-full h-64">
-        </div>
+      <div class="shrink-0 flex items-center space-x-3">
+        <span class="text-xs bg-slate-700 text-gray-300 font-semibold px-3 py-1.5 rounded-lg border border-slate-600">
+          Status: Concluded
+        </span>
+        <a href="#programmes" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-lg transition">
+          Join 2026 Real Classes &rarr;
+        </a>
       </div>
     </div>
   </div>
 </section>
 
-<section class="container mx-auto px-6 py-16">
-  <h2 class="text-2xl font-bold">Our Core Services</h2>
-  <div class="grid md:grid-cols-3 gap-6 mt-6">
-    <div class="bg-white p-6 rounded-lg shadow">
-      <h3 class="font-semibold">Tech Training Programs</h3>
-      <p class="text-gray-600 mt-2">Hands-on training to prepare you for real careers in Full-Stack Development, Data
-        Analysis, AI and more.</p>
-    </div>
-    <div class="bg-white p-6 rounded-lg shadow">
-      <h3 class="font-semibold">Software Products</h3>
-      <p class="text-gray-600 mt-2">Estate Management, Inventory & Barcode, automations and tailored web applications.
+<!-- ======================================================== -->
+<!-- 🎓 DETAILED PROGRAMMES: THE 8 INNOVATION HUB TRACKS -->
+<!-- ======================================================== -->
+<section id="programmes" class="py-20 bg-slate-950 text-white">
+  <div class="container mx-auto px-6">
+
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <div class="inline-flex items-center space-x-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
+        CodeCamp Innovation Hub Curriculum
+      </div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4">
+        Our Professional & Young Innovator Programmes
+      </h2>
+      <p class="text-gray-400 text-base sm:text-lg">
+        All 8 core programmes are priced at a subsidized <strong>₦35,000 / month</strong> tuition, featuring 12 weeks of practical instruction, real-world projects, and dedicated mentorship.
       </p>
     </div>
-    <div class="bg-white p-6 rounded-lg shadow">
-      <h3 class="font-semibold">Consultancy & Support</h3>
-      <p class="text-gray-600 mt-2">Digital transformation support, product strategy and maintenance.</p>
+
+    <!-- 8 Programme Cards Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {% for course in courses %}
+      <div class="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 flex flex-col justify-between hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-950/30 group">
+
+        <div>
+          <!-- Header Tag & Pricing -->
+          <div class="flex items-center justify-between mb-4">
+            <span class="bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-bold px-3 py-1 rounded-full">
+              {{ course.duration_weeks }} Weeks Practical
+            </span>
+            <div class="text-right">
+              <span class="text-xl font-extrabold text-emerald-400">₦{{ course.fee|floatformat:0 }}</span>
+              <span class="text-xs text-gray-400 block font-normal">/ month</span>
+            </div>
+          </div>
+
+          <!-- Course Title -->
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition">
+            {{ course.name }}
+          </h3>
+
+          <!-- Description -->
+          <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+            {{ course.short_description|default:course.description|truncatechars:140 }}
+          </p>
+
+          <!-- Cohort Schedule Badges -->
+          <div class="bg-slate-800/60 rounded-xl p-3 mb-6 border border-slate-800">
+            <div class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2 flex items-center">
+              <i class="far fa-calendar-check text-indigo-400 mr-1.5"></i> Active Cohort Options:
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="text-xs bg-slate-700/80 text-gray-200 px-2.5 py-1 rounded-md">
+                Weekday (10am–1pm)
+              </span>
+              <span class="text-xs bg-slate-700/80 text-gray-200 px-2.5 py-1 rounded-md">
+                Weekend (Fri/Sat)
+              </span>
+              <span class="text-xs bg-purple-900/50 text-purple-200 border border-purple-700/40 px-2 py-0.5 rounded-md">
+                Online
+              </span>
+            </div>
+          </div>
+
+          <!-- Curriculum Modules List (if subjects exist) -->
+          {% if course.subjects.all %}
+          <div class="mb-6">
+            <div class="text-xs font-semibold text-gray-400 mb-2">Curriculum Highlights:</div>
+            <ul class="text-xs text-gray-300 space-y-1.5">
+              {% for subj in course.subjects.all|slice:":4" %}
+              <li class="flex items-center">
+                <i class="fas fa-check-circle text-emerald-400 mr-2 text-xs"></i>
+                <span>{{ subj.name }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Action CTAs -->
+        <div class="pt-4 border-t border-slate-800 flex items-center gap-3">
+          <a href="{% url 'register' %}?course={{ course.slug }}" 
+             class="flex-1 text-center py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm rounded-xl transition shadow">
+            Enroll Now
+          </a>
+          <a href="{% url 'website:course_detail' course.slug %}" 
+             class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white font-semibold text-sm rounded-xl border border-slate-700 transition">
+            Syllabus
+          </a>
+        </div>
+
+      </div>
+      {% empty %}
+      <div class="col-span-3 text-center py-12 text-gray-400">
+        <p>Innovation Hub courses are loading. Please check back shortly.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Bottom Registration Banner -->
+    <div class="mt-16 bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-slate-900 rounded-2xl p-8 border border-indigo-800/40 flex flex-col md:flex-row items-center justify-between text-center md:text-left gap-6">
+      <div>
+        <h3 class="text-2xl font-bold text-white mb-2">Ready to Start Your Training Journey?</h3>
+        <p class="text-gray-300 text-sm max-w-xl">
+          Register now to reserve your seat in your preferred cohort track. Applications are processed immediately with student portal access.
+        </p>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="{% url 'register' %}" class="px-6 py-3 bg-white text-slate-950 font-bold rounded-xl hover:bg-gray-100 transition shadow">
+          Register / Apply Now
+        </a>
+        <a href="{% url 'login' %}" class="px-5 py-3 bg-slate-800 text-white font-semibold rounded-xl border border-slate-700 hover:bg-slate-700 transition">
+          Student Login
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======================================================== -->
+<!-- 🏢 SOFTWARE PRODUCTS & CLIENT SOLUTIONS -->
+<!-- ======================================================== -->
+<section class="py-20 bg-slate-900 text-white border-t border-slate-800">
+  <div class="container mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <div class="inline-flex items-center space-x-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+        Enterprise Technology
+      </div>
+      <h2 class="text-3xl font-extrabold text-white">Software Engineered by CodeCamp</h2>
+      <p class="text-gray-400 text-sm mt-2">
+        In addition to world-class education, CodeCamp builds production-grade software solutions for property estates, schools, and commerce.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="bg-slate-950/80 rounded-2xl p-7 border border-slate-800 hover:border-slate-700 transition">
+        <div class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xl mb-5">
+          <i class="fas fa-building"></i>
+        </div>
+        <h4 class="text-lg font-bold text-white mb-2">Estate Management Cloud</h4>
+        <p class="text-gray-400 text-sm leading-relaxed mb-4">
+          Automated resident billing, gate pass verification, security kiosk logging, and utility monitoring for modern residential estates.
+        </p>
+        <a href="{% url 'website:estate_software' %}" class="text-indigo-400 font-semibold text-sm hover:underline">
+          Explore Estate Software &rarr;
+        </a>
+      </div>
+
+      <div class="bg-slate-950/80 rounded-2xl p-7 border border-slate-800 hover:border-slate-700 transition">
+        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl mb-5">
+          <i class="fas fa-barcode"></i>
+        </div>
+        <h4 class="text-lg font-bold text-white mb-2">Smart Inventory & Barcode</h4>
+        <p class="text-gray-400 text-sm leading-relaxed mb-4">
+          Point-of-sale integration, QR code product tracking, real-time stock alerts, and automated revenue reconciliation.
+        </p>
+        <a href="{% url 'website:software_solutions' %}" class="text-indigo-400 font-semibold text-sm hover:underline">
+          View Inventory Suite &rarr;
+        </a>
+      </div>
+
+      <div class="bg-slate-950/80 rounded-2xl p-7 border border-slate-800 hover:border-slate-700 transition">
+        <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xl mb-5">
+          <i class="fas fa-code-branch"></i>
+        </div>
+        <h4 class="text-lg font-bold text-white mb-2">Custom Software Engineering</h4>
+        <p class="text-gray-400 text-sm leading-relaxed mb-4">
+          Bespoke web apps, mobile apps, database architectures, and API integrations engineered for African business needs.
+        </p>
+        <a href="{% url 'website:contact' %}" class="text-indigo-400 font-semibold text-sm hover:underline">
+          Request A Consultation &rarr;
+        </a>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="bg-gray-50 py-12">
-  <div class="container mx-auto px-6">
-    <h2 class="text-2xl font-bold">Popular Courses</h2>
-    <div class="grid md:grid-cols-3 gap-6 mt-6">
-      {% for course in featured %}
-      <div class="bg-white rounded-lg shadow p-4">
-        {% if course.image %}
-        <img src="{{ course.image.url }}" alt="{{ course.name }}" class="h-36 w-full object-cover rounded">
-        {% endif %}
-        <h3 class="mt-4 font-semibold">{{ course.name }}</h3>
-        <p class="mt-2 text-gray-600">{{ course.short_description|default:course.description|truncatechars:120 }}</p>
-        <div class="mt-3 flex gap-2">
-          <a href="{% url 'website:course_detail' course.slug %}" class="text-sm underline">View</a>
-          <a href="{% url 'register' %}"
-            class="ml-auto btn-primary px-3 py-1 rounded text-white bg-blue-600">Enroll</a>
-        </div>
-      </div>
-      {% empty %}
-      <p>No courses yet.</p>
-      {% endfor %}
-    </div>
-  </div>
-</section>
 {% endblock %}

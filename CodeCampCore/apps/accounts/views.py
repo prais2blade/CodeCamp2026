@@ -51,76 +51,124 @@ def home(request):
 # ---------------------------------------------------------
 
 def register_view(request):
+    selected_course_slug = request.GET.get('course', '').strip()
+    courses = Course.objects.filter(is_published=True).order_by('name')
+
     if request.method == 'POST':
+        full_name = request.POST.get('full_name', '').strip()
         username = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+        course_id = request.POST.get('course_id')
+        delivery_mode = request.POST.get('delivery_mode', 'onsite')
+
+        # Fallback username if missing
+        if not username and email:
+            username = email.split('@')[0].lower()
 
         # Validation
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
-            return redirect('register')
+            redirect_url = f"/account/register/?course={selected_course_slug}" if selected_course_slug else "/account/register/"
+            return redirect(redirect_url)
 
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already exists.")
-            return redirect('register')
+            redirect_url = f"/account/register/?course={selected_course_slug}" if selected_course_slug else "/account/register/"
+            return redirect(redirect_url)
 
         if User.objects.filter(email=email).exists():
-            messages.error(request, "Email already registered.")
-            return redirect('register')
+            messages.error(request, "An account with this email already exists. Please log in.")
+            return redirect('login')
+
+        name_parts = full_name.split(' ', 1)
+        first_name = name_parts[0] if name_parts else ''
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
 
         # Create User
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=password
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
         )
+
+        course = Course.objects.filter(id=course_id).first() if course_id else None
+        batch = None
+        if course:
+            batch = Batch.objects.filter(course=course, mode=delivery_mode, is_published=True).first()
+            if not batch:
+                batch = Batch.objects.filter(course=course, is_published=True).first()
 
         # 🔒 Ensure profile exists and is correct
         profile, created = Profile.objects.get_or_create(
             user=user,
             defaults={
+                'role': 'student',
+                'phone': phone,
+                'course': course,
+                'batch': batch,
                 'is_verified': False,
-                'onboarding_stage': 'email_pending'
+                'onboarding_stage': 'email_pending',
+                'total_fee': course.fee if course else Decimal('35000.00'),
             }
         )
+        if not created:
+            profile.phone = phone
+            profile.course = course
+            profile.batch = batch
+            profile.save()
 
-        # Build verification URL safely
-        verification_url = request.build_absolute_uri(
-            f"/account/verify/{profile.verification_token}/"
-        )
+        # Initialize Payment Record
+        if course:
+            Payment.objects.create(
+                student=user,
+                course=course,
+                batch=batch,
+                amount_due=course.fee,
+                amount_paid=Decimal('0.00'),
+                monthly_payment=Decimal('35000.00'),
+                status='pending'
+            )
 
-        # Email template
-        html_content = render_to_string(
-            "accounts/verify_email.html",
-            {
-                "user": user,
-                "verification_url": verification_url,
-                "year": timezone.now().year,
-            }
-        )
-        text_content = strip_tags(html_content)
-
-        # Send Email
-        msg = EmailMultiAlternatives(
-            subject="Verify your CodeCamp account",
-            body=text_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[email],
-        )
-        msg.attach_alternative(html_content, "text/html")
-        msg.send()
+        # Build verification URL and send email safely
+        try:
+            verification_url = request.build_absolute_uri(
+                f"/account/verify/{profile.verification_token}/"
+            )
+            html_content = render_to_string(
+                "accounts/verify_email.html",
+                {
+                    "user": user,
+                    "verification_url": verification_url,
+                    "year": timezone.now().year,
+                }
+            )
+            text_content = strip_tags(html_content)
+            msg = EmailMultiAlternatives(
+                subject="Verify your CodeCamp account",
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=True)
+        except Exception:
+            pass
 
         messages.success(
             request,
-            "Account created successfully. Please check your email to verify your account."
+            "Application created successfully! Please check your email to verify your account."
         )
-
-        # ✅ CORRECT REDIRECT
         return redirect('verify_email_sent')
 
-    return render(request, 'accounts/register.html')
+    return render(request, 'accounts/register.html', {
+        'courses': courses,
+        'selected_course_slug': selected_course_slug,
+    })
 
 
 # ---------------------------------------------------------

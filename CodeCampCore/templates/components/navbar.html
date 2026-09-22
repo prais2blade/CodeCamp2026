@@ -1,89 +1,110 @@
 {% load static %}
 
-<nav class="fixed top-0 left-0 w-full z-50 bg-dark/80 backdrop-blur-md shadow-glow">
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+<!-- Announcement Strip -->
+<div class="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 text-indigo-200 text-xs py-2 px-4 border-b border-indigo-800/40">
+    <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-1">
+        <div>
+            <span class="bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded mr-2 border border-indigo-400/30">NOTICE</span>
+            <span>Summer Coding Camp 2026 has concluded. <strong>Admissions are now open for the year-round Innovation Hub Programmes.</strong></span>
+        </div>
+        <div class="flex items-center space-x-3 text-xs">
+            <span class="text-gray-400">Summer Camp Reg: <span class="text-rose-400 font-semibold">Closed</span></span>
+            <a href="#programmes" class="text-yellow-400 hover:text-yellow-300 font-bold underline">View 2026 Cohorts &rarr;</a>
+        </div>
+    </div>
+</div>
+
+<nav class="fixed top-8 left-0 w-full z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800 shadow-xl">
+    <div class="container mx-auto px-6 py-3.5 flex justify-between items-center">
 
         <!-- LOGO -->
         <a href="/" class="flex items-center space-x-3">
-            <img src="{% static 'images/logo.png' %}" class="h-10 drop-shadow-glow w-20" alt="CodeCamp">
-            <span class="text-white font-bold text-2xl">CodeCamp</span>
+            <img src="{% static 'images/logo.png' %}" class="h-9 w-auto" alt="CodeCamp" onerror="this.style.display='none'">
+            <div>
+                <span class="text-white font-extrabold text-xl tracking-tight">CodeCamp</span>
+                <span class="text-xs block text-indigo-400 font-medium tracking-wide uppercase">Innovation Hub</span>
+            </div>
         </a>
 
         <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center space-x-10">
-            <a href="/" class="text-white hover:text-primaryLight transition duration-300">
+        <div class="hidden md:flex items-center space-x-8 text-sm font-semibold">
+            <a href="/" class="text-gray-200 hover:text-white transition duration-200">
                 Home
             </a>
 
-            <a href="{% url 'website:about' %}" class="text-white hover:text-primaryLight transition duration-300">
-                About
+            <a href="{% url 'website:training_programs' %}" class="text-gray-200 hover:text-white transition duration-200">
+                Programmes
             </a>
 
-            <a href="{% url 'website:training_programs' %}" class="text-white hover:text-primaryLight transition duration-300">
-                Training
-            </a>
-
-            <a href="{% url 'website:software_solutions' %}" class="text-white hover:text-primaryLight transition duration-300">
+            <a href="{% url 'website:software_solutions' %}" class="text-gray-200 hover:text-white transition duration-200">
                 Software
             </a>
 
-            <a href="{% url 'website:contact' %}" class="text-white hover:text-primaryLight transition duration-300">
+            <a href="{% url 'website:about' %}" class="text-gray-200 hover:text-white transition duration-200">
+                About
+            </a>
+
+            <a href="{% url 'website:contact' %}" class="text-gray-200 hover:text-white transition duration-200">
                 Contact
-            </a>
-
-            <a href="{% url 'home' %}" class="btn-primary">
-                Enroll Now
-            </a>
-
-            <a href="/competition/" class="btn-primary">
-                CRACKdaCODE Competition
             </a>
         </div>
 
+        <!-- Desktop Auth CTAs -->
+        <div class="hidden md:flex items-center space-x-3">
+            {% if request.user.is_authenticated %}
+                {% if request.user.is_superuser %}
+                    <a href="{% url 'admin_dashboard' %}" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">
+                        <i class="fas fa-shield-alt mr-1"></i> Admin Console
+                    </a>
+                {% else %}
+                    <a href="{% url 'student_dashboard' %}" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">
+                        <i class="fas fa-user-graduate mr-1"></i> My Dashboard
+                    </a>
+                {% endif %}
+                <a href="{% url 'logout_user' %}" class="px-3 py-2 text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition">
+                    Logout
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="px-4 py-2 text-sm font-semibold text-white hover:text-indigo-300 transition">
+                    Login
+                </a>
+                <a href="{% url 'register' %}" class="px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
+                    Apply / Register
+                </a>
+            {% endif %}
+        </div>
+
         <!-- Mobile Menu Button -->
-        <button id="mobileMenuBtn" type="button" class="md:hidden text-white" aria-label="Toggle navigation" title="Toggle navigation">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M4 6h16M4 12h16M4 18h16" />
+        <button id="mobileMenuBtn" type="button" class="md:hidden text-white p-1 rounded-md focus:outline-none" aria-label="Toggle navigation" title="Toggle navigation">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
         </button>
 
     </div>
 
     <!-- Mobile Menu -->
-    <div id="mobileMenu" class="hidden bg-dark border-t border-primary/30">
-        <div class="px-6 py-4 space-y-4">
+    <div id="mobileMenu" class="hidden md:hidden bg-slate-950 border-t border-slate-800">
+        <div class="px-6 py-4 space-y-3 font-semibold text-sm">
+            <a href="/" class="block text-gray-200 hover:text-white py-1">Home</a>
+            <a href="{% url 'website:training_programs' %}" class="block text-gray-200 hover:text-white py-1">Programmes</a>
+            <a href="{% url 'website:software_solutions' %}" class="block text-gray-200 hover:text-white py-1">Software Solutions</a>
+            <a href="{% url 'website:about' %}" class="block text-gray-200 hover:text-white py-1">About</a>
+            <a href="{% url 'website:contact' %}" class="block text-gray-200 hover:text-white py-1">Contact</a>
 
-            <a href="/" class="block text-white hover:text-primaryLight transition duration-300">
-                Home
-            </a>
-
-            <a href="{% url 'website:about' %}" class="block text-white hover:text-primaryLight transition duration-300">
-                About
-            </a>
-
-            <a href="{% url 'website:training_programs' %}" class="block text-white hover:text-primaryLight transition duration-300">
-                Training
-            </a>
-
-            <a href="{% url 'website:software_solutions' %}" class="block text-white hover:text-primaryLight transition duration-300">
-                Software
-            </a>
-
-            <a href="{% url 'website:contact' %}" class="block text-white hover:text-primaryLight transition duration-300">
-                Contact
-            </a>
-
-            <a href="{% url 'home' %}"
-                class="block bg-primary text-white py-2 px-4 text-center rounded-lg hover:opacity-90 transition">
-                Enroll Now
-            </a>
-
-            <a href="/competition/"
-                class="block bg-primary text-white py-2 px-4 text-center rounded-lg hover:opacity-90 transition">
-                CRACKdaCODE Competition
-            </a>
-
+            <div class="pt-3 border-t border-slate-800 space-y-2">
+                {% if request.user.is_authenticated %}
+                    {% if request.user.is_superuser %}
+                        <a href="{% url 'admin_dashboard' %}" class="block text-center py-2 px-4 rounded-lg bg-indigo-600 text-white font-bold">Admin Console</a>
+                    {% else %}
+                        <a href="{% url 'student_dashboard' %}" class="block text-center py-2 px-4 rounded-lg bg-indigo-600 text-white font-bold">My Dashboard</a>
+                    {% endif %}
+                    <a href="{% url 'logout_user' %}" class="block text-center py-2 px-4 rounded-lg bg-slate-800 text-gray-300 font-semibold">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="block text-center py-2 px-4 rounded-lg border border-slate-700 text-white font-semibold">Login</a>
+                    <a href="{% url 'register' %}" class="block text-center py-2 px-4 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold">Apply / Register</a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </nav>
@@ -92,9 +113,10 @@
     document.addEventListener('DOMContentLoaded', function () {
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const mobileMenu = document.getElementById('mobileMenu');
-
-        mobileMenuBtn.addEventListener('click', function () {
-            mobileMenu.classList.toggle('hidden');
-        });
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function () {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
     });
 </script>
