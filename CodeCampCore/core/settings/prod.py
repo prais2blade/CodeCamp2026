@@ -1,13 +1,18 @@
 from .base import *
 
 DEBUG = False
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
+_env_hosts = env.list('ALLOWED_HOSTS', default=[])
+ALLOWED_HOSTS = list(set(_env_hosts + [
     'codecamp.com.ng',
+    '.codecamp.com.ng',
     'www.codecamp.com.ng',
     'core.codecamp.com.ng',
+    'portal.codecamp.com.ng',
+    'attendance.codecamp.com.ng',
     '127.0.0.1',
     'localhost',
-])
+    '102.203.116.188',
+]))
 
 database_url = env("DATABASE_URL", default=None)
 
@@ -29,11 +34,17 @@ else:
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[
+_env_csrf = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = list(set(_env_csrf + [
     "https://codecamp.com.ng",
     "https://www.codecamp.com.ng",
     "https://core.codecamp.com.ng",
-])
+    "https://portal.codecamp.com.ng",
+    "https://attendance.codecamp.com.ng",
+    "http://codecamp.com.ng",
+    "http://www.codecamp.com.ng",
+    "http://core.codecamp.com.ng",
+]))
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
