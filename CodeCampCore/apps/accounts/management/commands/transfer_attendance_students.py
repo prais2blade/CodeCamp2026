@@ -89,12 +89,15 @@ class Command(BaseCommand):
                 s.first_name,
                 s.last_name,
                 s.class_name,
+                s.teaching_class_id,
+                tc.name as teaching_class_name,
                 s.gender,
                 s.is_active,
                 p.full_name as parent_name,
                 p.phone_number as parent_phone,
                 p.email as parent_email
             FROM students_student s
+            LEFT JOIN students_teachingclass tc ON s.teaching_class_id = tc.id
             LEFT JOIN students_studentparent sp ON s.id = sp.student_id
             LEFT JOIN students_parent p ON sp.parent_id = p.id
             ORDER BY s.id ASC
@@ -106,6 +109,8 @@ class Command(BaseCommand):
             "transferred": 0,
             "updated": 0,
             "attendance_records": 0,
+            "regular_students": 0,
+            "summer_students": 0,
         }
 
         transferred_roster = []
@@ -117,6 +122,7 @@ class Command(BaseCommand):
                     first_name = (row["first_name"] or "").strip()
                     last_name = (row["last_name"] or "").strip()
                     class_name = (row["class_name"] or "").strip()
+                    teaching_class = (row["teaching_class_name"] or "").strip()
                     parent_email = (row["parent_email"] or "").strip().lower()
                     phone = (row["parent_phone"] or "").strip()
 
@@ -125,14 +131,38 @@ class Command(BaseCommand):
                         first_name = "Student"
                         last_name = student_id
 
-                    # Assign suitable course based on class_name
-                    target_course = default_course
-                    if "programing" in class_name.lower() or "python" in class_name.lower():
-                        target_course = python_course
-                    elif "advance" in class_name.lower():
-                        target_course = python_course
-                    elif "batch a" in class_name.lower() or "batch b" in class_name.lower():
-                        target_course = web_course or default_course
+                    # Determine effective class name
+                    effective_class = (teaching_class or class_name).strip().lower()
+
+                    # Categorize student: Regular Innovation Hub Track vs Summer Camp
+                    is_summer = "summer" in effective_class or "teen" in effective_class
+                    if is_summer:
+                        student_type = "Summer"
+                        stats["summer_students"] += 1
+                        target_course = Course.objects.filter(name__icontains="summer").first() or default_course
+                    else:
+                        student_type = "Regular"
+                        stats["regular_students"] += 1
+                        target_course = None
+                        if "python" in effective_class or "programing advance" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="python").first()
+                        elif "data" in effective_class or "analysis" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="data").first()
+                        elif "robot" in effective_class or "automation" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="robotics").first()
+                        elif "innovator" in effective_class or "young" in effective_class or "beginner" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="innovator").first()
+                        elif "cloud" in effective_class or "devops" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="cloud").first()
+                        elif "cyber" in effective_class or "security" in effective_class or "ethical" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="cyber").first()
+                        elif "web" in effective_class or "batch a" in effective_class or "batch b" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="web").first()
+                        elif "advance" in effective_class:
+                            target_course = Course.objects.filter(name__icontains="python").first()
+
+                        if not target_course:
+                            target_course = default_course
 
                     target_batch = None
                     if target_course:
@@ -202,6 +232,7 @@ class Command(BaseCommand):
 
                     transferred_roster.append({
                         "name": f"{first_name} {last_name}",
+                        "type": student_type,
                         "student_id": student_id,
                         "username": user.username,
                         "email": user.email,
@@ -257,14 +288,15 @@ class Command(BaseCommand):
         conn.close()
 
         # Print Summary Table
-        self.stdout.write("\n" + "=" * 90)
+        self.stdout.write("\n" + "=" * 115)
         self.stdout.write(self.style.SUCCESS("[OK] ATTENDANCE STUDENTS TRANSFER COMPLETE"))
-        self.stdout.write("=" * 90)
-        self.stdout.write(f"{'Student Name':<24} | {'Student ID (Login)':<18} | {'Username':<18} | {'Temp Password'}")
-        self.stdout.write("-" * 90)
+        self.stdout.write("=" * 115)
+        self.stdout.write(f"{'Student Name':<22} | {'Type':<8} | {'Student ID':<13} | {'Username':<20} | {'Course':<24} | {'Temp Password'}")
+        self.stdout.write("-" * 115)
         for s in transferred_roster:
-            self.stdout.write(f"{s['name']:<24} | {s['student_id']:<18} | {s['username']:<18} | {s['password']}")
-        self.stdout.write("=" * 90)
-        self.stdout.write(f"Total Transferred: {stats['transferred']} new | {stats['updated']} updated")
+            course_short = (s['course'][:22] + '..') if len(s['course']) > 24 else s['course']
+            self.stdout.write(f"{s['name']:<22} | {s['type']:<8} | {s['student_id']:<13} | {s['username']:<20} | {course_short:<24} | {s['password']}")
+        self.stdout.write("=" * 115)
+        self.stdout.write(f"Total: {stats['transferred']} new, {stats['updated']} updated (Regular: {stats['regular_students']}, Summer: {stats['summer_students']})")
         self.stdout.write(f"Attendance Records Synced: {stats['attendance_records']}")
         self.stdout.write(f"Students can log in with: Student ID, Username, or Email using temporary password '{temp_password}'\n")
