@@ -22,6 +22,17 @@ urlpatterns = [
     path('hod/dashboard/', views.hod_dashboard, name='hod_dashboard'),
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
 
+    # Admin Management Command Center Endpoints
+    path('admin/students/create/', views.admin_student_create, name='admin_student_create'),
+    path('admin/students/<int:profile_id>/batch/', views.admin_student_update_batch, name='admin_student_update_batch'),
+    path('admin/students/<int:profile_id>/toggle-status/', views.admin_student_toggle_status, name='admin_student_toggle_status'),
+    path('admin/courses/create/', views.admin_course_create, name='admin_course_create'),
+    path('admin/courses/<int:course_id>/toggle/', views.admin_course_toggle_publish, name='admin_course_toggle_publish'),
+    path('admin/batches/create/', views.admin_batch_create, name='admin_batch_create'),
+    path('admin/batches/<int:batch_id>/toggle/', views.admin_batch_toggle_publish, name='admin_batch_toggle_publish'),
+    path('admin/payments/record/', views.admin_payment_record, name='admin_payment_record'),
+    path('admin/attendance/mark/', views.admin_attendance_mark, name='admin_attendance_mark'),
+
     # Profile
     path('student/profile/', views.student_profile, name='student_profile'),
     path('edit-profile/', views.edit_profile, name='edit_profile'),

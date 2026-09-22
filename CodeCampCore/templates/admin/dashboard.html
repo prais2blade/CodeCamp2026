@@ -1,183 +1,1650 @@
-{% extends "adminlte/base.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% extends "layouts/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin Management Console | CodeCamp Innovation Hub{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cc-primary: #4f46e5;
+    --cc-primary-hover: #4338ca;
+    --cc-indigo-glow: rgba(79, 70, 229, 0.25);
+    --cc-dark: #0f172a;
+    --cc-card-bg: #ffffff;
+    --cc-card-border: #e2e8f0;
+    --cc-text-main: #1e293b;
+    --cc-text-muted: #64748b;
+    --cc-accent-green: #10b981;
+    --cc-accent-amber: #f59e0b;
+    --cc-accent-purple: #8b5cf6;
+    --cc-accent-cyan: #06b6d4;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--cc-text-main);
+    background-color: #f8fafc;
+  }
+
+  /* Executive Hero Header */
+  .admin-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #31104b 100%);
+    border-radius: 1.25rem;
+    padding: 2rem 2.25rem;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.35);
+    margin-bottom: 1.75rem;
+  }
+  .admin-hero::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(217, 70, 239, 0) 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #c7d2fe;
+    margin-bottom: 0.85rem;
+  }
+
+  /* Metric KPI Cards */
+  .kpi-card {
+    background: var(--cc-card-bg);
+    border: 1px solid var(--cc-card-border);
+    border-radius: 1rem;
+    padding: 1.35rem 1.5rem;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    height: 100%;
+  }
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+  }
+  .kpi-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+  .kpi-value {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+  }
+  .kpi-label {
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: var(--cc-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Nav Tabs */
+  .custom-admin-tabs {
+    border-bottom: 2px solid #e2e8f0;
+    gap: 0.5rem;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1.75rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .custom-admin-tabs .nav-link {
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.925rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    background: transparent;
+  }
+  .custom-admin-tabs .nav-link:hover {
+    color: #1e293b;
+    background: #f1f5f9;
+  }
+  .custom-admin-tabs .nav-link.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+  .custom-admin-tabs .nav-link .badge-counter {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  /* Content Cards */
+  .section-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+    margin-bottom: 1.75rem;
+  }
+  .section-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: #ffffff;
+  }
+  .section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  /* Modern Tables */
+  .table-modern {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .table-modern thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.9rem 1.25rem;
+    border-top: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .table-modern tbody tr {
+    transition: background-color 0.15s ease;
+  }
+  .table-modern tbody tr:hover {
+    background-color: #f8fafc;
+  }
+  .table-modern td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+  }
+
+  /* Course Grid Cards */
+  .course-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.35rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+  .course-card:hover {
+    border-color: #a5b4fc;
+    box-shadow: 0 8px 20px -6px rgba(79, 70, 229, 0.15);
+    transform: translateY(-2px);
+  }
+  .course-badge {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  /* Buttons */
+  .btn-cc-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+    border-radius: 0.65rem;
+    padding: 0.55rem 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    transition: all 0.2s ease;
+  }
+  .btn-cc-primary:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  }
+
+  /* Search & Filter Inputs */
+  .search-input-wrap {
+    position: relative;
+    min-width: 260px;
+  }
+  .search-input-wrap i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+  }
+  .search-input-wrap input {
+    padding-left: 2.5rem;
+    border-radius: 0.65rem;
+    border: 1px solid #cbd5e1;
+    font-size: 0.9rem;
+    height: 40px;
+  }
+  .search-input-wrap input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+
+  /* Modals */
+  .modal-content {
+    border-radius: 1.25rem;
+    border: none;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+  .modal-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 1.25rem 1.75rem;
+    border-bottom: none;
+  }
+  .modal-header .close {
+    color: #ffffff;
+    opacity: 0.8;
+  }
+  .modal-header .close:hover {
+    opacity: 1;
+  }
+  .modal-body {
+    padding: 1.75rem;
+  }
+  .modal-footer {
+    padding: 1rem 1.75rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+  }
+</style>
+{% endblock extra_css %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid px-3 py-2">
 
-  <div class="card bg-danger">
-  <div class="card-header">
-    <h3>Alerts</h3>
+  <!-- ========================================================= -->
+  <!-- 🌟 EXECUTIVE CONSOLE HERO -->
+  <!-- ========================================================= -->
+  <div class="admin-hero">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <div class="hero-tag">
+          <i class="fas fa-shield-alt text-warning"></i> Master Administration Center
+        </div>
+        <h1 class="font-weight-bold mb-2 text-white" style="letter-spacing: -0.03em;">
+          CodeCamp Operations & Academic Console
+        </h1>
+        <p class="text-white-50 mb-3" style="font-size: 1.05rem; max-width: 650px;">
+          Manage students, Innovation Hub cohorts, tuition billing, live kiosk attendance, and programmes directly without leaving this dashboard.
+        </p>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <span class="badge badge-pill badge-light px-3 py-2 font-weight-bold mr-2">
+            <i class="fas fa-university text-primary mr-1"></i> Core Ecosystem: Active
+          </span>
+          <span class="badge badge-pill badge-light px-3 py-2 font-weight-bold mr-2">
+            <i class="fas fa-wifi text-success mr-1"></i> Kiosk Scanner: Online
+          </span>
+          <span class="text-white-50 small font-weight-bold">
+            <i class="far fa-calendar-alt mr-1"></i> Term: Innovation Hub 2026 Intake
+          </span>
+        </div>
+      </div>
+      <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
+        <button class="btn btn-warning btn-lg font-weight-bold px-4 shadow-sm" data-toggle="modal" data-target="#enrollStudentModal">
+          <i class="fas fa-user-plus mr-2"></i> Enroll Student
+        </button>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    {% if alerts %}
-      <ul>
-        {% for alert in alerts %}
-          <li>{{ alert }}</li>
+
+  <!-- ALERTS (IF ANY) -->
+  {% if alerts %}
+  <div class="alert alert-warning border-0 shadow-sm rounded-lg mb-4 p-3 d-flex align-items-center" role="alert">
+    <i class="fas fa-bell fa-lg text-warning mr-3"></i>
+    <div>
+      <strong class="d-block mb-1 font-weight-bold">Actionable Operational Alerts:</strong>
+      <ul class="mb-0 pl-3 small font-weight-bold">
+        {% for a in alerts %}
+          <li>{{ a }}</li>
         {% endfor %}
       </ul>
-    {% else %}
-      <p>No critical alerts</p>
-    {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ========================================================= -->
+  <!-- 📈 KPI STAT STRIP -->
+  <!-- ========================================================= -->
+  <div class="row mb-4">
+    <!-- Total Students -->
+    <div class="col-xl-3 col-md-6 mb-3 mb-xl-0">
+      <div class="kpi-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-label">Enrolled Students</div>
+            <div class="kpi-value text-primary">{{ total_students }}</div>
+            <div class="small text-muted mt-1 font-weight-bold">
+              <i class="fas fa-check-circle text-success mr-1"></i> Active in 2026 Cohorts
+            </div>
+          </div>
+          <div class="kpi-icon-wrap" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">
+            <i class="fas fa-user-graduate"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Cohorts / Batches -->
+    <div class="col-xl-3 col-md-6 mb-3 mb-xl-0">
+      <div class="kpi-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-label">Active Cohorts</div>
+            <div class="kpi-value text-indigo" style="color: #6366f1;">{{ total_batches }}</div>
+            <div class="small text-muted mt-1 font-weight-bold">
+              <i class="fas fa-layer-group text-info mr-1"></i> Across {{ total_courses }} Programmes
+            </div>
+          </div>
+          <div class="kpi-icon-wrap" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue Collected -->
+    <div class="col-xl-3 col-md-6 mb-3 mb-xl-0">
+      <div class="kpi-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-label">Tuition Collected</div>
+            <div class="kpi-value text-success">₦{{ total_collected|floatformat:0 }}</div>
+            <div class="small text-muted mt-1 font-weight-bold">
+              Pending: <span class="text-danger">₦{{ pending_revenue|floatformat:0 }}</span> ({{ collection_rate }}%)
+            </div>
+          </div>
+          <div class="kpi-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+            <i class="fas fa-wallet"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Today -->
+    <div class="col-xl-3 col-md-6 mb-3 mb-xl-0">
+      <div class="kpi-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="kpi-label">Attendance Today</div>
+            <div class="kpi-value text-info">{{ attendance_today }}</div>
+            <div class="small text-muted mt-1 font-weight-bold">
+              <i class="fas fa-qrcode text-primary mr-1"></i> Synced Kiosk Scans
+            </div>
+          </div>
+          <div class="kpi-icon-wrap" style="background: rgba(6, 182, 212, 0.1); color: #06b6d4;">
+            <i class="fas fa-fingerprint"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 🎛️ INTERACTIVE MANAGEMENT TABS -->
+  <!-- ========================================================= -->
+  <ul class="nav custom-admin-tabs" id="adminTabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="students-tab" data-toggle="pill" href="#students" role="tab">
+        <i class="fas fa-user-graduate"></i> Students Management
+        <span class="badge-counter">{{ total_students }}</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="courses-tab" data-toggle="pill" href="#courses" role="tab">
+        <i class="fas fa-book-open"></i> Programmes & Courses
+        <span class="badge-counter">{{ total_courses }}</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="cohorts-tab" data-toggle="pill" href="#cohorts" role="tab">
+        <i class="fas fa-calendar-alt"></i> Cohorts & Batches
+        <span class="badge-counter">{{ total_batches }}</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="billing-tab" data-toggle="pill" href="#billing" role="tab">
+        <i class="fas fa-file-invoice-dollar"></i> Tuition & Billing
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="attendance-tab" data-toggle="pill" href="#attendance" role="tab">
+        <i class="fas fa-stream"></i> Live Kiosk Attendance
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="overview-tab" data-toggle="pill" href="#overview" role="tab">
+        <i class="fas fa-chart-pie"></i> Analytics & Trends
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="staff-tab" data-toggle="pill" href="#staff" role="tab">
+        <i class="fas fa-chalkboard-teacher"></i> Instructors & Staff
+      </a>
+    </li>
+  </ul>
+
+  <!-- ========================================================= -->
+  <!-- 📑 TAB CONTENTS -->
+  <!-- ========================================================= -->
+  <div class="tab-content" id="adminTabsContent">
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 1: 🎓 STUDENTS MANAGEMENT -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade show active" id="students" role="tabpanel">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-users text-primary"></i> Active Student Directory
+            </h3>
+            <p class="text-muted small mb-0">Search, reassign cohorts, monitor tuition payments, and update student accounts.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="search-input-wrap mr-2">
+              <i class="fas fa-search"></i>
+              <input type="text" id="studentSearchInput" class="form-control" placeholder="Search student name, email, cohort...">
+            </div>
+            <button class="btn btn-cc-primary" data-toggle="modal" data-target="#enrollStudentModal">
+              <i class="fas fa-user-plus"></i> Enroll Student
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-modern" id="studentsTable">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Enrolled Programme</th>
+                <th>Assigned Cohort</th>
+                <th>Tuition Status</th>
+                <th>Account Status</th>
+                <th class="text-right">Admin Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="mr-3 font-weight-bold text-white rounded-circle d-flex align-items-center justify-content-center"
+                         style="width: 40px; height: 40px; background: linear-gradient(135deg, #4f46e5, #06b6d4);">
+                      {{ s.user.first_name|first|default:s.user.username|first|upper }}
+                    </div>
+                    <div>
+                      <div class="font-weight-bold text-dark">
+                        {{ s.user.get_full_name|default:s.user.username }}
+                      </div>
+                      <div class="small text-muted">
+                        <i class="far fa-envelope mr-1"></i>{{ s.user.email }}
+                        {% if s.phone %} • <i class="fas fa-phone mr-1"></i>{{ s.phone }}{% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  {% if s.course %}
+                    <span class="badge badge-light border font-weight-bold text-dark px-2 py-1">
+                      <i class="fas fa-laptop-code text-primary mr-1"></i> {{ s.course.name }}
+                    </span>
+                  {% else %}
+                    <span class="badge badge-secondary">Not Assigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.batch %}
+                    <span class="badge badge-primary font-weight-bold px-2 py-1">
+                      <i class="fas fa-users mr-1"></i> {{ s.batch.name }}
+                    </span>
+                    <div class="small text-muted font-weight-bold mt-1">
+                      {{ s.batch.get_mode_display }} ({{ s.batch.get_session_period_display }})
+                    </div>
+                  {% else %}
+                    <span class="badge badge-warning text-dark font-weight-bold">Unassigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.payment_record %}
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      {% if s.payment_record.status == 'paid' %}
+                        <span class="badge badge-success font-weight-bold">PAID IN FULL</span>
+                      {% elif s.payment_record.status == 'partial' %}
+                        <span class="badge badge-warning text-dark font-weight-bold">PARTIAL</span>
+                      {% else %}
+                        <span class="badge badge-danger font-weight-bold">PENDING</span>
+                      {% endif %}
+                      <span class="small font-weight-bold text-muted ml-2">
+                        ₦{{ s.payment_record.amount_paid|floatformat:0 }} / ₦{{ s.payment_record.amount_due|floatformat:0 }}
+                      </span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 9999px;">
+                      <div class="progress-bar {% if s.payment_pct >= 100 %}bg-success{% elif s.payment_pct > 0 %}bg-warning{% else %}bg-danger{% endif %}"
+                           role="progressbar" style="width: {{ s.payment_pct }}%;"></div>
+                    </div>
+                  {% else %}
+                    <span class="badge badge-secondary">No Invoice</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.user.is_active %}
+                    <span class="badge badge-pill badge-success px-2 py-1">
+                      <i class="fas fa-check-circle mr-1"></i> Active
+                    </span>
+                  {% else %}
+                    <span class="badge badge-pill badge-danger px-2 py-1">
+                      <i class="fas fa-ban mr-1"></i> Deactivated
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle font-weight-bold" data-toggle="dropdown">
+                      Manage
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                      <!-- Reassign Batch -->
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#batchModal{{ s.id }}">
+                        <i class="fas fa-exchange-alt mr-2 text-primary"></i> Change Cohort / Batch
+                      </a>
+                      <!-- Record Payment -->
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#quickPayModal{{ s.id }}">
+                        <i class="fas fa-credit-card mr-2 text-success"></i> Record Payment
+                      </a>
+                      <div class="dropdown-divider"></div>
+                      <!-- Toggle Status -->
+                      <form action="{% url 'admin_student_toggle_status' s.id %}" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item text-danger">
+                          {% if s.user.is_active %}
+                            <i class="fas fa-user-slash mr-2"></i> Deactivate Student
+                          {% else %}
+                            <i class="fas fa-user-check mr-2 text-success"></i> Reactivate Student
+                          {% endif %}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <!-- Quick Modal for Changing Batch -->
+                  <div class="modal fade text-left" id="batchModal{{ s.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title font-weight-bold text-white">
+                            <i class="fas fa-layer-group text-warning mr-2"></i> Assign Cohort: {{ s.user.get_full_name|default:s.user.username }}
+                          </h5>
+                          <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <form action="{% url 'admin_student_update_batch' s.id %}" method="POST">
+                          {% csrf_token %}
+                          <div class="modal-body">
+                            <div class="form-group">
+                              <label class="font-weight-bold">Select Innovation Hub Cohort / Batch</label>
+                              <select name="batch_id" class="form-control form-control-lg font-weight-bold" required>
+                                <option value="">-- Choose Cohort --</option>
+                                {% for b in all_batches %}
+                                  <option value="{{ b.id }}" {% if s.batch_id == b.id %}selected{% endif %}>
+                                    {{ b.course.name }} | {{ b.name }} ({{ b.get_mode_display }} - {{ b.get_session_period_display }})
+                                  </option>
+                                {% endfor %}
+                              </select>
+                              <small class="form-text text-muted">
+                                This will automatically associate student attendance scans and class timetables with this cohort.
+                              </small>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-cc-primary">Save Cohort Assignment</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Quick Modal for Recording Payment for this Student -->
+                  <div class="modal fade text-left" id="quickPayModal{{ s.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title font-weight-bold text-white">
+                            <i class="fas fa-wallet text-success mr-2"></i> Record Payment: {{ s.user.get_full_name|default:s.user.username }}
+                          </h5>
+                          <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <form action="{% url 'admin_payment_record' %}" method="POST">
+                          {% csrf_token %}
+                          <input type="hidden" name="student_id" value="{{ s.user.id }}">
+                          <div class="modal-body">
+                            <div class="alert alert-light border mb-3">
+                              <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Enrolled Course:</span>
+                                <strong>{{ s.course.name|default:"General" }}</strong>
+                              </div>
+                              <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Amount Due:</span>
+                                <strong>₦{{ s.payment_record.amount_due|default:"35000"|floatformat:2 }}</strong>
+                              </div>
+                              <div class="d-flex justify-content-between">
+                                <span class="text-muted">Currently Paid:</span>
+                                <strong class="text-success">₦{{ s.payment_record.amount_paid|default:"0"|floatformat:2 }}</strong>
+                              </div>
+                            </div>
+                            <div class="form-group">
+                              <label class="font-weight-bold">Payment Amount (₦)</label>
+                              <input type="number" step="0.01" name="amount" class="form-control form-control-lg font-weight-bold"
+                                     value="35000" required>
+                              <small class="form-text text-muted">
+                                Standard Innovation Hub tuition fee is ₦35,000 / month.
+                              </small>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success font-weight-bold px-4">
+                              <i class="fas fa-receipt mr-1"></i> Confirm & Issue Receipt
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  <i class="fas fa-user-graduate fa-3x mb-3 text-muted"></i>
+                  <h5>No students registered yet.</h5>
+                  <p>Click "Enroll Student" above to add students to the 2026 intake.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 2: 📚 PROGRAMMES & COURSES -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="courses" role="tabpanel">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-graduation-cap text-indigo" style="color: #6366f1;"></i> Innovation Hub Programmes
+            </h3>
+            <p class="text-muted small mb-0">Live courses, monthly tuition rates, subject modules, and admissions intake status.</p>
+          </div>
+          <div>
+            <button class="btn btn-cc-primary" data-toggle="modal" data-target="#addCourseModal">
+              <i class="fas fa-plus"></i> Add New Programme
+            </button>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <div class="row">
+            {% for c in courses %}
+            <div class="col-xl-4 col-md-6 mb-4">
+              <div class="course-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <span class="course-badge {% if c.is_published %}badge-success{% else %}badge-secondary{% endif %}">
+                    {% if c.is_published %}● Public Admissions Open{% else %}● Hidden / Draft{% endif %}
+                  </span>
+                  <form action="{% url 'admin_course_toggle_publish' c.id %}" method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-xs btn-outline-secondary font-weight-bold"
+                            title="Toggle admission intake status">
+                      {% if c.is_published %}Hide{% else %}Publish{% endif %}
+                    </button>
+                  </form>
+                </div>
+
+                <h4 class="font-weight-bold text-dark mb-1" style="font-size: 1.15rem;">{{ c.name }}</h4>
+                <p class="text-muted small mb-3" style="min-height: 38px;">
+                  {{ c.short_description|default:"Core practical programme at CodeCamp Innovation Hub." }}
+                </p>
+
+                <div class="d-flex justify-content-between align-items-center border-top border-bottom py-2 my-2 bg-light px-3 rounded">
+                  <div>
+                    <span class="text-muted small d-block">Monthly Tuition</span>
+                    <strong class="text-success font-weight-bold">₦{{ c.fee|floatformat:0 }}</strong>
+                  </div>
+                  <div>
+                    <span class="text-muted small d-block">Duration</span>
+                    <strong class="text-dark font-weight-bold">{{ c.duration_weeks }} Weeks</strong>
+                  </div>
+                  <div>
+                    <span class="text-muted small d-block">Enrolled</span>
+                    <strong class="text-primary font-weight-bold">{{ c.student_count }} Students</strong>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-2">
+                  <span class="small font-weight-bold text-muted">
+                    <i class="fas fa-calendar-alt text-warning mr-1"></i> {{ c.cohort_count }} Active Cohorts
+                  </span>
+                  <span class="small font-weight-bold text-muted">
+                    <i class="fas fa-book text-info mr-1"></i> {{ c.subjects.count }} Curriculum Subjects
+                  </span>
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5 text-muted">
+              <h5>No courses loaded.</h5>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 3: 🗓️ COHORTS & BATCHES -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="cohorts" role="tabpanel">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-layer-group text-primary"></i> Cohort & Batch Timetable Management
+            </h3>
+            <p class="text-muted small mb-0">Weekday (10am-1pm), Weekend (Fri 4-6pm & Sat 9am-3pm), and Online cohorts with capacity tracking.</p>
+          </div>
+          <div>
+            <button class="btn btn-cc-primary" data-toggle="modal" data-target="#createBatchModal">
+              <i class="fas fa-plus"></i> Create Cohort / Batch
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-modern">
+            <thead>
+              <tr>
+                <th>Cohort / Batch Name</th>
+                <th>Programme</th>
+                <th>Schedule Mode</th>
+                <th>Timing & Days</th>
+                <th>Seat Capacity</th>
+                <th>Status</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in batches %}
+              <tr>
+                <td>
+                  <strong class="text-dark">{{ b.name }}</strong>
+                  <div class="small text-muted font-weight-bold">
+                    {{ b.start_date|date:"M d, Y" }} – {{ b.end_date|date:"M d, Y" }}
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-light border font-weight-bold text-dark px-2 py-1">
+                    {{ b.course.name }}
+                  </span>
+                </td>
+                <td>
+                  {% if b.mode == 'onsite' %}
+                    <span class="badge badge-info font-weight-bold px-2 py-1"><i class="fas fa-map-marker-alt mr-1"></i> Onsite</span>
+                  {% else %}
+                    <span class="badge badge-purple text-white font-weight-bold px-2 py-1" style="background: #8b5cf6;"><i class="fas fa-globe mr-1"></i> Online</span>
+                  {% endif %}
+                  <span class="badge badge-secondary font-weight-bold ml-1">{{ b.get_batch_type_display }}</span>
+                </td>
+                <td>
+                  <div class="font-weight-bold text-dark">{{ b.get_session_period_display }}</div>
+                  <div class="small text-muted">{{ b.get_days_pattern_display }}</div>
+                </td>
+                <td style="min-width: 140px;">
+                  <div class="d-flex justify-content-between small font-weight-bold mb-1">
+                    <span>{{ b.enrolled_count }} / {{ b.max_students }} Seats</span>
+                    <span>{{ b.occupancy_pct }}%</span>
+                  </div>
+                  <div class="progress" style="height: 6px; border-radius: 9999px;">
+                    <div class="progress-bar {% if b.occupancy_pct >= 90 %}bg-danger{% elif b.occupancy_pct >= 50 %}bg-warning{% else %}bg-primary{% endif %}"
+                         role="progressbar" style="width: {{ b.occupancy_pct }}%;"></div>
+                  </div>
+                </td>
+                <td>
+                  {% if b.is_published %}
+                    <span class="badge badge-pill badge-success font-weight-bold px-2 py-1">Open</span>
+                  {% else %}
+                    <span class="badge badge-pill badge-secondary font-weight-bold px-2 py-1">Closed</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <form action="{% url 'admin_batch_toggle_publish' b.id %}" method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-secondary font-weight-bold">
+                      {% if b.is_published %}Close{% else %}Open{% endif %}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <h5>No cohorts found.</h5>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 4: 💳 TUITION & BILLING -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="billing" role="tabpanel">
+      <!-- Billing Metric Bar -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Invoiced</div>
+            <div class="kpi-value text-dark">₦{{ total_invoiced|floatformat:2 }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-label">Collected Revenue</div>
+            <div class="kpi-value text-success">₦{{ total_collected|floatformat:2 }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-label">Outstanding Balance</div>
+            <div class="kpi-value text-danger">₦{{ pending_revenue|floatformat:2 }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-label">Collection Rate</div>
+            <div class="kpi-value text-primary">{{ collection_rate }}%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-wallet text-success"></i> Tuition Ledger & Invoices
+            </h3>
+            <p class="text-muted small mb-0">Record payments directly, issue automated receipts, and audit balances.</p>
+          </div>
+          <div>
+            <button class="btn btn-success font-weight-bold" data-toggle="modal" data-target="#recordPaymentModal">
+              <i class="fas fa-plus-circle mr-1"></i> Record Payment / Installment
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-modern">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Course / Cohort</th>
+                <th>Amount Due</th>
+                <th>Amount Paid</th>
+                <th>Outstanding Balance</th>
+                <th>Status</th>
+                <th>Latest Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+              <tr>
+                <td>
+                  <strong class="text-dark">{{ p.student.get_full_name|default:p.student.username }}</strong>
+                  <div class="small text-muted">{{ p.student.email }}</div>
+                </td>
+                <td>
+                  <span class="badge badge-light border font-weight-bold text-dark">
+                    {{ p.course.name|default:"General" }}
+                  </span>
+                  {% if p.batch %}
+                    <div class="small text-muted font-weight-bold">{{ p.batch.name }}</div>
+                  {% endif %}
+                </td>
+                <td class="font-weight-bold text-dark">₦{{ p.amount_due|floatformat:2 }}</td>
+                <td class="font-weight-bold text-success">₦{{ p.amount_paid|floatformat:2 }}</td>
+                <td class="font-weight-bold {% if p.remaining_balance > 0 %}text-danger{% else %}text-muted{% endif %}">
+                  ₦{{ p.remaining_balance|floatformat:2 }}
+                </td>
+                <td>
+                  {% if p.status == 'paid' %}
+                    <span class="badge badge-pill badge-success font-weight-bold px-3 py-1">PAID IN FULL</span>
+                  {% elif p.status == 'partial' %}
+                    <span class="badge badge-pill badge-warning text-dark font-weight-bold px-3 py-1">PARTIAL</span>
+                  {% else %}
+                    <span class="badge badge-pill badge-danger font-weight-bold px-3 py-1">PENDING</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted font-weight-bold">
+                  {{ p.payment_date|date:"M d, Y H:i" }}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <h5>No payment records logged yet.</h5>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Digital Receipts -->
+      <div class="section-card mt-4">
+        <div class="section-header">
+          <h4 class="section-title" style="font-size: 1rem;">
+            <i class="fas fa-receipt text-warning"></i> Recently Issued Official Receipts
+          </h4>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-modern">
+            <thead>
+              <tr>
+                <th>Receipt Ref #</th>
+                <th>Student</th>
+                <th>Amount</th>
+                <th>Issued At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in recent_receipts %}
+              <tr>
+                <td><code>#{{ r.reference|stringformat:"s"|slice:":8"|upper }}</code></td>
+                <td>{{ r.payment.student.get_full_name|default:r.payment.student.username }}</td>
+                <td class="font-weight-bold text-success">₦{{ r.amount|floatformat:2 }}</td>
+                <td class="small text-muted">{{ r.issued_date|date:"M d, Y H:i" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-3 text-muted small">No receipts generated yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 5: ⏱️ LIVE KIOSK ATTENDANCE -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="attendance" role="tabpanel">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-fingerprint text-info"></i> Live Kiosk Attendance Scanner Log
+            </h3>
+            <p class="text-muted small mb-0">Real-time check-in stream synchronized from the attendance kiosk tablet & manual logs.</p>
+          </div>
+          <div>
+            <button class="btn btn-cc-primary" data-toggle="modal" data-target="#manualAttendanceModal">
+              <i class="fas fa-user-check"></i> Mark Manual Attendance
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-modern">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Subject / Module</th>
+                <th>Cohort / Batch</th>
+                <th>Date</th>
+                <th>Time In</th>
+                <th>Status</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in attendance_records %}
+              <tr>
+                <td>
+                  <strong class="text-dark">{{ a.student.get_full_name|default:a.student.username }}</strong>
+                </td>
+                <td>
+                  <span class="badge badge-light border font-weight-bold text-dark">{{ a.subject.name }}</span>
+                </td>
+                <td>
+                  {{ a.batch.name|default:"General" }}
+                </td>
+                <td class="small font-weight-bold text-dark">{{ a.date|date:"M d, Y" }}</td>
+                <td class="small text-muted font-weight-bold">
+                  {{ a.check_in_time|time:"H:i A"|default:"--" }}
+                </td>
+                <td>
+                  {% if a.status == 'Present' %}
+                    <span class="badge badge-pill badge-success font-weight-bold px-3 py-1">PRESENT</span>
+                  {% elif a.status == 'Late' %}
+                    <span class="badge badge-pill badge-warning text-dark font-weight-bold px-3 py-1">LATE</span>
+                  {% else %}
+                    <span class="badge badge-pill badge-danger font-weight-bold px-3 py-1">ABSENT</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge badge-secondary small">{{ a.source|default:"kiosk" }}</span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <h5>No attendance records found.</h5>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 6: 📊 ANALYTICS & TRENDS -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="overview" role="tabpanel">
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="section-card h-100">
+            <div class="section-header">
+              <h4 class="section-title" style="font-size: 1rem;"><i class="fas fa-chart-line text-primary"></i> 7-Day User Registration</h4>
+            </div>
+            <div class="p-3">
+              <canvas id="userChart" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <div class="section-card h-100">
+            <div class="section-header">
+              <h4 class="section-title" style="font-size: 1rem;"><i class="fas fa-chart-bar text-success"></i> 7-Day Attendance Trend</h4>
+            </div>
+            <div class="p-3">
+              <canvas id="attendanceChart" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <div class="section-card h-100">
+            <div class="section-header">
+              <h4 class="section-title" style="font-size: 1rem;"><i class="fas fa-tasks text-warning"></i> Operational Tasks Status</h4>
+            </div>
+            <div class="p-3 text-center">
+              <canvas id="taskPie" height="180"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 7: 👥 INSTRUCTORS & STAFF -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="staff" role="tabpanel">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-chalkboard-teacher text-indigo" style="color: #6366f1;"></i> Academic Staff & Instructors
+            </h3>
+            <p class="text-muted small mb-0">Approve staff onboarding requests and manage instructor permissions.</p>
+          </div>
+          <div>
+            <a href="{% url 'create_staff' %}" class="btn btn-cc-primary">
+              <i class="fas fa-user-plus"></i> Add Staff / Instructor
+            </a>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-modern">
+            <thead>
+              <tr>
+                <th>Name / User</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Approval Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for st in staff_members %}
+              <tr>
+                <td>
+                  <strong class="text-dark">{{ st.user.get_full_name|default:st.user.username }}</strong>
+                </td>
+                <td>
+                  <span class="badge badge-info font-weight-bold px-2 py-1 text-uppercase">{{ st.role }}</span>
+                </td>
+                <td>{{ st.user.email }}</td>
+                <td>
+                  {% if st.is_approved %}
+                    <span class="badge badge-pill badge-success font-weight-bold px-2 py-1">Approved</span>
+                  {% else %}
+                    <span class="badge badge-pill badge-warning text-dark font-weight-bold px-2 py-1">Pending Approval</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  {% if not st.is_approved %}
+                    <a href="{% url 'approve_staff' st.user.id %}" class="btn btn-sm btn-success font-weight-bold">
+                      <i class="fas fa-check mr-1"></i> Approve Staff
+                    </a>
+                  {% else %}
+                    <span class="text-muted small font-weight-bold"><i class="fas fa-check-circle text-success"></i> Active</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">No instructors registered yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-  <!-- KPI CARDS -->
-  <div class="row">
+<!-- ========================================================= -->
+<!-- 🚀 MODALS FOR ADMINISTRATIVE ACTIONS -->
+<!-- ========================================================= -->
 
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-info">
-        <div class="inner">
-          <h3>{{ total_users }}</h3>
-          <p>Total Users</p>
-        </div>
+<!-- 1. ENROLL STUDENT MODAL -->
+<div class="modal fade" id="enrollStudentModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold text-white">
+          <i class="fas fa-user-plus text-warning mr-2"></i> Enroll Student (Innovation Hub 2026)
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
       </div>
-    </div>
-
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-success">
-        <div class="inner">
-          <h3>{{ total_tasks }}</h3>
-          <p>Total Tasks</p>
+      <form action="{% url 'admin_student_create' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Username *</label>
+              <input type="text" name="username" class="form-control" placeholder="e.g. emeka.dev" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Email Address *</label>
+              <input type="email" name="email" class="form-control" placeholder="student@example.com" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">First Name</label>
+              <input type="text" name="first_name" class="form-control" placeholder="Emeka">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Last Name</label>
+              <input type="text" name="last_name" class="form-control" placeholder="Okafor">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Phone Number</label>
+              <input type="text" name="phone" class="form-control" placeholder="+234 800 000 0000">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Temporary Password</label>
+              <input type="text" name="password" class="form-control" value="CodeCamp2026!">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Programme / Course *</label>
+              <select name="course_id" class="form-control" required>
+                <option value="">-- Select Innovation Hub Course --</option>
+                {% for c in all_courses %}
+                  <option value="{{ c.id }}">{{ c.name }} (₦{{ c.fee|floatformat:0 }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Assign Cohort / Batch</label>
+              <select name="batch_id" class="form-control">
+                <option value="">-- Choose Batch --</option>
+                {% for b in all_batches %}
+                  <option value="{{ b.id }}">{{ b.course.name }} | {{ b.name }} ({{ b.get_mode_display }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-warning">
-        <div class="inner">
-          <h3>{{ pending_tasks }}</h3>
-          <p>Pending Tasks</p>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-cc-primary font-weight-bold px-4">
+            <i class="fas fa-check mr-1"></i> Enroll & Generate Invoice
+          </button>
         </div>
-      </div>
+      </form>
     </div>
-
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-danger">
-        <div class="inner">
-          <h3>{{ completed_tasks }}</h3>
-          <p>Completed Tasks</p>
-        </div>
-      </div>
-    </div>
-
   </div>
-
-  <!-- CHARTS -->
-  <div class="row">
-
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header"><h3>User Growth</h3></div>
-        <div class="card-body">
-          <canvas id="userChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header"><h3>Attendance Trend</h3></div>
-        <div class="card-body">
-          <canvas id="attendanceChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <canvas id="staffChart"></canvas>
-    
-    <canvas id="taskPie"></canvas>
-
-  </div>
-
-  <!-- RECENT DATA -->
-  <div class="row">
-
-    
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header"><h3>Recent Users</h3></div>
-        <div class="card-body">
-          <ul>
-            {% for user in recent_users %}
-              <li>{{ user.username }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header"><h3>Recent Tasks</h3></div>
-        <div class="card-body">
-          <ul>
-            {% for task in recent_tasks %}
-              <li>{{ task.title }} ({{ task.status }})</li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
 </div>
 
-<!-- Charts -->
+<!-- 2. ADD COURSE MODAL -->
+<div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold text-white">
+          <i class="fas fa-book-open text-warning mr-2"></i> Add New Programme
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'admin_course_create' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="font-weight-bold">Course / Programme Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. AI & Generative Engineering" required>
+          </div>
+          <div class="form-group">
+            <label class="font-weight-bold">Short Description</label>
+            <input type="text" name="short_description" class="form-control" placeholder="Brief outline for admissions">
+          </div>
+          <div class="row">
+            <div class="col-6 form-group">
+              <label class="font-weight-bold">Duration (Weeks)</label>
+              <input type="number" name="duration_weeks" class="form-control" value="12" required>
+            </div>
+            <div class="col-6 form-group">
+              <label class="font-weight-bold">Monthly Fee (₦)</label>
+              <input type="number" name="fee" class="form-control" value="35000" required>
+            </div>
+          </div>
+          <div class="form-check mt-2">
+            <input type="checkbox" name="is_published" class="form-check-input" id="pubCourseCheck" checked>
+            <label class="form-check-label font-weight-bold" for="pubCourseCheck">Publish immediately on web admissions</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-cc-primary">Create Programme</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3. CREATE BATCH / COHORT MODAL -->
+<div class="modal fade" id="createBatchModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold text-white">
+          <i class="fas fa-calendar-plus text-warning mr-2"></i> Create Innovation Hub Cohort
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'admin_batch_create' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Associated Programme *</label>
+              <select name="course_id" class="form-control" required>
+                {% for c in all_courses %}
+                  <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Cohort Name (Optional)</label>
+              <input type="text" name="name" class="form-control" placeholder="Leave blank for auto-name">
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Delivery Mode</label>
+              <select name="mode" class="form-control">
+                <option value="onsite">Onsite (Hub Campus)</option>
+                <option value="online">Online (Virtual Class)</option>
+              </select>
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Batch Type</label>
+              <select name="batch_type" class="form-control">
+                <option value="weekdays">Weekdays</option>
+                <option value="weekends">Weekends</option>
+              </select>
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Session Timing</label>
+              <select name="session_period" class="form-control">
+                <option value="morning">Morning (10:00 AM - 1:00 PM)</option>
+                <option value="afternoon">Afternoon</option>
+              </select>
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Days Pattern</label>
+              <select name="days_pattern" class="form-control">
+                <option value="mon_wed_fri">Mon / Wed / Fri</option>
+                <option value="tue_thu_sat">Tue / Thu / Sat</option>
+                <option value="fri_sat">Fri (4-6pm) & Sat (9am-3pm)</option>
+              </select>
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Max Seats (Capacity)</label>
+              <input type="number" name="max_students" class="form-control" value="20" required>
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Start Date</label>
+              <input type="date" name="start_date" class="form-control">
+            </div>
+          </div>
+          <div class="form-check mt-2">
+            <input type="checkbox" name="is_published" class="form-check-input" id="pubBatchCheck" checked>
+            <label class="form-check-label font-weight-bold" for="pubBatchCheck">Open immediately for student assignment</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-cc-primary">Create Cohort</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 4. RECORD PAYMENT MODAL -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold text-white">
+          <i class="fas fa-file-invoice-dollar text-success mr-2"></i> Record Tuition Installment
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'admin_payment_record' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="font-weight-bold">Select Student *</label>
+            <select name="student_id" class="form-control form-control-lg font-weight-bold" required>
+              <option value="">-- Choose Student --</option>
+              {% for s in students %}
+                <option value="{{ s.user.id }}">
+                  {{ s.user.get_full_name|default:s.user.username }} ({{ s.course.name|default:"General" }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="font-weight-bold">Payment Amount (₦) *</label>
+            <input type="number" step="0.01" name="amount" class="form-control form-control-lg font-weight-bold" value="35000" required>
+            <small class="form-text text-muted">Standard monthly installment is ₦35,000.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success font-weight-bold px-4">
+            <i class="fas fa-check-circle mr-1"></i> Record Payment & Issue Receipt
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 5. MANUAL ATTENDANCE MODAL -->
+<div class="modal fade" id="manualAttendanceModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold text-white">
+          <i class="fas fa-clipboard-check text-info mr-2"></i> Log Student Attendance
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'admin_attendance_mark' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="font-weight-bold">Student *</label>
+            <select name="student_id" class="form-control" required>
+              <option value="">-- Select Student --</option>
+              {% for s in students %}
+                <option value="{{ s.user.id }}">{{ s.user.get_full_name|default:s.user.username }} ({{ s.course.name }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="font-weight-bold">Subject / Module *</label>
+            <select name="subject_id" class="form-control" required>
+              <option value="">-- Select Subject --</option>
+              {% for subj in all_subjects %}
+                <option value="{{ subj.id }}">{{ subj.course.name }} &rsaquo; {{ subj.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row">
+            <div class="col-6 form-group">
+              <label class="font-weight-bold">Date</label>
+              <input type="date" name="date" class="form-control">
+            </div>
+            <div class="col-6 form-group">
+              <label class="font-weight-bold">Status</label>
+              <select name="status" class="form-control font-weight-bold">
+                <option value="Present" class="text-success">Present</option>
+                <option value="Late" class="text-warning">Late</option>
+                <option value="Absent" class="text-danger">Absent</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="font-weight-bold">Remarks (Optional)</label>
+            <input type="text" name="remarks" class="form-control" placeholder="e.g. Approved leave or manual check">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-cc-primary">Log Attendance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-new Chart(document.getElementById('userChart'), {
-    type: 'line',
-    data: {
+document.addEventListener("DOMContentLoaded", function() {
+  // 1. URL Hash routing for tabs
+  var hash = window.location.hash;
+  if (hash) {
+    var triggerEl = document.querySelector('#adminTabs a[href="' + hash + '"]');
+    if (triggerEl) {
+      $(triggerEl).tab('show');
+    }
+  }
+
+  // Update hash on tab click
+  $('#adminTabs a').on('shown.bs.tab', function (e) {
+    if (history.pushState) {
+      history.pushState(null, null, e.target.hash);
+    } else {
+      window.location.hash = e.target.hash;
+    }
+  });
+
+  // 2. Client-side Real-time Search for Students
+  var searchInput = document.getElementById('studentSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      var query = this.value.toLowerCase().trim();
+      var rows = document.querySelectorAll('#studentsTable tbody tr');
+      rows.forEach(function(row) {
+        var text = row.innerText.toLowerCase();
+        if (text.indexOf(query) > -1) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // 3. Render Modern Charts
+  var userCtx = document.getElementById('userChart');
+  if (userCtx) {
+    new Chart(userCtx, {
+      type: 'line',
+      data: {
         labels: {{ user_labels|safe }},
         datasets: [{
-            label: 'Users',
-            data: {{ user_data|safe }}
+          label: 'Registrations',
+          data: {{ user_data|safe }},
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79, 70, 229, 0.08)',
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#4f46e5'
         }]
-    }
-});
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
 
-new Chart(document.getElementById('attendanceChart'), {
-    type: 'bar',
-    data: {
+  var attCtx = document.getElementById('attendanceChart');
+  if (attCtx) {
+    new Chart(attCtx, {
+      type: 'bar',
+      data: {
         labels: {{ attendance_labels|safe }},
         datasets: [{
-            label: 'Attendance',
-            data: {{ attendance_data|safe }}
+          label: 'Scans',
+          data: {{ attendance_data|safe }},
+          backgroundColor: '#10b981',
+          borderRadius: 6
         }]
-    }
-});
-</script>
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
 
-<script>
-new Chart(document.getElementById('staffChart'), {
-    type: 'bar',
-    data: {
-        labels: {{ staff_labels|safe }},
+  var pieCtx = document.getElementById('taskPie');
+  if (pieCtx) {
+    new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Todo', 'In Progress', 'Review', 'Completed'],
         datasets: [{
-            label: 'Completed Tasks',
-            data: {{ staff_completed|safe }}
+          data: [
+            {{ task_status.todo }},
+            {{ task_status.in_progress }},
+            {{ task_status.review }},
+            {{ task_status.done }}
+          ],
+          backgroundColor: ['#cbd5e1', '#3b82f6', '#f59e0b', '#10b981'],
+          borderWidth: 0
         }]
-    }
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' }
+        },
+        cutout: '70%'
+      }
+    });
+  }
 });
 </script>
-
-<script>
-new Chart(document.getElementById('taskPie'), {
-    type: 'pie',
-    data: {
-        labels: ['Todo', 'In Progress', 'Review', 'Done'],
-        datasets: [{
-            data: [
-                {{ task_status.todo }},
-                {{ task_status.in_progress }},
-                {{ task_status.review }},
-                {{ task_status.done }}
-            ]
-        }]
-    }
-});
-</script>
-
-{% endblock %}
+{% endblock extra_js %}

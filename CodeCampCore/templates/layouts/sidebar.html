@@ -2,22 +2,59 @@
 
     <!-- ADMIN SIDEBAR -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="#" class="brand-link">
-            <span class="brand-text font-weight-light">Admin Panel</span>
+        <a href="{% url 'admin_dashboard' %}" class="brand-link">
+            <span class="brand-text font-weight-bold ml-2">CodeCamp Admin</span>
         </a>
 
         <div class="sidebar">
             <nav>
                 <ul class="nav nav-pills nav-sidebar flex-column">
 
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small">Hub Command Center</li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}" class="nav-link">
-                            <i class="nav-icon fas fa-tachometer-alt"></i>
-                            <p>Global Overview</p>
+                        <a href="{% url 'admin_dashboard' %}#overview" class="nav-link">
+                            <i class="nav-icon fas fa-chart-line text-warning"></i>
+                            <p>Overview & Trends</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}#students" class="nav-link">
+                            <i class="nav-icon fas fa-user-graduate text-primary"></i>
+                            <p>Students Directory</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}#courses" class="nav-link">
+                            <i class="nav-icon fas fa-book-open text-info"></i>
+                            <p>Programmes & Courses</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}#cohorts" class="nav-link">
+                            <i class="nav-icon fas fa-calendar-alt text-success"></i>
+                            <p>Cohorts & Batches</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}#billing" class="nav-link">
+                            <i class="nav-icon fas fa-file-invoice-dollar text-success"></i>
+                            <p>Tuition & Billing</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}#attendance" class="nav-link">
+                            <i class="nav-icon fas fa-fingerprint text-cyan"></i>
+                            <p>Live Kiosk Scans</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}#staff" class="nav-link">
+                            <i class="nav-icon fas fa-chalkboard-teacher text-indigo"></i>
+                            <p>Instructors & Staff</p>
                         </a>
                     </li>
 
-                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">Tenant Management</li>
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-3">Multi-Campus & SaaS</li>
                     <li class="nav-item">
                         <a href="{% url 'tenants:dashboard' %}" class="nav-link">
                             <i class="nav-icon fas fa-university text-primary"></i>
@@ -37,23 +74,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'tenants:attendance_live' %}" class="nav-link">
-                            <i class="nav-icon fas fa-stream text-success"></i>
-                            <p>Live Attendance</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a href="{% url 'tenants:settings' %}" class="nav-link">
                             <i class="nav-icon fas fa-cogs text-secondary"></i>
                             <p>Academy Settings</p>
-                        </a>
-                    </li>
-
-                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">Academic Core</li>
-                    <li class="nav-item">
-                        <a href="{% url 'manage_courses' %}" class="nav-link">
-                            <i class="nav-icon fas fa-book"></i>
-                            <p>Courses</p>
                         </a>
                     </li>
 
