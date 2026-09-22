@@ -1,0 +1,190 @@
+{% load static %}
+
+<div class="w-full h-44 rounded-xl overflow-hidden relative mb-5 flex items-center justify-center border border-purple-500/20 group-hover:border-purple-500/50 transition-all duration-300">
+
+  {% if 'full-stack' in course.slug or 'front-end' in course.slug or 'web' in course.slug %}
+    <!-- Web Development Illustration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-950 via-[#180a3a] to-purple-950"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#818cf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Browser Window -->
+      <rect x="15" y="15" width="130" height="90" rx="8" fill="#1e1145" stroke="#6366f1" stroke-width="2"/>
+      <rect x="15" y="15" width="130" height="18" rx="8" fill="#2d1b69"/>
+      <!-- Window Controls -->
+      <circle cx="27" cy="24" r="3" fill="#f43f5e"/>
+      <circle cx="36" cy="24" r="3" fill="#f59e0b"/>
+      <circle cx="45" cy="24" r="3" fill="#10b981"/>
+      <!-- Code Brackets & Elements -->
+      <path d="M45 55L32 68L45 81" stroke="#a855f7" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M75 55L88 68L75 81" stroke="#a855f7" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="64" y1="52" x2="56" y2="84" stroke="#818cf8" stroke-width="3" stroke-linecap="round"/>
+      <!-- Mini Database & Floating Component -->
+      <rect x="100" y="48" width="34" height="42" rx="4" fill="#0f0729" stroke="#38bdf8" stroke-width="1.5"/>
+      <ellipse cx="117" cy="58" rx="11" ry="4" fill="#38bdf8" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1.5"/>
+      <ellipse cx="117" cy="69" rx="11" ry="4" stroke="#38bdf8" stroke-width="1.5"/>
+      <ellipse cx="117" cy="80" rx="11" ry="4" stroke="#38bdf8" stroke-width="1.5"/>
+    </svg>
+
+  {% elif 'python' in course.slug %}
+    <!-- Python Programming Illustration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-[#0c1836] via-[#111c47] to-[#1c134d]"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Terminal Window -->
+      <rect x="15" y="15" width="130" height="90" rx="8" fill="#0a0f26" stroke="#3b82f6" stroke-width="2"/>
+      <rect x="15" y="15" width="130" height="18" rx="8" fill="#13214a"/>
+      <circle cx="27" cy="24" r="3" fill="#f43f5e"/>
+      <circle cx="36" cy="24" r="3" fill="#f59e0b"/>
+      <circle cx="45" cy="24" r="3" fill="#10b981"/>
+      <!-- Python-style Interlocking Snakes Concept -->
+      <path d="M60 42C52 42 47 46 47 52V62H63V65H38C32 65 27 70 27 76C27 82 32 87 38 87H46V78C46 72 51 67 57 67H73V64C73 58 68 53 62 53H51C51 47 55 42 60 42Z" fill="#3b82f6" fill-opacity="0.85"/>
+      <circle cx="40" cy="50" r="2.5" fill="#ffffff"/>
+      <path d="M100 78C108 78 113 74 113 68V58H97V55H122C128 55 133 50 133 44C133 38 128 33 122 33H114V42C114 48 109 53 103 53H87V56C87 62 92 67 98 67H109C109 73 105 78 100 78Z" fill="#facc15" fill-opacity="0.9"/>
+      <circle cx="120" cy="70" r="2.5" fill="#0a0f26"/>
+      <!-- Prompt Lines -->
+      <text x="32" y="99" fill="#10b981" font-size="9" font-family="monospace" font-weight="bold">&gt;&gt;&gt; import ai, codecamp</text>
+    </svg>
+
+  {% elif 'data' in course.slug or 'analysis' in course.slug %}
+    <!-- Data Analysis & Science Illustration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-[#062424] via-[#092d35] to-[#131a42]"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Back Grid Board -->
+      <rect x="15" y="15" width="130" height="90" rx="8" fill="#05191b" stroke="#10b981" stroke-width="1.8"/>
+      <!-- Rising 3D-effect Data Bars -->
+      <rect x="30" y="65" width="14" height="32" rx="3" fill="#047857"/>
+      <rect x="52" y="52" width="14" height="45" rx="3" fill="#059669"/>
+      <rect x="74" y="38" width="14" height="59" rx="3" fill="#10b981"/>
+      <rect x="96" y="28" width="14" height="69" rx="3" fill="#34d399"/>
+      <!-- Trend Growth Line -->
+      <path d="M37 60L59 47L81 33L103 23L125 18" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="37" cy="60" r="3.5" fill="#38bdf8"/>
+      <circle cx="59" cy="47" r="3.5" fill="#38bdf8"/>
+      <circle cx="81" cy="33" r="3.5" fill="#38bdf8"/>
+      <circle cx="103" cy="23" r="3.5" fill="#38bdf8"/>
+      <circle cx="125" cy="18" r="4" fill="#facc15"/>
+      <!-- Analytics Node -->
+      <circle cx="128" cy="76" r="14" fill="#064e3b" stroke="#10b981" stroke-width="1.5"/>
+      <path d="M123 76L127 80L134 72" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+  {% elif 'cloud' in course.slug or 'devops' in course.slug %}
+    <!-- Cloud & DevOps Illustration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-[#061d33] via-[#092542] to-[#18113c]"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Main Cloud -->
+      <path d="M118 55C118 42.8497 108.15 33 96 33C94.3402 33 92.7196 33.1834 91.1627 33.533C87.4879 24.2372 78.508 18 68 18C53.6406 18 42 29.6406 42 44C42 45.4746 42.1226 46.9205 42.3582 48.3275C34.1207 50.7719 28 58.2612 28 67C28 77.4934 36.5066 86 47 86H115C124.941 86 133 77.9411 133 68C133 58.6253 126.338 50.9388 118 49.3364V55Z" fill="#0c4a6e" stroke="#38bdf8" stroke-width="2.5"/>
+      <!-- Server Stack inside/underneath -->
+      <rect x="52" y="58" width="56" height="12" rx="3" fill="#0369a1" stroke="#7dd3fc" stroke-width="1.5"/>
+      <circle cx="60" cy="64" r="2" fill="#10b981"/>
+      <circle cx="67" cy="64" r="2" fill="#38bdf8"/>
+      <rect x="52" y="73" width="56" height="12" rx="3" fill="#0369a1" stroke="#7dd3fc" stroke-width="1.5"/>
+      <circle cx="60" cy="79" r="2" fill="#10b981"/>
+      <circle cx="67" cy="79" r="2" fill="#38bdf8"/>
+      <!-- DevOps Continuous Sync Arrows -->
+      <path d="M70 95C62 95 56 99 56 104C56 109 62 113 70 113C78 113 84 109 84 104C84 99 90 95 98 95C106 95 112 99 112 104C112 109 106 113 98 113" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+
+  {% elif 'cyber' in course.slug or 'security' in course.slug or 'ethical' in course.slug %}
+    <!-- Cybersecurity & Ethical Hacking Illustration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-[#2b081a] via-[#360824] to-[#160526]"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#f43f5e_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Shield Outline -->
+      <path d="M80 18L122 34V68C122 93 80 108 80 108C80 108 38 93 38 68V34L80 18Z" fill="#4c0519" stroke="#f43f5e" stroke-width="2.5"/>
+      <!-- Inner Shield Glow -->
+      <path d="M80 27L112 39V65C112 85 80 97 80 97C80 97 48 85 48 65V39L80 27Z" fill="#881337" fill-opacity="0.6"/>
+      <!-- Padlock Centerpiece -->
+      <rect x="68" y="58" width="24" height="20" rx="3" fill="#fb7185"/>
+      <path d="M72 58V50C72 45.5817 75.5817 42 80 42C84.4183 42 88 45.5817 88 50V58" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="80" cy="67" r="2.5" fill="#4c0519"/>
+      <!-- Circuit Scanner Rays -->
+      <line x1="20" y1="62" x2="33" y2="62" stroke="#fb7185" stroke-width="2" stroke-linecap="round"/>
+      <line x1="127" y1="62" x2="140" y2="62" stroke="#fb7185" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="18" cy="62" r="2" fill="#fb7185"/>
+      <circle cx="142" cy="62" r="2" fill="#fb7185"/>
+    </svg>
+
+  {% elif 'robotics' in course.slug or 'automation' in course.slug %}
+    <!-- Robotics & Automation Illustration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-[#1e1302] via-[#291705] to-[#1a082b]"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Microcontroller CPU Board -->
+      <rect x="42" y="28" width="76" height="64" rx="6" fill="#1c1917" stroke="#f59e0b" stroke-width="2"/>
+      <rect x="56" y="42" width="48" height="36" rx="4" fill="#292524" stroke="#fbbf24" stroke-width="1.5"/>
+      <!-- Robotic Sensor Core -->
+      <circle cx="80" cy="60" r="10" fill="#f59e0b" fill-opacity="0.3" stroke="#f59e0b" stroke-width="2"/>
+      <circle cx="80" cy="60" r="4" fill="#fbbf24"/>
+      <!-- Board Pins -->
+      <line x1="52" y1="20" x2="52" y2="28" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="66" y1="20" x2="66" y2="28" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="80" y1="20" x2="80" y2="28" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="94" y1="20" x2="94" y2="28" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="108" y1="20" x2="108" y2="28" stroke="#f59e0b" stroke-width="2.5"/>
+      <!-- Bottom Pins -->
+      <line x1="52" y1="92" x2="52" y2="100" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="66" y1="92" x2="66" y2="100" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="80" y1="92" x2="80" y2="100" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="94" y1="92" x2="94" y2="100" stroke="#f59e0b" stroke-width="2.5"/>
+      <line x1="108" y1="92" x2="108" y2="100" stroke="#f59e0b" stroke-width="2.5"/>
+      <!-- Tech Circuit Traces -->
+      <path d="M22 60L42 60" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+      <path d="M118 60L138 60" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="20" cy="60" r="2.5" fill="#38bdf8"/>
+      <circle cx="140" cy="60" r="2.5" fill="#38bdf8"/>
+    </svg>
+
+  {% elif 'young' in course.slug or 'beginners' in course.slug or 'kids' in course.slug or 'innovator' in course.slug %}
+    <!-- Young Innovators & Kids Tech Illustration -->
+    <div class="absolute inset-0 bg-gradient-to-br from-[#240c38] via-[#2f1049] to-[#0f1d47]"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#c084fc_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Rocket Body -->
+      <path d="M80 18C92 30 96 52 96 74L80 82L64 74C64 52 68 30 80 18Z" fill="#a855f7" stroke="#e9d5ff" stroke-width="2"/>
+      <!-- Rocket Window -->
+      <circle cx="80" cy="46" r="8" fill="#38bdf8" stroke="#ffffff" stroke-width="2"/>
+      <!-- Fins -->
+      <path d="M64 62L46 76L64 74V62Z" fill="#ec4899"/>
+      <path d="M96 62L114 76L96 74V62Z" fill="#ec4899"/>
+      <!-- Flame Thrust -->
+      <path d="M72 82L80 102L88 82H72Z" fill="#f59e0b"/>
+      <path d="M75 82L80 94L85 82H75Z" fill="#facc15"/>
+      <!-- Sparkles / Coding Stars -->
+      <polygon points="32,30 35,38 43,41 35,44 32,52 29,44 21,41 29,38" fill="#fbbf24"/>
+      <polygon points="128,34 130,40 136,42 130,44 128,50 126,44 120,42 126,40" fill="#38bdf8"/>
+      <circle cx="120" cy="85" r="3" fill="#f43f5e"/>
+      <circle cx="38" cy="85" r="2.5" fill="#a855f7"/>
+    </svg>
+
+  {% else %}
+    <!-- Default Modern Engineering Track -->
+    <div class="absolute inset-0 bg-gradient-to-br from-purple-950 via-[#130730] to-slate-950"></div>
+    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <svg class="relative z-10 w-36 h-28 transform group-hover:scale-105 transition-transform duration-300" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="25" y="25" width="110" height="70" rx="8" fill="#1b0e3d" stroke="#8b5cf6" stroke-width="2"/>
+      <path d="M55 45L40 60L55 75" stroke="#a855f7" stroke-width="3" stroke-linecap="round"/>
+      <path d="M105 45L120 60L105 75" stroke="#a855f7" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="80" cy="60" r="14" fill="#6d28d9" stroke="#c084fc" stroke-width="2"/>
+      <path d="M75 60L79 64L86 56" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  {% endif %}
+
+  <!-- Top Badge for Discipline -->
+  <div class="absolute top-2.5 right-2.5 z-20">
+    <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/60 text-purple-300 border border-purple-500/30 backdrop-blur-md">
+      Innovation Track
+    </span>
+  </div>
+
+</div>

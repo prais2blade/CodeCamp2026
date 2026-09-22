@@ -149,7 +149,7 @@
                     <option value="">-- Choose Your Track (₦35,000 / month) --</option>
                     {% for c in courses %}
                     <option value="{{ c.id }}" {% if selected_course_slug == c.slug %}selected{% endif %}>
-                        {{ c.name }} (₦{{ c.fee|floatformat:0|default:"35,000" }}/mo)
+                        {{ c.name }} — ₦35,000/mo ({{ c.duration_weeks }} Weeks)
                     </option>
                     {% empty %}
                     <option value="">Full Stack Web Development (₦35,000/mo)</option>
