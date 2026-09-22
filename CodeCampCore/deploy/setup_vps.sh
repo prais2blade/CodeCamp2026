@@ -70,6 +70,8 @@ DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$DB_USER') THEN
         CREATE ROLE $DB_USER WITH LOGIN PASSWORD '$DB_PASS';
+    ELSE
+        ALTER ROLE $DB_USER WITH PASSWORD '$DB_PASS';
     END IF;
 END
 \$\$;
