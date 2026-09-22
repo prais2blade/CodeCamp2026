@@ -616,12 +616,11 @@ def admin_dashboard(request):
 
     attendance_trend = (
         Attendance.objects.filter(date__gte=last_7_days.date())
-        .annotate(day=TruncDay('date'))
-        .values('day')
+        .values('date')
         .annotate(count=Count('id'))
-        .order_by('day')
+        .order_by('date')
     )
-    attendance_labels = [str(i['day']) for i in attendance_trend]
+    attendance_labels = [str(i['date']) for i in attendance_trend]
     attendance_data = [i['count'] for i in attendance_trend]
 
     task_status = {

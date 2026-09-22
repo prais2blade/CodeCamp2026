@@ -32,6 +32,8 @@ urlpatterns = [
     path('admin/batches/<int:batch_id>/toggle/', views.admin_batch_toggle_publish, name='admin_batch_toggle_publish'),
     path('admin/payments/record/', views.admin_payment_record, name='admin_payment_record'),
     path('admin/attendance/mark/', views.admin_attendance_mark, name='admin_attendance_mark'),
+    path('admin/staff/create/', views.create_staff, name='create_staff'),
+    path('admin/staff/approve/<int:user_id>/', views.approve_staff, name='approve_staff'),
 
     # Profile
     path('student/profile/', views.student_profile, name='student_profile'),
