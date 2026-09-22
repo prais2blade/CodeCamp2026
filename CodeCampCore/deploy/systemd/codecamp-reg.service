@@ -1,0 +1,21 @@
+[Unit]
+Description=Gunicorn daemon for Codecamp Admissions Gateway
+After=network.target postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/codecamp2026/Codecamp/camp
+EnvironmentFile=/var/www/codecamp2026/Codecamp/camp/.env
+ExecStart=/var/www/codecamp2026/Codecamp/camp/cenv/bin/gunicorn \
+          --workers 3 \
+          --timeout 60 \
+          --bind 127.0.0.1:8002 \
+          --access-logfile /var/log/codecamp/reg_access.log \
+          --error-logfile /var/log/codecamp/reg_error.log \
+          camp.wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

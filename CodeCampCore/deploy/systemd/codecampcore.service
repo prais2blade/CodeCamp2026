@@ -1,0 +1,22 @@
+[Unit]
+Description=Gunicorn daemon for CodeCampCore Master ERP
+After=network.target postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/codecamp2026/CodeCampCore
+Environment="DJANGO_SETTINGS_MODULE=core.settings.prod"
+EnvironmentFile=/var/www/codecamp2026/CodeCampCore/.env
+ExecStart=/var/www/codecamp2026/CodeCampCore/venv/bin/gunicorn \
+          --workers 4 \
+          --timeout 90 \
+          --bind 127.0.0.1:8000 \
+          --access-logfile /var/log/codecamp/core_access.log \
+          --error-logfile /var/log/codecamp/core_error.log \
+          core.wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

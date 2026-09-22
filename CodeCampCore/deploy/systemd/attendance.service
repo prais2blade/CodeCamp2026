@@ -1,0 +1,21 @@
+[Unit]
+Description=Gunicorn daemon for Attendance Kiosk Hub Backend
+After=network.target postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/codecamp2026/attendance-system/backend
+EnvironmentFile=/var/www/codecamp2026/attendance-system/backend/.env
+ExecStart=/var/www/codecamp2026/attendance-system/backend/attv/bin/gunicorn \
+          --workers 3 \
+          --timeout 60 \
+          --bind 127.0.0.1:8001 \
+          --access-logfile /var/log/codecamp/attendance_access.log \
+          --error-logfile /var/log/codecamp/attendance_error.log \
+          config.wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
