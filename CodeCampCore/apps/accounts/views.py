@@ -200,7 +200,29 @@ def login_view(request):
                 matched_user = authenticate(request, username=user_by_email.username, password=password)
 
         if not matched_user:
+            # 1. Exact match on external_attendance_id
             profile_by_id = Profile.objects.filter(external_attendance_id__iexact=login_input).select_related('user').first()
+            
+            # 2. Normalized match (strip hyphens, spaces, and compare alphanumeric)
+            if not profile_by_id:
+                clean_input = login_input.replace('-', '').replace(' ', '').upper()
+                # Query candidate profiles with external attendance IDs
+                candidate_profiles = Profile.objects.exclude(external_attendance_id='').exclude(external_attendance_id__isnull=True).select_related('user')
+                for prof in candidate_profiles:
+                    if prof.external_attendance_id:
+                        prof_clean = prof.external_attendance_id.replace('-', '').replace(' ', '').upper()
+                        if prof_clean == clean_input:
+                            profile_by_id = prof
+                            break
+                        # Compare numeric suffix if prefix starts with CDCP
+                        if clean_input.startswith('CDCP') and prof_clean.startswith('CDCP'):
+                            try:
+                                if int(clean_input[4:]) == int(prof_clean[4:]):
+                                    profile_by_id = prof
+                                    break
+                            except (ValueError, TypeError):
+                                pass
+
             if profile_by_id:
                 matched_user = authenticate(request, username=profile_by_id.user.username, password=password)
 
