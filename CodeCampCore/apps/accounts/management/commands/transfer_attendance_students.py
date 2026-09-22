@@ -134,35 +134,41 @@ class Command(BaseCommand):
                     # Determine effective class name
                     effective_class = (teaching_class or class_name).strip().lower()
 
-                    # Categorize student: Regular Innovation Hub Track vs Summer Camp
-                    is_summer = "summer" in effective_class or "teen" in effective_class
-                    if is_summer:
-                        student_type = "Summer"
+                    young_innovators_course = Course.objects.filter(name__icontains="innovator").first() or default_course
+
+                    # User rule: All classes referring to "summer" (e.g. summer class 1) map directly to Young Innovators!
+                    if "summer" in effective_class or "teen" in effective_class or "innovator" in effective_class or "young" in effective_class or "beginner" in effective_class:
+                        target_course = young_innovators_course
+                        student_type = "Young Innovator"
                         stats["summer_students"] += 1
-                        target_course = Course.objects.filter(name__icontains="summer").first() or default_course
-                    else:
+                    elif "python" in effective_class or "programing advance" in effective_class or "advance" in effective_class:
+                        target_course = Course.objects.filter(name__icontains="python").first() or default_course
                         student_type = "Regular"
                         stats["regular_students"] += 1
-                        target_course = None
-                        if "python" in effective_class or "programing advance" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="python").first()
-                        elif "data" in effective_class or "analysis" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="data").first()
-                        elif "robot" in effective_class or "automation" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="robotics").first()
-                        elif "innovator" in effective_class or "young" in effective_class or "beginner" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="innovator").first()
-                        elif "cloud" in effective_class or "devops" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="cloud").first()
-                        elif "cyber" in effective_class or "security" in effective_class or "ethical" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="cyber").first()
-                        elif "web" in effective_class or "batch a" in effective_class or "batch b" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="web").first()
-                        elif "advance" in effective_class:
-                            target_course = Course.objects.filter(name__icontains="python").first()
-
-                        if not target_course:
-                            target_course = default_course
+                    elif "data" in effective_class or "analysis" in effective_class:
+                        target_course = Course.objects.filter(name__icontains="data").first() or default_course
+                        student_type = "Regular"
+                        stats["regular_students"] += 1
+                    elif "robot" in effective_class or "automation" in effective_class:
+                        target_course = Course.objects.filter(name__icontains="robotics").first() or default_course
+                        student_type = "Regular"
+                        stats["regular_students"] += 1
+                    elif "cloud" in effective_class or "devops" in effective_class:
+                        target_course = Course.objects.filter(name__icontains="cloud").first() or default_course
+                        student_type = "Regular"
+                        stats["regular_students"] += 1
+                    elif "cyber" in effective_class or "security" in effective_class or "ethical" in effective_class:
+                        target_course = Course.objects.filter(name__icontains="cyber").first() or default_course
+                        student_type = "Regular"
+                        stats["regular_students"] += 1
+                    elif "web" in effective_class or "batch a" in effective_class or "batch b" in effective_class:
+                        target_course = Course.objects.filter(name__icontains="web").first() or default_course
+                        student_type = "Regular"
+                        stats["regular_students"] += 1
+                    else:
+                        target_course = young_innovators_course
+                        student_type = "Young Innovator"
+                        stats["summer_students"] += 1
 
                     target_batch = None
                     if target_course:
