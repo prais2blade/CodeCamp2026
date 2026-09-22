@@ -117,6 +117,7 @@ venv/bin/python manage.py seed_innovation_hub_courses --tenant-slug lagos-hq --s
 # ------------------------------------------------------------------------------
 echo -e "\n${YELLOW}[4/8] Setting up Codecamp Admissions Gateway...${NC}"
 cd "$DEPLOY_ROOT/Codecamp/camp"
+mkdir -p logs media staticfiles
 
 if [ ! -d "cenv" ]; then
     python3 -m venv cenv
@@ -139,6 +140,7 @@ cenv/bin/python manage.py collectstatic --noinput || true
 # ------------------------------------------------------------------------------
 echo -e "\n${YELLOW}[5/8] Setting up attendance-system Backend...${NC}"
 cd "$DEPLOY_ROOT/attendance-system/backend"
+mkdir -p logs media staticfiles
 
 if [ ! -d "attv" ]; then
     python3 -m venv attv

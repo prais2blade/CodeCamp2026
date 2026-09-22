@@ -197,8 +197,9 @@ X_FRAME_OPTIONS = "DENY"
 SECURE_REFERRER_POLICY = "same-origin"
 
 STATICFILES_STORAGE = (
-    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    "whitenoise.storage.CompressedStaticFilesStorage"
 )
+WHITENOISE_MANIFEST_STRICT = False
 
 MEDIA_URL = "/media/"
 
@@ -208,6 +209,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+os.makedirs(BASE_DIR / "logs", exist_ok=True)
 
 LOGGING = {
     "version": 1,
