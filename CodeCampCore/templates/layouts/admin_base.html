@@ -6,48 +6,33 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>The Academy HUB | Dashboard</title>
+  <title>{% block title %}CodeCamp Admin Console{% endblock title %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="{% static 'fontawesome-free/css/all.min.css' %}">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Source+Sans+Pro:300,400,400i,700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" crossorigin="anonymous">
   <!-- Ionicons -->
   <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
 
-  <!-- Bootstrap 4.6 (AdminLTE compatible) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
-    integrity="sha384-5sAR7xN1Nv6A5Yw7xX2s+pbC91rZ+e2dZB+Y5Z5gOtq0PqVx1Bq5F5uhhZB8wZB/" crossorigin="anonymous">
+  <!-- Bootstrap 4.6 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" crossorigin="anonymous">
 
-  <!-- Tempusdominus Bootstrap 4 -->
-  <link rel="stylesheet" href="{% static 'tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css' %}">
-  <!-- iCheck -->
-  <link rel="stylesheet" href="{% static 'icheck-bootstrap/icheck-bootstrap.min.css' %}">
-  <!-- JQVMap -->
-  <link rel="stylesheet" href="{% static 'jqvmap/jqvmap.min.css' %}">
+  <!-- AdminLTE 3.2 Theme style -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css" crossorigin="anonymous">
+
   <!-- overlayScrollbars -->
-  <link rel="stylesheet" href="{% static 'overlayScrollbars/css/OverlayScrollbars.min.css' %}">
-  <!-- Daterange picker -->
-  <link rel="stylesheet" href="{% static 'daterangepicker/daterangepicker.css' %}">
-  <!-- Summernote -->
-  <link rel="stylesheet" href="{% static 'summernote/summernote-bs4.css' %}">
-  <!-- Theme style -->
-  <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}">
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@1.13.1/css/OverlayScrollbars.min.css" crossorigin="anonymous">
+
+  <!-- AOS Animations -->
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 
   {% block extra_css %}{% endblock extra_css %}
 </head>
-<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-<script>
-  AOS.init({
-    offset: 80,
-    duration: 800,
-    easing: 'ease-in-out',
-    once: true,
-  });
-</script>
 
 <body class="hold-transition sidebar-mini layout-fixed">
   <div class="wrapper">
@@ -69,9 +54,9 @@
 
       <!-- Flash Messages -->
       {% if messages %}
-      <div class="container mt-2">
+      <div class="container-fluid mt-2">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
           {{ message }}
           <button type="button" class="close" data-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>
@@ -92,43 +77,38 @@
   </div>
   <!-- ./wrapper -->
 
-  <!-- jQuery -->
-  <script src="{% static 'jquery/jquery.min.js' %}"></script>
+  <!-- jQuery 3.6 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+
   <!-- jQuery UI -->
-  <script src="{% static 'jquery-ui/jquery-ui.min.js' %}"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" crossorigin="anonymous"></script>
   <script>
-    $.widget.bridge('uibutton', $.ui.button)
+    if (typeof $.widget !== 'undefined') {
+      $.widget.bridge('uibutton', $.ui.button);
+    }
   </script>
 
-  <!-- Bootstrap 4.6 Bundle (with Popper) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2LcQbK/H2y0f3HpC8FHvG7xQ5u6A5Zq6P5+S5U5Z4Y"
-    crossorigin="anonymous"></script>
+  <!-- Bootstrap 4.6 Bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
-  <!-- ChartJS -->
-  <script src="{% static 'chart.js/Chart.min.js' %}"></script>
-  <!-- Sparkline -->
-  <script src="{% static 'sparklines/sparkline.js' %}"></script>
-  <!-- JQVMap -->
-  <script src="{% static 'jqvmap/jquery.vmap.min.js' %}"></script>
-  <script src="{% static 'jqvmap/maps/jquery.vmap.usa.js' %}"></script>
-  <!-- jQuery Knob Chart -->
-  <script src="{% static 'jquery-knob/jquery.knob.min.js' %}"></script>
-  <!-- daterangepicker -->
-  <script src="{% static 'moment/moment.min.js' %}"></script>
-  <script src="{% static 'daterangepicker/daterangepicker.js' %}"></script>
-  <!-- Tempusdominus Bootstrap 4 -->
-  <script src="{% static 'tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js' %}"></script>
-  <!-- Summernote -->
-  <script src="{% static 'summernote/summernote-bs4.min.js' %}"></script>
   <!-- overlayScrollbars -->
-  <script src="{% static 'overlayScrollbars/js/jquery.overlayScrollbars.min.js' %}"></script>
-  <!-- AdminLTE App -->
-  <script src="{% static 'dist/js/adminlte.js' %}"></script>
-  <!-- AdminLTE dashboard demo -->
-  <script src="{% static 'dist/js/pages/dashboard.js' %}"></script>
-  <!-- AdminLTE for demo purposes -->
-  <script src="{% static 'dist/js/demo.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@1.13.1/js/jquery.overlayScrollbars.min.js" crossorigin="anonymous"></script>
+
+  <!-- AdminLTE 3.2 App -->
+  <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js" crossorigin="anonymous"></script>
+
+  <!-- AOS init -->
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  <script>
+    if (typeof AOS !== 'undefined') {
+      AOS.init({
+        offset: 80,
+        duration: 800,
+        easing: 'ease-in-out',
+        once: true,
+      });
+    }
+  </script>
 
   {% block extra_js %}{% endblock extra_js %}
 
