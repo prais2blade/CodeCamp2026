@@ -1,0 +1,44 @@
+{% extends "layouts/hod_base.html" %}
+{% block title %}HOD Dashboard{% endblock %}
+{% block content %}
+
+<h2>Welcome {{ request.user.username }}</h2>
+
+<div style="display:flex;flex-wrap:wrap;gap:15px;margin-top:20px;">
+
+    <!-- Notification Summary Card -->
+    <div style="flex:1;min-width:260px;background:#fff;border-radius:12px;
+              box-shadow:0 2px 8px rgba(0,0,0,0.05);padding:20px;">
+        <h3>📧 Notification Summary</h3>
+        <p style="font-size:14px;color:#6c757d;">Today’s activity</p>
+        <hr>
+        <p><strong>Sent:</strong> <span style="color:green;">{{ summary.sent }}</span></p>
+        <p><strong>Failed:</strong> <span style="color:red;">{{ summary.failed }}</span></p>
+        <p><strong>Queued:</strong> <span style="color:#ffc107;">{{ summary.queued }}</span></p>
+        <p><strong>Total:</strong> {{ summary.total }}</p>
+        <hr>
+        <a href="{% url 'notification_center' %}" style="background:#0d6efd;color:white;padding:8px 12px;border-radius:6px;
+              text-decoration:none;">Open Notification Center</a>
+    </div>
+    <canvas id="notifChart" height="80" style="margin-top:10px;"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Chart(document.getElementById('notifChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Sent', 'Failed', 'Queued'],
+                datasets: [{
+                    data: [{{ summary.sent }}, {{ summary.failed }}, {{ summary.queued }}],
+            backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+    }]
+  },
+            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+    </script>
+
+
+    <!-- (Optionally add other dashboard widgets beside it) -->
+
+</div>
+
+{% endblock %}

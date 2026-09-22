@@ -1,0 +1,73 @@
+{
+    "name": "CodeCamp Attendance System",
+    "short_name": "Attendance",
+    "description": "CodeCamp attendance, student, staff, parent and sponsor portals.",
+    "start_url": "/school-admin/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#0f172a",
+    "orientation": "portrait",
+    "shortcuts": [
+        {
+            "name": "School Admin",
+            "short_name": "Admin",
+            "url": "/school-admin/",
+            "icons": [
+                {
+                    "src": "/static/icons/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Parent Portal",
+            "short_name": "Parent",
+            "url": "/parent/login/",
+            "icons": [
+                {
+                    "src": "/static/icons/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Staff Portal",
+            "short_name": "Staff",
+            "url": "/staff/",
+            "icons": [
+                {
+                    "src": "/static/icons/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Foundation Portal",
+            "short_name": "Foundation",
+            "url": "/foundation/",
+            "icons": [
+                {
+                    "src": "/static/icons/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "icons": [
+        {
+            "src": "/static/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

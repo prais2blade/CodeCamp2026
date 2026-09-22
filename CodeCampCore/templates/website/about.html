@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}About Us — CodeCamp{% endblock %}
+{% block meta_description %}About CodeCamp — our mission, vision and values.{% endblock %}
+
+{% block content %}
+<section class="container mx-auto px-6 py-16">
+  <div class="grid md:grid-cols-2 gap-8 items-center">
+    <div>
+      <h1 class="text-3xl font-bold">Who We Are</h1>
+      <p class="mt-4 text-gray-700">We are a technology training and software development company committed to empowering individuals with relevant digital skills and helping businesses automate their operations.</p>
+
+      <h3 class="mt-6 font-semibold">Our Mission</h3>
+      <p class="text-gray-600">To equip individuals and businesses with the skills and digital tools needed to thrive in the modern world.</p>
+
+      <h3 class="mt-4 font-semibold">Our Vision</h3>
+      <p class="text-gray-600">To become Africa’s leading centre for practical tech education and smart business automation.</p>
+    </div>
+
+    <div>
+      <img src="{% static 'images/about-team.jpg' %}" alt="Team" class="rounded-lg shadow-lg w-full object-cover h-80">
+    </div>
+  </div>
+
+  <div class="mt-10 grid md:grid-cols-3 gap-6">
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h4 class="font-semibold">Excellence</h4>
+      <p class="text-gray-600 mt-2">Deliver real outcomes and professional training.</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h4 class="font-semibold">Innovation</h4>
+      <p class="text-gray-600 mt-2">Build modern software solving real problems.</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h4 class="font-semibold">Customer Satisfaction</h4>
+      <p class="text-gray-600 mt-2">Support and follow-up for our students and clients.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

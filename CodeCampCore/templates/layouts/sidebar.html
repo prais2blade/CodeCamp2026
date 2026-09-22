@@ -1,0 +1,148 @@
+{% if request.user.is_superuser %}
+
+    <!-- ADMIN SIDEBAR -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="#" class="brand-link">
+            <span class="brand-text font-weight-light">Admin Panel</span>
+        </a>
+
+        <div class="sidebar">
+            <nav>
+                <ul class="nav nav-pills nav-sidebar flex-column">
+
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Global Overview</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">Tenant Management</li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-university text-primary"></i>
+                            <p>Campus Console</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:api_keys' %}" class="nav-link">
+                            <i class="nav-icon fas fa-key text-warning"></i>
+                            <p>Tenant API Keys</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:domains' %}" class="nav-link">
+                            <i class="nav-icon fas fa-globe text-info"></i>
+                            <p>Custom Domains</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:attendance_live' %}" class="nav-link">
+                            <i class="nav-icon fas fa-stream text-success"></i>
+                            <p>Live Attendance</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:settings' %}" class="nav-link">
+                            <i class="nav-icon fas fa-cogs text-secondary"></i>
+                            <p>Academy Settings</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">Academic Core</li>
+                    <li class="nav-item">
+                        <a href="{% url 'manage_courses' %}" class="nav-link">
+                            <i class="nav-icon fas fa-book"></i>
+                            <p>Courses</p>
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+{% elif request.user.profile.role == 'hod' %}
+
+    <!-- HOD SIDEBAR -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="#" class="brand-link">
+            <span class="brand-text font-weight-light">HOD Panel</span>
+        </a>
+
+        <div class="sidebar">
+            <nav>
+                <ul class="nav nav-pills nav-sidebar flex-column">
+
+                    <li class="nav-item">
+                        <a href="{% url 'hod_dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">Tenant Campus</li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-university text-primary"></i>
+                            <p>Campus Console</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:attendance_live' %}" class="nav-link">
+                            <i class="nav-icon fas fa-stream text-success"></i>
+                            <p>Live Attendance</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{% url 'manage_courses' %}" class="nav-link">
+                            <i class="nav-icon fas fa-book"></i>
+                            <p>Courses</p>
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+
+{% elif request.user.profile.role == 'hod' %}
+
+    <!-- Instructors SIDEBAR -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="#" class="brand-link">
+            <span class="brand-text font-weight-light">Instructor Panel</span>
+        </a>
+
+        <div class="sidebar">
+            <nav>
+                <ul class="nav nav-pills nav-sidebar flex-column">
+
+                    <li class="nav-item">
+                        <a href="{% url 'instructor_dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{% url 'manage_courses' %}" class="nav-link">
+                            <i class="nav-icon fas fa-book"></i>
+                            <p>Courses</p>
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+
+{% else %}
+
+    <!-- STUDENT SIDEBAR (EXISTING) -->
+    {% include "student_template/sidebar_template.html" %}
+
+{% endif %}

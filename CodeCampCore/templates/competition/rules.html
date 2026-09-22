@@ -1,0 +1,18 @@
+{% extends 'competition/base.html' %}
+
+{% block content %}
+<section class="cdc-section">
+  <div class="cdc-container">
+    <h2 class="cdc-section-title">Rules</h2>
+    {% if edition.rules_markdown %}
+      <div class="cdc-copy">{{ edition.rules_markdown|linebreaks }}</div>
+    {% else %}
+      <ul class="cdc-list">
+        <li>Participants must use their own account.</li>
+        <li>Submitted work must be original.</li>
+        <li>Judges' decisions are final.</li>
+      </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock content %}

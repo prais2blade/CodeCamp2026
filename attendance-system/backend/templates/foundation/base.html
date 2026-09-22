@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% block title %}
+        Foundation Portal
+        {% endblock %}
+    </title>
+    {% include "components/pwa_head.html" %}
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-900">
+
+    <header class="bg-emerald-950 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="min-h-16 flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between">
+                <a href="{% url 'foundation_dashboard' %}" class="font-bold text-lg">
+                    Foundation Portal
+                </a>
+
+                {% if request.session.foundation_portal_foundation_id %}
+                <nav class="flex flex-wrap items-center gap-2 text-sm">
+                    <a href="{% url 'foundation_dashboard' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Dashboard
+                    </a>
+                    <a href="{% url 'foundation_change_password' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Password
+                    </a>
+                    <a href="{% url 'foundation_logout' %}" class="px-3 py-2 rounded-lg bg-white text-emerald-950 hover:bg-emerald-100">
+                        Logout
+                    </a>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+            {% for message in messages %}
+            <div class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% include "components/pwa_script.html" %}
+
+</body>
+
+</html>

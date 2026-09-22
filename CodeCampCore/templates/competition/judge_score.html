@@ -1,0 +1,16 @@
+{% extends 'competition/base.html' %}
+{% block content %}
+<section class="cdc-section">
+  <div class="cdc-container cdc-auth-card">
+    <h2 class="cdc-section-title">Score: {{ participant.full_name }}</h2>
+    <p>Track: {{ participant.get_track_display }} | Team: {% if participant.team %}{{ participant.team.name }}{% else %}Solo{% endif %}</p>
+
+    <form method="post" class="cdc-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="cdc-btn cdc-btn-primary">Save score</button>
+      <a href="{% url 'competition:judge_dashboard' edition.year %}" class="cdc-btn cdc-btn-ghost">Back</a>
+    </form>
+  </div>
+</section>
+{% endblock %}

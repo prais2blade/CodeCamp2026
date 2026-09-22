@@ -1,0 +1,63 @@
+{% extends 'competition/base.html' %}
+{% block content %}
+<section class="cdc-section">
+  <div class="cdc-container">
+    <h2 class="cdc-section-title">Competition Dashboard</h2>
+
+    {% if participant %}
+      <div class="cdc-card">
+        <p><strong>Name:</strong> {{ participant.full_name }}</p>
+        <p><strong>Email:</strong> {{ participant.email }}</p>
+        <p><strong>Track:</strong> {{ participant.get_track_display }}</p>
+        <p><strong>Team:</strong>
+          {% if participant.team %}
+            {{ participant.team.name }} (Join code: {{ participant.team.join_code }})
+          {% else %}
+            Solo
+          {% endif %}
+        </p>
+        <p><strong>Checked in:</strong> {{ participant.checked_in }}</p>
+      </div>
+
+      <div class="cdc-qr-section">
+        <h3>Your QR Code</h3>
+        <img src="{% url 'competition:qr' edition.year participant.id %}" alt="QR code" class="cdc-qr-img">
+        <div style="margin-top:10px;">
+          <a href="{% url 'competition:ticket_pdf' edition.year %}" class="cdc-btn cdc-btn-primary">
+            Download Ticket (PDF)
+          </a>
+        </div>
+      </div>
+
+      <div class="cdc-section" style="padding-top:24px;">
+        <h3 class="cdc-section-title">Team Management</h3>
+        {% if participant.team %}
+          <p>You are part of team <strong>{{ participant.team.name }}</strong> (track: {{ participant.team.get_track_display }}).</p>
+          <p>Share this join code with teammates: <strong>{{ participant.team.join_code }}</strong></p>
+        {% else %}
+          <div class="cdc-cards">
+            <div class="cdc-card">
+              <h4>Create a team</h4>
+              <form method="post" action="{% url 'competition:team_create' edition.year %}" class="cdc-form">
+                {% csrf_token %}
+                {{ team_create_form.as_p }}
+                <button type="submit" class="cdc-btn cdc-btn-primary">Create team</button>
+              </form>
+            </div>
+            <div class="cdc-card">
+              <h4>Join a team</h4>
+              <form method="post" action="{% url 'competition:team_join' edition.year %}" class="cdc-form">
+                {% csrf_token %}
+                {{ team_join_form.as_p }}
+                <button type="submit" class="cdc-btn cdc-btn-ghost">Join team</button>
+              </form>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <p>You don't have a competition profile yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% load static %}
+{% load tz %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        {% block title %}CodeCamp — Empowering Tech Careers & Smart Businesses{% endblock %}
+    </title>
+
+    <!-- SEO -->
+    <meta name="description" content="{% block meta_description %}Practical tech training, software solutions, and automation for businesses in Nigeria.{% endblock %}">
+    <meta name="keywords" content="CodeCamp, tech training Nigeria, software solutions, estate management software, coding school Nigeria">
+
+    <!-- Tailwind CSS -->
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+<link rel="stylesheet" href="{% static 'css/website.css' %}">
+
+
+    <!-- AOS CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+    {% include 'components/navbar.html' %}
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    {% include 'components/crack.html' %}
+    {% include 'components/footer.html' %}
+
+    <!-- AOS -->
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            offset: 100,
+            duration: 800,
+            easing: 'ease-out-quart',
+            once: false,
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

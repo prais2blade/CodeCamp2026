@@ -1,0 +1,49 @@
+{% extends "layouts/student_base.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h3 class="mb-3">My Assignments</h3>
+
+    <div class="card">
+        <div class="card-body table-responsive">
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Title</th>
+                        <th>Due Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for a in assignments %}
+                    <tr>
+                        <td>{{ a.subject.name }}</td>
+                        <td>{{ a.title }}</td>
+                        <td>{{ a.due_date }}</td>
+
+                        <td>
+                            <a href="{% url 'submit_assignment' a.id %}" class="btn btn-sm btn-primary">
+                                Submit
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No assignments yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

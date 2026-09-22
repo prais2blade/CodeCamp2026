@@ -1,0 +1,16 @@
+<div class="mt-10 flex gap-4">
+  <a class="px-4 py-2 bg-primary text-white rounded"
+     href="https://twitter.com/share?url={{ request.build_absolute_uri }}&text={{ post.title }}">
+    Share on Twitter
+  </a>
+
+  <a class="px-4 py-2 bg-secondary text-white rounded"
+     href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}">
+    Share on Facebook
+  </a>
+
+  <a class="px-4 py-2 bg-gray-700 text-white rounded"
+     href="https://wa.me/?text={{ post.title }}%20{{ request.build_absolute_uri }}">
+    Share on WhatsApp
+  </a>
+</div>

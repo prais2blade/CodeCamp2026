@@ -1,0 +1,224 @@
+{% extends 'layouts/admin_base.html' %}
+{% load static %}
+
+{% block title %}Academy Settings | {{ tenant.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <div class="small text-muted mb-1">
+        <a href="{% url 'tenants:dashboard' %}" class="text-primary font-weight-bold">&larr; Back to Tenant Console</a>
+      </div>
+      <h2 class="h3 font-weight-bold text-dark mb-0">
+        <i class="fas fa-cogs text-secondary mr-2"></i>Academy Settings
+      </h2>
+      <p class="text-muted small mb-0">Manage profile and operational details for <strong>{{ tenant.name }}</strong>.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Settings Form -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm rounded-lg mb-4">
+        <div class="card-header bg-white border-0 pt-3 pb-0">
+          <h5 class="font-weight-bold mb-0 text-dark">Campus Profile & Information</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="">
+            {% csrf_token %}
+
+            <div class="form-group mb-3">
+              <label class="font-weight-bold text-dark">Academy / Organization Name</label>
+              <input type="text" name="name" class="form-control" value="{{ tenant.name }}" required>
+            </div>
+
+            <div class="form-row mb-3">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <label class="font-weight-bold text-dark">Tenant Slug / Subdomain</label>
+                <div class="input-group">
+                  <input type="text" class="form-control bg-light" value="{{ tenant.subdomain }}" readonly>
+                  <div class="input-group-append">
+                    <span class="input-group-text font-monospace small">.codecamp.org</span>
+                  </div>
+                </div>
+                <small class="form-text text-muted">Fixed identifier for subdomain routing.</small>
+              </div>
+
+              <div class="col-md-6">
+                <label class="font-weight-bold text-dark">Subscription Tier</label>
+                <input type="text" class="form-control bg-light text-capitalize font-weight-bold" value="{{ tenant.subscription_tier }} Plan" readonly>
+                <small class="form-text text-muted">Capacity limit: {{ tenant.max_students }} students.</small>
+              </div>
+            </div>
+
+            <div class="form-row mb-3">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <label class="font-weight-bold text-dark">Contact Email</label>
+                <input type="email" name="contact_email" class="form-control" value="{{ tenant.contact_email }}" placeholder="admin@academy.com">
+              </div>
+
+              <div class="col-md-6">
+                <label class="font-weight-bold text-dark">Contact Phone</label>
+                <input type="text" name="contact_phone" class="form-control" value="{{ tenant.contact_phone }}" placeholder="+234 800 000 0000">
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label class="font-weight-bold text-dark">Physical Campus Address</label>
+              <textarea name="address" class="form-control" rows="2" placeholder="e.g. 12 Academy Way, Victoria Island, Lagos">{{ tenant.address }}</textarea>
+            </div>
+
+            <div class="form-group mb-4">
+              <label class="font-weight-bold text-dark">Timezone</label>
+              <select name="timezone" class="form-control custom-select">
+                <option value="UTC" {% if tenant.timezone == 'UTC' %}selected{% endif %}>UTC (Coordinated Universal Time)</option>
+                <option value="Africa/Lagos" {% if tenant.timezone == 'Africa/Lagos' or not tenant.timezone %}selected{% endif %}>Africa/Lagos (WAT / GMT+1)</option>
+                <option value="Africa/Accra" {% if tenant.timezone == 'Africa/Accra' %}selected{% endif %}>Africa/Accra (GMT)</option>
+                <option value="Europe/London" {% if tenant.timezone == 'Europe/London' %}selected{% endif %}>Europe/London (GMT/BST)</option>
+                <option value="America/New_York" {% if tenant.timezone == 'America/New_York' %}selected{% endif %}>America/New_York (EST)</option>
+              </select>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary px-4 font-weight-bold shadow-sm">
+                <i class="fas fa-save mr-1"></i>Save Academy Settings
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tenant Details Sidebar Card & Subscription Plan Upgrade -->
+    <div class="col-lg-4">
+      
+      <!-- SUBSCRIPTION TIER CARD -->
+      <div class="card border-0 shadow-sm rounded-lg mb-4 text-white" style="background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge badge-warning text-uppercase font-weight-bold px-3 py-1">
+              <i class="fas fa-crown mr-1"></i>{{ tenant.subscription_tier }} Tier
+            </span>
+            <span class="small font-weight-bold opacity-75">SaaS Plan</span>
+          </div>
+          <h4 class="font-weight-bold mb-1">{{ tenant.name }}</h4>
+          <p class="small opacity-75 mb-3">Allowed Capacity: <strong>{{ tenant.max_students }} Students</strong></p>
+
+          <button type="button" class="btn btn-light btn-block font-weight-bold text-primary shadow-sm" data-toggle="modal" data-target="#upgradeTierModal">
+            <i class="fas fa-arrow-alt-circle-up mr-1"></i>Upgrade / Change Plan
+          </button>
+        </div>
+      </div>
+
+      <!-- OVERVIEW CARD -->
+      <div class="card border-0 shadow-sm rounded-lg mb-4 bg-light">
+        <div class="card-header bg-transparent border-0 pt-3 pb-0">
+          <h6 class="font-weight-bold mb-0 text-dark"><i class="fas fa-info-circle text-primary mr-2"></i>Tenant Overview</h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0 small">
+            <li class="mb-2"><strong>Tenant ID:</strong> <code>#{{ tenant.id }}</code></li>
+            <li class="mb-2"><strong>Registered On:</strong> {{ tenant.created_at|date:"F d, Y" }}</li>
+            <li class="mb-2"><strong>Status:</strong> 
+              {% if tenant.is_active %}
+                <span class="badge badge-success px-2 py-1">Active</span>
+              {% else %}
+                <span class="badge badge-danger px-2 py-1">Suspended</span>
+              {% endif %}
+            </li>
+            <li class="mb-2"><strong>Max Students Allowed:</strong> {{ tenant.max_students }}</li>
+            <li><strong>Default Tenant:</strong> {{ tenant.is_default|yesno:"Yes,No" }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPGRADE TIER MODAL -->
+  <div class="modal fade" id="upgradeTierModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-dark text-white border-0">
+          <h5 class="modal-title font-weight-bold">
+            <i class="fas fa-layer-group text-warning mr-2"></i>Choose Academy Subscription Tier
+          </h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-muted small mb-4">Select an academy tier to automatically update resource quotas for {{ tenant.name }}.</p>
+
+          <form method="POST" action="{% url 'tenants:plan_upgrade' %}">
+            {% csrf_token %}
+            <div class="row">
+              <!-- Starter -->
+              <div class="col-md-4 mb-3">
+                <div class="card h-100 border {% if tenant.subscription_tier == 'starter' %}border-primary shadow-sm{% endif %}">
+                  <div class="card-body text-center p-3">
+                    <h5 class="font-weight-bold text-dark mb-1">Starter</h5>
+                    <div class="text-primary font-weight-bold mb-3">$49 <span class="text-muted small">/mo</span></div>
+                    <ul class="list-unstyled small text-muted text-left mb-3">
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> Up to <strong>50</strong> Students</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> 3 Courses / 5 Batches</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> 2 M2M API Keys</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> Kiosk Attendance</li>
+                    </ul>
+                    <button type="submit" name="target_tier" value="starter" class="btn btn-sm {% if tenant.subscription_tier == 'starter' %}btn-secondary disabled{% else %}btn-outline-primary{% endif %} btn-block font-weight-bold">
+                      {% if tenant.subscription_tier == 'starter' %}Current Plan{% else %}Select Starter{% endif %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pro -->
+              <div class="col-md-4 mb-3">
+                <div class="card h-100 border {% if tenant.subscription_tier == 'pro' %}border-primary shadow-sm bg-light{% endif %}">
+                  <div class="card-body text-center p-3">
+                    <span class="badge badge-primary font-weight-bold px-2 py-1 mb-2">Most Popular</span>
+                    <h5 class="font-weight-bold text-dark mb-1">Professional</h5>
+                    <div class="text-primary font-weight-bold mb-3">$199 <span class="text-muted small">/mo</span></div>
+                    <ul class="list-unstyled small text-muted text-left mb-3">
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> Up to <strong>500</strong> Students</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> 20 Courses / 30 Batches</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> 10 M2M API Keys</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> 5 Custom Domains</li>
+                    </ul>
+                    <button type="submit" name="target_tier" value="pro" class="btn btn-sm {% if tenant.subscription_tier == 'pro' %}btn-secondary disabled{% else %}btn-primary{% endif %} btn-block font-weight-bold">
+                      {% if tenant.subscription_tier == 'pro' %}Current Plan{% else %}Upgrade to Pro{% endif %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Enterprise -->
+              <div class="col-md-4 mb-3">
+                <div class="card h-100 border {% if tenant.subscription_tier == 'enterprise' %}border-warning shadow-sm{% endif %}">
+                  <div class="card-body text-center p-3">
+                    <span class="badge badge-warning font-weight-bold px-2 py-1 mb-2">Scale & Multi-Campus</span>
+                    <h5 class="font-weight-bold text-dark mb-1">Enterprise</h5>
+                    <div class="text-primary font-weight-bold mb-3">$499 <span class="text-muted small">/mo</span></div>
+                    <ul class="list-unstyled small text-muted text-left mb-3">
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> Up to <strong>5,000+</strong> Students</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> Unlimited Courses & Batches</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> 100 API Keys & 50 Domains</li>
+                      <li class="mb-1"><i class="fas fa-check text-success mr-1"></i> Priority Kiosk Sync</li>
+                    </ul>
+                    <button type="submit" name="target_tier" value="enterprise" class="btn btn-sm {% if tenant.subscription_tier == 'enterprise' %}btn-secondary disabled{% else %}btn-warning text-dark{% endif %} btn-block font-weight-bold">
+                      {% if tenant.subscription_tier == 'enterprise' %}Current Plan{% else %}Upgrade Enterprise{% endif %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

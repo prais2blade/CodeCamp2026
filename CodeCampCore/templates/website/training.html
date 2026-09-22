@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Training Programs — CodeCamp{% endblock %}
+{% block content %}
+<section class="py-20 container mx-auto px-6">
+  <h1 class="section-title">Build a World-Class Tech Career</h1>
+  <p class="mt-4 text-gray-600 max-w-2xl">
+    Our academy takes complete beginners and turns them into job-ready tech professionals with real-world skills.
+  </p>
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10 mt-12">
+    {% for course in courses %}
+    <div class="card shadow-lg rounded-xl p-6">
+      {% if course.image %}
+      <img src="{{ course.image.url }}" alt="{{ course.name }}" class="rounded-xl mb-4 object-cover h-40 w-full">
+      {% endif %}
+
+      <h3 class="text-xl font-semibold">{{ course.name }}</h3>
+      <p class="mt-2 text-gray-600">
+        {% if course.short_description %}
+          {{ course.short_description }}
+        {% else %}
+          {{ course.description|truncatechars:140 }}
+        {% endif %}
+      </p>
+
+      <div class="mt-4 space-y-2">
+        <a href="{% url 'website:course_detail' course.slug %}" class="btn-secondary w-full block text-center">
+          View course
+        </a>
+
+        <a href="{% url 'website:course_detail' course.slug %}#enroll" class="btn-primary w-full block text-center">
+          Enroll Now
+        </a>
+
+        {% if course.brochure %}
+        <a href="{{ course.brochure.url }}" class="mt-2 block text-center text-sm underline" download>
+          Download Brochure
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

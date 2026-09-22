@@ -1,0 +1,68 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Classes
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase text-emerald-700">Classes</p>
+            <h1 class="mt-2 text-3xl font-bold text-slate-950">Assign Staff To Classes</h1>
+        </div>
+        <a href="{% url 'school_admin:class_create' %}" class="inline-flex justify-center rounded-lg bg-emerald-800 px-5 py-3 font-semibold text-white hover:bg-emerald-900">
+            Create Class
+        </a>
+    </div>
+
+    <div class="mt-8 rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                        <th class="p-4 text-left">Class</th>
+                        <th class="p-4 text-left">Staff</th>
+                        <th class="p-4 text-left">Students</th>
+                        <th class="p-4 text-left">Status</th>
+                        <th class="p-4 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for teaching_class in classes %}
+                    <tr>
+                        <td class="p-4 font-semibold">{{ teaching_class.name }}</td>
+                        <td class="p-4">
+                            {% if teaching_class.staff %}
+                            {{ teaching_class.staff.get_full_name|default:teaching_class.staff.username }}
+                            {% else %}
+                            <span class="text-amber-700">Not assigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">{{ teaching_class.student_count }}</td>
+                        <td class="p-4">
+                            {% if teaching_class.is_active %}
+                            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Active</span>
+                            {% else %}
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            <a href="{% url 'school_admin:class_edit' teaching_class.id %}" class="font-semibold text-emerald-800 hover:text-emerald-950">
+                                Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-6 text-center text-slate-500">No classes yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

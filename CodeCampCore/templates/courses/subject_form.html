@@ -1,0 +1,40 @@
+{% extends "layouts/admin_base.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h3 class="mb-3">{{ title }} ({{ course.name }})</h3>
+
+    <div class="card">
+        <div class="card-body">
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label>Name</label>
+                    {{ form.name }}
+                </div>
+
+                <div class="mb-3">
+                    <label>Description</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="mb-3">
+                    <label>Instructor</label>
+                    {{ form.instructor }}
+                </div>
+
+                <button class="btn btn-success">Save</button>
+                <a href="{% url 'manage_subjects' course.id %}" class="btn btn-secondary">Cancel</a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

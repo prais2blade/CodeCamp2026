@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard</title>
+
+    <style>
+
+        body{
+            font-family:Arial;
+            padding:20px;
+            background:#f4f4f4;
+        }
+
+        .cards{
+            display:flex;
+            gap:20px;
+            margin-bottom:30px;
+        }
+
+        .card{
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            min-width:200px;
+            box-shadow:0 2px 5px rgba(0,0,0,.1);
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            background:white;
+        }
+
+        th,
+        td{
+            padding:12px;
+            border:1px solid #ddd;
+        }
+
+        th{
+            background:#333;
+            color:white;
+        }
+
+        .in{
+            color:green;
+            font-weight:bold;
+        }
+
+        .out{
+            color:red;
+            font-weight:bold;
+        }
+
+    </style>
+</head>
+<body>
+
+<h1>Attendance Dashboard</h1>
+
+<p>{{ today }}</p>
+
+<div class="cards">
+
+    <div class="card">
+        <h3>Total Attendance</h3>
+        <h1>{{ total_students }}</h1>
+    </div>
+
+    <div class="card">
+        <h3>Currently In Center</h3>
+        <h1>{{ checked_in }}</h1>
+    </div>
+
+    <div class="card">
+        <h3>Checked Out</h3>
+        <h1>{{ checked_out }}</h1>
+    </div>
+
+</div>
+
+<table>
+
+    <thead>
+
+        <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Status</th>
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for attendance in attendances %}
+
+        <tr>
+
+            <td>
+                {{ attendance.student.student_id }}
+            </td>
+
+            <td>
+                <a
+                    href="{% url 'student_detail' attendance.student.id %}"
+                    class="text-blue-600 hover:underline"
+>
+
+                    {{ attendance.student.first_name }}
+                    {{ attendance.student.last_name }}
+
+                </a>
+            </td>
+
+            <td>
+                {{ attendance.check_in|date:"H:i" }}
+            </td>
+
+            <td>
+                {{ attendance.check_out|date:"H:i" }}
+            </td>
+
+            <td>
+
+                {% if attendance.check_in and not attendance.check_out %}
+                    <span class="in">IN CENTER</span>
+
+                {% elif attendance.check_out %}
+                    <span class="out">CHECKED OUT</span>
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+</body>
+</html>

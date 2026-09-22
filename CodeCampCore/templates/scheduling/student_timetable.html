@@ -1,0 +1,18 @@
+{% extends 'layouts/student_base.html' %}
+{% block title %}My Batch Details{% endblock %}
+{% block content %}
+<h2>My Batch: {{ request.user.profile.batch.name }}</h2>
+<p>Course: {{ request.user.profile.course.name }}</p>
+<p>Mode: {{ request.user.profile.batch.mode|title }}</p>
+<p>Type: {{ request.user.profile.batch.batch_type|title }}</p>
+<p>Session: {{ request.user.profile.batch.session_period|title }}</p>
+<p>Days: {{ request.user.profile.batch.get_days_pattern_display }}</p>
+<p>Start Date: {{ request.user.profile.batch.start_date }} | End Date: {{ request.user.profile.batch.end_date }}</p>
+
+<h3>Subjects</h3>
+<ul>
+    {% for subject in request.user.profile.course.subjects.all %}
+    <li>{{ subject.name }} {% if subject.instructor %}- {{ subject.instructor.username }}{% endif %}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

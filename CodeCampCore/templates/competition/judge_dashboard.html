@@ -1,0 +1,36 @@
+{% extends 'competition/base.html' %}
+{% block content %}
+<section class="cdc-section">
+  <div class="cdc-container">
+    <h2 class="cdc-section-title">Judge Dashboard</h2>
+    <p>Select a participant to enter or update your score.</p>
+
+    <table class="cdc-table">
+      <thead>
+        <tr>
+          <th>Participant</th>
+          <th>Track</th>
+          <th>Team</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in participants %}
+          <tr>
+            <td>{{ p.full_name }}</td>
+            <td>{{ p.get_track_display }}</td>
+            <td>{% if p.team %}{{ p.team.name }}{% else %}Solo{% endif %}</td>
+            <td>
+              <a href="{% url 'competition:judge_score' edition.year p.id %}" class="cdc-btn cdc-btn-xs">
+                Score
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No participants yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

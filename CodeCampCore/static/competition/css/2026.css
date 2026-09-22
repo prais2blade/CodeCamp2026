@@ -1,0 +1,8 @@
+/* static/competition/css/2025.css */
+.cdc-body {
+  background: radial-gradient(circle at top, #0f172a 0, #020617 55%, #000 100%);
+}
+
+.cdc-btn-primary {
+  background: radial-gradient(circle at top, #0ea5e9, #6366f1);
+}

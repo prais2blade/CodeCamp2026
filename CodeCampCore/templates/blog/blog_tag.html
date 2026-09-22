@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag.name }} - CodeCamp Blog{% endblock title %}
+
+{% block content %}
+<section class="container mx-auto px-6 py-12">
+  <h1 class="text-3xl font-bold">Posts tagged "{{ tag.name }}"</h1>
+  <div class="grid md:grid-cols-3 gap-8 mt-8">
+    {% for post in posts %}
+      {% include "components/blog-card.html" %}
+    {% empty %}
+      <p>No posts found for this tag.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock content %}

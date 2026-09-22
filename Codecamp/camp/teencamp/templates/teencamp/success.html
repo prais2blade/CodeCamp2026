@@ -1,0 +1,385 @@
+{% extends "teencamp/base.html" %}
+{% load static %}
+
+{% block title %}Registration Submitted | Teen CodeCamp{% endblock %}
+
+{% block content %}
+
+<section class="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 py-20">
+
+    <div class="max-w-5xl mx-auto px-6 text-center">
+
+        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-white/20 backdrop-blur mb-8">
+
+            <i data-lucide="check-circle" class="w-14 h-14 text-white"></i>
+
+        </div>
+
+        <h1 class="text-5xl font-extrabold text-white">
+
+            Registration Submitted Successfully
+
+        </h1>
+
+        <p class="mt-6 text-xl text-blue-100 max-w-3xl mx-auto">
+
+            Thank you for registering for Teen CodeCamp 2026.
+
+            We have received your registration together with your payment receipt.
+
+            Your payment is now awaiting verification.
+
+        </p>
+
+    </div>
+
+</section>
+
+
+<section class="bg-slate-50 py-20">
+
+    <div class="max-w-6xl mx-auto px-6">
+
+        <div class="grid lg:grid-cols-3 gap-8">
+
+            <!-- ================================================= -->
+            <!-- LEFT COLUMN -->
+            <!-- ================================================= -->
+
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Registration Code -->
+
+                <div class="pds-card text-center">
+
+                    <p class="uppercase tracking-widest text-sm text-slate-500">
+
+                        Registration Code
+
+                    </p>
+
+                    <div class="mt-5 inline-flex rounded-xl bg-slate-900 px-8 py-5">
+
+                        <span class="text-3xl font-bold tracking-widest text-white">
+
+                            {{ registration.reg_code }}
+
+                        </span>
+
+                    </div>
+
+                    <p class="mt-5 text-slate-600">
+
+                        Please save this registration code.
+
+                        You may be asked to provide it whenever you contact us.
+
+                    </p>
+
+                </div>
+
+                <!-- Registration Details -->
+
+                <div class="pds-card">
+
+                    <h2 class="text-2xl font-bold mb-8">
+
+                        Registration Details
+
+                    </h2>
+
+                    <div class="grid md:grid-cols-2 gap-8">
+
+                        <div>
+
+                            <h3 class="font-semibold text-lg mb-4">
+
+                                Student
+
+                            </h3>
+
+                            <div class="space-y-3">
+
+                                <p>
+
+                                    <strong>Name:</strong>
+
+                                    {{ registration.full_name }}
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Age:</strong>
+
+                                    {{ registration.age }}
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Learning Mode:</strong>
+
+                                    {{ registration.get_mode_display }}
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-semibold text-lg mb-4">
+
+                                Parent / Guardian
+
+                            </h3>
+
+                            <div class="space-y-3">
+
+                                <p>
+
+                                    <strong>Name:</strong>
+
+                                    {{ registration.parent_name }}
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Phone:</strong>
+
+                                    {{ registration.parent_phone }}
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Email:</strong>
+
+                                    {{ registration.parent_email }}
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Next Steps -->
+
+                <div class="pds-card">
+
+                    <h2 class="text-2xl font-bold mb-8">
+
+                        What Happens Next?
+
+                    </h2>
+
+                    <div class="space-y-6">
+
+                        <div class="flex gap-4">
+
+                            <i data-lucide="search" class="w-14 h-14 text-white"></i>
+
+                            <div>
+
+                                <h3 class="font-semibold">
+
+                                    Payment Verification
+
+                                </h3>
+
+                                <p class="text-slate-600">
+
+                                    Our finance team will verify your payment receipt.
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="flex gap-4">
+
+                            <i data-lucide="users" class="w-14 h-14 text-white"></i>
+
+                            <div>
+
+                                <h3 class="font-semibold">
+
+                                    Batch Allocation
+
+                                </h3>
+
+                                <p class="text-slate-600">
+
+                                    Once payment is approved, your child will be assigned to a class.
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="flex gap-4">
+
+                            <i data-lucide="" class="w-14 h-14 text-white"></i>
+
+                            <div>
+
+                                <h3 class="font-semibold">
+
+                                    Confirmation
+
+                                </h3>
+
+                                <p class="text-slate-600">
+
+                                    You'll receive confirmation by Email and WhatsApp.
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- RIGHT SIDEBAR -->
+            <!-- ================================================= -->
+
+            <aside class="space-y-6 lg:sticky lg:top-24 self-start">
+
+                <!-- Status -->
+
+                <div class="pds-card">
+
+                    <h3 class="text-xl font-bold mb-5">
+
+                        Current Status
+
+                    </h3>
+
+                    <span class="inline-flex rounded-full bg-yellow-100 text-yellow-700 px-4 py-2 font-semibold">
+
+                        Pending Payment Verification
+
+                    </span>
+
+                    <p class="mt-5 text-slate-600">
+
+                        Your registration has been received successfully.
+
+                        Payment verification is the next step before admission is confirmed.
+
+                    </p>
+
+                </div>
+
+                <!-- Important Notice -->
+
+                <div class="pds-card">
+
+                    <h3 class="text-xl font-bold mb-5">
+
+                        Important Notice
+
+                    </h3>
+
+                    <ul class="space-y-3 text-slate-600">
+
+                        <li>• Save your Registration Code.</li>
+
+                        <li>• Keep your payment receipt.</li>
+
+                        <li>• Check your email regularly.</li>
+
+                        <li>• We'll notify you after verification.</li>
+
+                    </ul>
+
+                </div>
+
+                <!-- Support -->
+
+                <div class="pds-card">
+
+                    <h3 class="text-xl font-bold mb-5">
+
+                        Need Help?
+
+                    </h3>
+
+                    <div class="space-y-4">
+
+                        <div class="flex items-center gap-3">
+
+                            <i data-lucide="phone" class="w-14 h-14 text-white"></i>
+
+                            <span>+234 703 219 2478</span>
+                            <span>+234 916 914 8543</span>
+
+                        </div>
+
+                        <div class="flex items-center gap-3">
+
+                            <i data-lucide="mail" class="w-14 h-14 text-white"></i>
+
+                            <span>praise2blade@gamil.com</span>
+
+                        </div>
+
+                        <div class="flex items-center gap-3">
+
+                            <i data-lucide="message" class="w-14 h-14 text-white"></i>
+
+                            <span>WhatsApp Support</span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+        <!-- Bottom Actions -->
+
+        <div class="mt-16 flex flex-col sm:flex-row justify-center gap-4">
+
+            <a
+                href="{% url 'teencamp:landing' %}"
+                class="pds-btn pds-btn-secondary">
+
+                Return Home
+
+            </a>
+
+            <a
+                href="{% url 'teencamp:register' %}"
+                class="pds-btn pds-btn-primary">
+
+                Register Another Child
+
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

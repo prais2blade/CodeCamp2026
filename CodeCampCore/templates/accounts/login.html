@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Purple Glow Background */
+    .auth-bg {
+        min-height: 90vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        background:
+            radial-gradient(circle at 20% 20%,
+                rgba(168, 85, 247, 0.55),
+                rgba(76, 29, 149, 0.85)),
+            linear-gradient(135deg,
+                #4c0d8f,
+                #6b21a8,
+                #9333ea,
+                #c084fc);
+        background-size: 300% 300%;
+        animation: gradientShift 12s ease infinite;
+        padding: 30px;
+    }
+
+    @keyframes gradientShift {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    /* Login Card — Bigger + Clearer + Glassmorphism */
+    .login-card {
+        background: rgba(255, 255, 255, 0.25);
+        /* clear glass */
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 20px;
+        padding: 50px;
+        color: #2d1a73;
+        width: 480px;
+        animation: fadeInUp 0.9s ease forwards;
+
+        /* glow outline + shadow */
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35),
+            0 0 25px rgba(168, 85, 247, 0.5);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            transform: translateY(40px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Inputs — Clearer & Higher Contrast */
+    .login-card input {
+        background: rgba(255, 255, 255, 0.35);
+        color: #1c0f57;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        padding: 12px 16px;
+        font-size: 16px;
+        border-radius: 10px;
+    }
+
+    .login-card input::placeholder {
+        color: rgba(60, 40, 120, 0.7);
+    }
+
+    .login-card label {
+        color: #1a2a78;
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .toggle-password {
+        cursor: pointer;
+        color: #ddd;
+        position: absolute;
+        right: 14px;
+        top: 43px;
+    }
+
+    a {
+        color: #4520d1;
+        font-weight: 600;
+    }
+</style>
+
+
+<div class="auth-bg">
+    <div class="login-card">
+
+        <h3 class="text-center mb-4" style="font-weight: 700; font-size: 28px;">
+            Welcome Back
+        </h3>
+
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div class="form-group mb-4">
+                <label>Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group mb-5 position-relative">
+                <label>Password</label>
+                <input type="password" name="password" class="form-control password-field"
+                    placeholder="Enter your password" required>
+
+                <i class="fas fa-eye toggle-password"></i>
+            </div>
+
+            <!-- Login Button -->
+            <button class="btn btn-light btn-block btn-lg text-dark font-weight-bold py-2" type="submit">
+                Login
+            </button>
+
+        </form>
+
+        {% if messages %}
+        <div class="mt-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} p-2 text-center">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-warning">{{ message }}</div>
+        {% if "verify" in message|lower %}
+        <p class="text-center mt-2">
+            <a href="{% url 'resend_verification' %}" class="btn btn-sm btn-outline-primary">
+                Resend Verification Email
+            </a>
+        </p>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+
+
+        <p class="text-center mt-4">
+            No account?
+            <a href="{% url 'register' %}">Register</a>
+        </p>
+
+    </div>
+</div>
+
+
+<!-- Password Toggle -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.querySelector(".toggle-password");
+        const passwordField = document.querySelector(".password-field");
+
+        toggle.addEventListener("click", function () {
+            const type = passwordField.getAttribute("type") === "password" ? "text" : "password";
+            passwordField.setAttribute("type", type);
+
+            this.classList.toggle("fa-eye");
+            this.classList.toggle("fa-eye-slash");
+        });
+    });
+</script>
+
+{% endblock %}

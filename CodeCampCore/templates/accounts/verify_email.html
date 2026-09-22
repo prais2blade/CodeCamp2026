@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" style="font-family: Arial, sans-serif;">
+<head>
+    <meta charset="UTF-8" />
+    <title>Verify Your CodeCamp Account</title>
+</head>
+
+<body style="background: #f2f2f7; padding: 40px;">
+
+<div style="max-width: 600px; margin: auto; background: white; border-radius: 12px; overflow: hidden;">
+    
+    <div style="background: #5b21b6; padding: 25px; text-align: center;">
+        <h2 style="color:white; margin:0;">Welcome to CodeCamp 🎓</h2>
+        <p style="color:#ddd; margin:5px 0 0;">Activate your student account</p>
+    </div>
+
+    <div style="padding: 30px;">
+        <p style="font-size: 16px;">Hello <strong>{{ user.username }}</strong>,</p>
+
+        <p style="font-size: 15px;">
+            Thank you for signing up at <strong>CodeCamp</strong>!  
+            Please click the button below to verify your email address and activate your account.
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ verification_url }}" 
+               style="background: #5b21b6; color: white; padding: 14px 22px; border-radius: 6px; 
+                      text-decoration: none; font-size: 16px;">
+                Verify My Email
+            </a>
+        </div>
+
+        <p style="font-size: 14px; color: #555;">
+            If the button doesn't work, copy and paste the link below into your browser:
+        </p>
+
+        <p style="word-wrap: break-word; font-size: 13px; color: #5b21b6;">
+            {{ verification_url }}
+        </p>
+
+        <p style="font-size: 13px; margin-top: 40px; color: #777;">
+            Regards,<br>
+            <strong>CodeCamp Team</strong>
+        </p>
+    </div>
+
+    <div style="background:#eee; padding: 12px; text-align:center; font-size: 12px; color:#666;">
+        © {{ year }} CodeCamp. All rights reserved.
+    </div>
+
+</div>
+
+</body>
+</html>

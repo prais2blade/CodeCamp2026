@@ -1,0 +1,35 @@
+{% load static %}
+<section class="bg-hero-gradient text-white pt-40 pb-28 relative overflow-hidden">
+
+  <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+
+    <div class="animate-fadeIn">
+      <h1 class="text-5xl font-extrabold leading-tight" style="color: pink;">
+        Build Your Tech Future at  
+        <span class="text-primaryLight">CodeCamp Innovation Hub</span>
+      </h1>
+
+      <p class="mt-6 text-lg text-softWhite max-w-xl" style="color: whitesmoke;">
+        Learn digital skills, work on real projects, and unlock opportunities 
+        in software, automation, and tech careers.
+      </p>
+
+      <div class="mt-8 flex gap-4">
+        <a href="{% url 'website:training_programs' %}" class="btn-primary">
+          Explore Training
+        </a>
+
+        <a href="{% url 'website:software_solutions' %}" class="btn-primary">
+          Software Solutions
+        </a>
+      </div>
+    </div>
+
+    <div class="animate-fadeIn delay-300">
+      <img src="{% static 'images/hero-illustration.png' %}"
+        class="w-full rounded-xl shadow-glow" />
+    </div>
+
+  </div>
+
+</section>

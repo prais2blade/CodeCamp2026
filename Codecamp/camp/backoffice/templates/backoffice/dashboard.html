@@ -1,0 +1,226 @@
+{% load static humanize %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Back‑Office | Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-purple-800 text-white py-4 px-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold">CodeCamp Back‑Office</h1>
+    <div class="space-x-4">
+      <a href="{% url 'backoffice:export-csv' %}" class="px-4 py-2 bg-purple-600 rounded hover:bg-purple-700">Download
+        CSV</a>
+      <a href="{% url 'backoffice:sync-pending' %}"
+        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+
+        Sync Pending
+
+      </a>
+      <a href="{% url 'backoffice:dashboard' %}" class="hover:underline">Dashboard</a>
+      <a href="{% url 'backoffice:registrations' %}" class="hover:underline">Registrations</a>
+      <a href="{% url 'logout' %}" class="underline">Log out</a>
+      <a href="{% url 'backoffice:batches' %}" class="hover:underline">
+        Batches
+      </a>
+    </div>
+  </header>
+
+  <main class="p-6 max-w-7xl mx-auto">
+
+    <!-- ─── HEADLINE METRICS ───────────────────────────────────── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="bg-white shadow rounded p-4">
+        <p class="text-gray-500">Total Registrations</p>
+        <p id="totalRegs" class="text-3xl font-bold">{{ total_regs }}</p>
+      </div>
+
+      <div class="bg-white shadow rounded p-4">
+        <p class="text-gray-500">Verified Payments</p>
+        <p id="verifiedRegs" class="text-3xl font-bold">{{ verified }}</p>
+      </div>
+
+      <div class="bg-white shadow rounded p-4">
+        <p class="text-gray-500">Pending Verifications</p>
+        <p id="unverifiedRegs" class="text-3xl font-bold">{{ unverified }}</p>
+      </div>
+
+      <div class="bg-white shadow rounded p-4">
+        <p class="text-gray-500">Revenue (₦)</p>
+        <p class="text-3xl font-bold">{{ revenue|intcomma }}</p>
+      </div>
+    </div>
+
+    <!-- Class Mode Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+      <div class="bg-white shadow rounded p-4">
+        <p class="text-gray-500">Virtual Seats</p>
+        <p class="text-3xl font-bold">{{ virtual_count }} / 500</p>
+      </div>
+      <div class="bg-white shadow rounded p-4">
+        <p class="text-gray-500">Physical Seats</p>
+        <p class="text-3xl font-bold">{{ physical_count }}</p>
+      </div>
+    </div>
+
+
+    <!-- Batch pie chart & table -->
+    <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Chart -->
+      <div class="bg-white shadow rounded p-4">
+        <h2 class="font-semibold mb-2">Registrations per Batch</h2>
+        <canvas id="batchChart"></canvas>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-white shadow rounded p-4 overflow-x-auto">
+        <h2 class="font-semibold mb-2">Batch Breakdown</h2>
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b">
+              <th class="py-1">Batch</th>
+              <th>Seats</th>
+              <th>Free</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in batch_data %}
+            <tr class="border-t">
+              <td class="py-1">{{ b.code }}</td>
+              <td>{{ b.count }}/30</td>
+              <td>{{ b.free }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Daily registrations line chart -->
+    <div class="mt-10 bg-white shadow rounded p-4">
+      <h2 class="font-semibold mb-2">Daily Sign‑ups (last 14 days)</h2>
+      <canvas id="dailyChart"></canvas>
+    </div>
+
+    <!-- Age distribution pie -->
+    <div class="mt-10 bg-white shadow rounded p-4">
+      <h2 class="font-semibold mb-2">Age Distribution</h2>
+      <canvas id="ageChart"></canvas>
+    </div>
+
+    <!-- Discount uptake bar -->
+    <div class="mt-10 bg-white shadow rounded p-4">
+      <h2 class="font-semibold mb-2">Discount Uptake</h2>
+      <canvas id="discountChart"></canvas>
+    </div>
+
+    <!-- Class Mode Distribution -->
+    <div class="mt-10 bg-white shadow rounded p-4">
+      <h2 class="font-semibold mb-2">Class Mode Distribution</h2>
+      <canvas id="modeChart"></canvas>
+    </div>
+
+  </main>
+
+  <!-- ─── JSON data blobs ─── -->
+  {{ batch_data|json_script:"batch-data" }}
+  {{ daily_labels|json_script:"daily-labels" }}
+  {{ daily_counts|json_script:"daily-counts" }}
+  {{ age_labels|json_script:"age-labels" }}
+  {{ age_counts|json_script:"age-counts" }}
+
+  <!-- ─── Charts & WebSocket ─── -->
+  <script>
+    const batchData = JSON.parse(document.getElementById("batch-data").textContent);
+    const dailyLabels = JSON.parse(document.getElementById("daily-labels").textContent);
+    const dailyCounts = JSON.parse(document.getElementById("daily-counts").textContent);
+    const ageLabels = JSON.parse(document.getElementById("age-labels").textContent);
+    const ageCounts = JSON.parse(document.getElementById("age-counts").textContent);
+
+    // Batch Pie
+    new Chart(document.getElementById("batchChart"), {
+      type: "pie",
+      data: {
+        labels: batchData.map(b => b.code),
+        datasets: [{ data: batchData.map(b => b.count) }]
+      },
+      options: { plugins: { legend: { position: "bottom" } } }
+    });
+
+    // Daily Line
+    new Chart(document.getElementById("dailyChart"), {
+      type: "line",
+      data: {
+        labels: dailyLabels,
+        datasets: [{
+          label: "Registrations",
+          data: dailyCounts,
+          tension: .3,
+          fill: false
+        }]
+      },
+      options: {
+        scales: { y: { beginAtZero: true, precision: 0 } },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // Age Doughnut
+    new Chart(document.getElementById("ageChart"), {
+      type: "doughnut",
+      data: {
+        labels: ageLabels,
+        datasets: [{ data: ageCounts }]
+      },
+      options: { plugins: { legend: { position: "bottom" } } }
+    });
+
+    // Discount Bar
+    new Chart(document.getElementById("discountChart"), {
+      type: "bar",
+      data: {
+        labels: ["Early‑bird", "Standard"],
+        datasets: [{
+          data: [{{ discount_yes }}, {{ discount_no }}]
+    }]
+      },
+      options: {
+      indexAxis: "y",
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, precision: 0 } }
+    }
+    });
+
+    new Chart(document.getElementById("modeChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Virtual", "Physical"],
+        datasets: [{ data: [{{ virtual_count }}, {{ physical_count }}]
+    }]
+      },
+      options: { plugins: { legend: { position: "bottom" } } }
+    });
+
+
+    // WebSocket to live‑update headline numbers
+    const ws = new WebSocket(
+      (location.protocol === "https:" ? "wss://" : "ws://") +
+      location.host + "/ws/backoffice/"
+    );
+    ws.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      document.getElementById("totalRegs").textContent = d.total;
+      document.getElementById("verifiedRegs").textContent = d.verified;
+      document.getElementById("unverifiedRegs").textContent = d.total - d.verified;
+      // You can also update charts here if desired.
+    };
+  </script>
+</body>
+
+</html>

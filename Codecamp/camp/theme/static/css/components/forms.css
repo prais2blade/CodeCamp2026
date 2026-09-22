@@ -1,0 +1,138 @@
+/* ==========================================================
+   PRAISETENT DESIGN SYSTEM (PDS)
+   Forms
+========================================================== */
+
+.pds-form-group{
+    display:flex;
+    flex-direction:column;
+    gap:.5rem;
+    margin-bottom:1.5rem;
+}
+
+.pds-label{
+    font-size:.95rem;
+    font-weight:600;
+    color:var(--pds-slate-700);
+}
+
+.pds-input{
+
+    width:100%;
+
+    padding:.9rem 1rem;
+
+    border:1px solid var(--pds-slate-300);
+
+    border-radius:var(--pds-radius-md);
+
+    background:#fff;
+
+    transition:var(--pds-transition);
+
+    font-size:1rem;
+
+}
+
+.pds-input:focus{
+
+    outline:none;
+
+    border-color:var(--pds-primary);
+
+    box-shadow:
+    0 0 0 4px rgba(37,99,235,.12);
+
+}
+
+.pds-select{
+
+    width:100%;
+
+    padding:.9rem 1rem;
+
+    border-radius:var(--pds-radius-md);
+
+    border:1px solid var(--pds-slate-300);
+
+    background:white;
+
+}
+
+.pds-textarea{
+
+    width:100%;
+
+    min-height:150px;
+
+    resize:vertical;
+
+}
+
+/* ==========================================================
+   File Upload
+========================================================== */
+
+.pds-upload {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+
+    padding: 2.5rem;
+
+    background: #ffffff;
+
+    border: 2px dashed var(--pds-slate-300);
+
+    border-radius: var(--pds-radius-lg);
+
+    transition: var(--pds-transition);
+
+}
+
+.pds-upload:hover {
+
+    border-color: var(--pds-primary);
+
+    background: #f8fbff;
+
+}
+
+.pds-upload input[type="file"] {
+
+    margin-top: 1rem;
+
+    width: 100%;
+
+    cursor: pointer;
+
+}
+
+.pds-upload input[type="file"]::file-selector-button {
+
+    background: var(--pds-primary);
+
+    color: white;
+
+    border: none;
+
+    border-radius: var(--pds-radius-pill);
+
+    padding: .75rem 1.5rem;
+
+    margin-right: 1rem;
+
+    cursor: pointer;
+
+    transition: var(--pds-transition);
+
+}
+
+.pds-upload input[type="file"]::file-selector-button:hover {
+
+    background: #1d4ed8;
+
+}

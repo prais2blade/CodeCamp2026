@@ -1,0 +1,252 @@
+{% load static %}
+
+<footer class="bg-slate-950 text-slate-300">
+
+    <!-- ========================================= -->
+    <!-- Main Footer -->
+    <!-- ========================================= -->
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 py-20">
+
+        <div class="grid lg:grid-cols-4 gap-12">
+
+            <!-- ================================= -->
+            <!-- Brand -->
+            <!-- ================================= -->
+
+            <div>
+
+                <a href="{% url 'teencamp:landing' %}"
+                   class="flex items-center gap-3">
+
+                    <img
+                        src="{% static 'img/praisetent-logo.png' %}"
+                        class="h-14"
+                        alt="CodeCamp">
+
+                    <div>
+
+                        <h3 class="text-2xl font-bold text-white">
+
+                            CodeCamp
+
+                        </h3>
+
+                        <p class="text-sm text-slate-400">
+
+                            Innovation Hub
+
+                        </p>
+
+                    </div>
+
+                </a>
+
+                <p class="mt-6 leading-8">
+
+                    Empowering the next generation of innovators through
+                    Artificial Intelligence, Software Development,
+                    Robotics, Cloud Engineering and hands-on project learning.
+
+                </p>
+
+            </div>
+
+            <!-- ================================= -->
+            <!-- Programs -->
+            <!-- ================================= -->
+
+            <div>
+
+                <h4 class="text-white font-semibold text-lg mb-6">
+
+                    Programs
+
+                </h4>
+
+                <ul class="space-y-4">
+
+                    <li>Artificial Intelligence</li>
+
+                    <li>Python Programming</li>
+
+                    <li>Web Development</li>
+
+                    <li>Cloud Computing</li>
+
+                    <li>Data Analytics</li>
+
+                    <li>Robotics</li>
+
+                </ul>
+
+            </div>
+
+            <!-- ================================= -->
+            <!-- Quick Links -->
+            <!-- ================================= -->
+
+            <div>
+
+                <h4 class="text-white font-semibold text-lg mb-6">
+
+                    Quick Links
+
+                </h4>
+
+                <ul class="space-y-4">
+
+                    <li>
+
+                        <a href="{% url 'teencamp:landing' %}"
+                           class="hover:text-cyan-400 transition">
+
+                            Home
+
+                        </a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="#programs"
+                           class="hover:text-cyan-400 transition">
+
+                            Programs
+
+                        </a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="#gallery"
+                           class="hover:text-cyan-400 transition">
+
+                            Gallery
+
+                        </a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="#faq"
+                           class="hover:text-cyan-400 transition">
+
+                            FAQ
+
+                        </a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="{% url 'teencamp:register' %}"
+                           class="hover:text-cyan-400 transition">
+
+                            Register
+
+                        </a>
+
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <!-- ================================= -->
+            <!-- Contact -->
+            <!-- ================================= -->
+
+            <div>
+
+                <h4 class="text-white font-semibold text-lg mb-6">
+
+                    Contact
+
+                </h4>
+
+                <ul class="space-y-5">
+
+                    <li>
+
+                        📍 Arepo, Ogun State
+
+                    </li>
+
+                    <li>
+
+                        📧 info@codecamp.com.ng
+
+                    </li>
+
+                    <li>
+
+                        ☎ +234 916 914 8543 <br>
+                        ☎ +234 703 219 2478
+
+                    </li>
+
+                    <li>
+
+                        Monday – Saturday
+
+                    </li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- Bottom Bar -->
+    <!-- ========================================= -->
+
+    <div class="border-t border-slate-800">
+
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+
+                <p class="text-sm">
+
+                    © {% now "Y" %} CodeCamp Innovation Hub.
+
+                    All Rights Reserved.
+
+                </p>
+
+                <div
+                    class="flex gap-6 text-sm">
+
+                    <a href="#">
+
+                        Privacy Policy
+
+                    </a>
+
+                    <a href="#">
+
+                        Terms
+
+                    </a>
+
+                    <a href="#">
+
+                        Support
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</footer>

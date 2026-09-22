@@ -1,0 +1,51 @@
+{% load static %}
+
+<div class="pds-form-group">
+
+    {% if field.label %}
+        <label for="{{ field.id_for_label }}" class="pds-label">
+            {{ field.label }}
+        </label>
+    {% endif %}
+
+    <div class="pds-upload">
+
+        <div class="flex flex-col items-center text-center">
+
+            <i data-lucide="upload" class="w-12 h-12 mb-4 text-blue-600"></i>
+
+            <h3 class="text-lg font-semibold text-slate-800">
+                Upload Payment Receipt
+            </h3>
+
+            <p class="mt-2 text-sm text-slate-500">
+                Drag &amp; drop your receipt here or click below to browse.
+            </p>
+
+            <p class="text-xs text-slate-400 mt-1">
+                Accepted formats: PDF, JPG, JPEG, PNG
+            </p>
+
+            <div class="mt-6">
+
+                {{ field }}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% if field.help_text %}
+        <p class="mt-2 text-sm text-slate-500">
+            {{ field.help_text }}
+        </p>
+    {% endif %}
+
+    {% for error in field.errors %}
+        <p class="mt-2 text-sm text-red-600">
+            {{ error }}
+        </p>
+    {% endfor %}
+
+</div>

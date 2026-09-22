@@ -1,0 +1,228 @@
+{% load static %}
+
+<header
+    id="navbar"
+    class="fixed top-0 left-0 w-full z-50 transition-all duration-300">
+
+    <nav class="max-w-7xl mx-auto px-6 lg:px-8">
+
+        <div class="flex items-center justify-between h-20">
+
+            <!-- ===================================== -->
+            <!-- Logo -->
+            <!-- ===================================== -->
+
+            <a href="{% url 'teencamp:landing' %}"
+               class="flex items-center gap-3">
+
+                <img
+                    src="{% static 'img/praisetent-logo.png' %}"
+                    alt="CodeCamp"
+                    class="h-12 w-auto">
+
+                <div class="hidden sm:block">
+
+                    <h1 class="font-bold text-xl text-white">
+
+                        CodeCamp
+
+                    </h1>
+
+                    <p class="text-xs text-slate-200">
+
+                        Innovation Hub
+
+                    </p>
+
+                </div>
+
+            </a>
+
+            <!-- ===================================== -->
+            <!-- Desktop Menu -->
+            <!-- ===================================== -->
+
+            <div
+                class="hidden lg:flex items-center gap-10">
+
+                <a href="{% url 'teencamp:landing' %}"
+                   class="nav-link">
+                    Home
+                </a>
+
+                <a href="#programs"
+                   class="nav-link">
+                    Programs
+                </a>
+
+                <a href="#journey"
+                   class="nav-link">
+                    Journey
+                </a>
+
+                <a href="#gallery"
+                   class="nav-link">
+                    Gallery
+                </a>
+
+                <a href="#faq"
+                   class="nav-link">
+                    FAQ
+                </a>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- Register Button -->
+            <!-- ===================================== -->
+
+            <div
+                class="hidden lg:flex">
+
+                <a
+                    href="{% url 'teencamp:register' %}"
+
+                    class="px-6 py-3 rounded-full bg-white text-primary font-semibold hover:scale-105 transition">
+
+                    Register Now
+
+                </a>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- Mobile Button -->
+            <!-- ===================================== -->
+
+            <button
+                id="mobileMenuButton"
+                class="lg:hidden text-white">
+
+                <svg
+                    class="w-8 h-8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24">
+
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M4 6h16M4 12h16M4 18h16"/>
+
+                </svg>
+
+            </button>
+
+        </div>
+
+    </nav>
+
+</header>
+
+<!-- ===================================== -->
+<!-- Mobile Menu -->
+<!-- ===================================== -->
+
+<div
+    id="mobileMenu"
+    class="hidden fixed inset-0 z-40 bg-slate-900 text-white">
+
+    <div class="pt-28 px-8">
+
+        <div class="flex flex-col gap-8 text-2xl">
+
+            <a href="{% url 'teencamp:landing' %}">
+                Home
+            </a>
+
+            <a href="#programs">
+                Programs
+            </a>
+
+            <a href="#journey">
+                Journey
+            </a>
+
+            <a href="#gallery">
+                Gallery
+            </a>
+
+            <a href="#faq">
+                FAQ
+            </a>
+
+            <a
+                href="{% url 'teencamp:register' %}"
+
+                class="mt-8 bg-primary text-center py-4 rounded-xl">
+
+                Register Now
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const navbar = document.getElementById("navbar");
+
+window.addEventListener("scroll", () => {
+
+    if(window.scrollY > 40){
+
+        navbar.classList.add(
+
+            "bg-white",
+
+            "shadow-lg"
+
+        );
+
+        navbar.querySelectorAll(".nav-link").forEach(link=>{
+
+            link.classList.remove("text-white");
+
+            link.classList.add("text-slate-700");
+
+        });
+
+    }
+
+    else{
+
+        navbar.classList.remove(
+
+            "bg-white",
+
+            "shadow-lg"
+
+        );
+
+        navbar.querySelectorAll(".nav-link").forEach(link=>{
+
+            link.classList.remove("text-slate-700");
+
+            link.classList.add("text-white");
+
+        });
+
+    }
+
+});
+
+const button = document.getElementById("mobileMenuButton");
+
+const menu = document.getElementById("mobileMenu");
+
+button.addEventListener("click", ()=>{
+
+    menu.classList.toggle("hidden");
+
+});
+
+</script>

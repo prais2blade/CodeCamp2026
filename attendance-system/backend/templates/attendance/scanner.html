@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner</title>
+    <link rel="stylesheet" href="{% static 'attendance/scanner.css' %}">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+
+<body>
+
+    <h2>Scan Student QR Code</h2>
+
+    <div id="reader"></div>
+
+    <div id="result">
+        Waiting for scan...
+    </div>
+    <div id="success-modal" class="fixed inset-0 bg-black/50 items-center justify-center hidden">
+
+        <div class="bg-white rounded-xl p-8 w-96">
+
+            <div class="text-center">
+
+                <div class="text-5xl text-green-500">
+
+                    ✓
+
+                </div>
+
+                <h2 id="scan-status" class="text-2xl font-bold mt-4">
+                </h2>
+
+                <p id="scan-student" class="mt-2 text-gray-600">
+                </p>
+
+                <button onclick="closeModal()" class="mt-5 bg-blue-600 text-white px-4 py-2 rounded">
+                    Close
+                </button>
+                <a id="whatsapp-button" href="#" target="_blank"
+                    class="hidden bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+
+                    Send WhatsApp
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+    <script>
+
+        function onScanSuccess(decodedText) {
+
+            let qrData;
+
+            try {
+
+                qrData = JSON.parse(
+                    decodedText
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Invalid QR Code",
+                    error
+                );
+
+                alert(
+                    "Invalid QR Code."
+                );
+
+                return;
+
+            }
+
+            fetch(
+
+                "/api/attendance/scan/",
+
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body: JSON.stringify({
+
+                        student_id:
+                            qrData.student_id
+
+                    })
+
+                }
+
+            )
+
+                .then(response => {
+
+                    if (!response.ok) {
+
+                        throw new Error(
+
+                            `HTTP Error: ${response.status}`
+
+                        );
+
+                    }
+
+                    return response.json();
+
+                })
+
+                .then(data => {
+
+                    console.log(data);
+                    console.log(
+                        "WhatsApp URL:",
+                        data.whatsapp_url
+                    );
+
+                    document.getElementById(
+                        "scan-status"
+                    ).innerText = data.status;
+
+                    document.getElementById(
+                        "scan-student"
+                    ).innerText = data.student;
+
+                    const successModal =
+                        document.getElementById(
+                            "success-modal"
+                        );
+
+                    successModal.classList.remove(
+                        "hidden"
+                    );
+
+                    successModal.classList.add(
+                        "flex"
+                    );
+
+                    const whatsappButton =
+                        document.getElementById(
+                            "whatsapp-button"
+                        );
+
+                    if (
+
+                        whatsappButton
+
+                    ) {
+
+                        if (
+
+                            data.whatsapp_url
+
+                        ) {
+
+                            whatsappButton.href =
+                                data.whatsapp_url;
+
+                            whatsappButton.classList.remove(
+                                "hidden"
+                            );
+
+                        }
+
+                        else {
+
+                            whatsappButton.classList.add(
+                                "hidden"
+                            );
+
+                        }
+
+                    }
+
+                    if (
+
+                        data.whatsapp_url
+
+                        &&
+
+                        data.auto_whatsapp_popup
+
+                    ) {
+
+                        window.open(
+
+                            data.whatsapp_url,
+
+                            "_blank"
+
+                        );
+
+                    }
+
+                })
+
+                .catch(error => {
+
+                    console.error(
+                        "Scan Error:",
+                        error
+                    );
+
+                    if (
+
+                        !navigator.onLine
+
+                    ) {
+
+                        if (
+
+                            typeof queueAttendance
+                            === "function"
+
+                        ) {
+
+                            queueAttendance(
+
+                                qrData.student_id
+
+                            );
+
+                        }
+
+                        alert(
+
+                            "Internet unavailable.\n\nAttendance saved locally and will sync automatically when connection returns."
+
+                        );
+
+                    }
+
+                    else {
+
+                        alert(
+
+                            "An unexpected error occurred. Please check the browser console."
+
+                        );
+
+                    }
+
+                });
+
+        }
+
+        const html5QrScanner =
+            new Html5QrcodeScanner(
+
+                "reader",
+
+                {
+
+                    fps: 10,
+
+                    qrbox: 250
+
+                }
+
+            );
+
+        html5QrScanner.render(
+            onScanSuccess
+        );
+
+        function closeModal() {
+
+            const successModal =
+                document.getElementById(
+                    "success-modal"
+                );
+
+            successModal.classList.add(
+                "hidden"
+            );
+
+            successModal.classList.remove(
+                "flex"
+            );
+
+        }
+
+    </script>
+
+</body>
+
+</html>

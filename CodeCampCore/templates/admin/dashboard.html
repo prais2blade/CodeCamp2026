@@ -1,0 +1,183 @@
+{% extends "adminlte/base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="card bg-danger">
+  <div class="card-header">
+    <h3>Alerts</h3>
+  </div>
+  <div class="card-body">
+    {% if alerts %}
+      <ul>
+        {% for alert in alerts %}
+          <li>{{ alert }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No critical alerts</p>
+    {% endif %}
+  </div>
+</div>
+
+  <!-- KPI CARDS -->
+  <div class="row">
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-info">
+        <div class="inner">
+          <h3>{{ total_users }}</h3>
+          <p>Total Users</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-success">
+        <div class="inner">
+          <h3>{{ total_tasks }}</h3>
+          <p>Total Tasks</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-warning">
+        <div class="inner">
+          <h3>{{ pending_tasks }}</h3>
+          <p>Pending Tasks</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box bg-danger">
+        <div class="inner">
+          <h3>{{ completed_tasks }}</h3>
+          <p>Completed Tasks</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CHARTS -->
+  <div class="row">
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header"><h3>User Growth</h3></div>
+        <div class="card-body">
+          <canvas id="userChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header"><h3>Attendance Trend</h3></div>
+        <div class="card-body">
+          <canvas id="attendanceChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="staffChart"></canvas>
+    
+    <canvas id="taskPie"></canvas>
+
+  </div>
+
+  <!-- RECENT DATA -->
+  <div class="row">
+
+    
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header"><h3>Recent Users</h3></div>
+        <div class="card-body">
+          <ul>
+            {% for user in recent_users %}
+              <li>{{ user.username }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header"><h3>Recent Tasks</h3></div>
+        <div class="card-body">
+          <ul>
+            {% for task in recent_tasks %}
+              <li>{{ task.title }} ({{ task.status }})</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+new Chart(document.getElementById('userChart'), {
+    type: 'line',
+    data: {
+        labels: {{ user_labels|safe }},
+        datasets: [{
+            label: 'Users',
+            data: {{ user_data|safe }}
+        }]
+    }
+});
+
+new Chart(document.getElementById('attendanceChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ attendance_labels|safe }},
+        datasets: [{
+            label: 'Attendance',
+            data: {{ attendance_data|safe }}
+        }]
+    }
+});
+</script>
+
+<script>
+new Chart(document.getElementById('staffChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ staff_labels|safe }},
+        datasets: [{
+            label: 'Completed Tasks',
+            data: {{ staff_completed|safe }}
+        }]
+    }
+});
+</script>
+
+<script>
+new Chart(document.getElementById('taskPie'), {
+    type: 'pie',
+    data: {
+        labels: ['Todo', 'In Progress', 'Review', 'Done'],
+        datasets: [{
+            data: [
+                {{ task_status.todo }},
+                {{ task_status.in_progress }},
+                {{ task_status.review }},
+                {{ task_status.done }}
+            ]
+        }]
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'layouts/hod_base.html' %}
+{% block title %}Update Payment{% endblock %}
+{% block content %}
+<h2>Update Payment for {{ payment.student.username }}</h2>
+<p>Course: {{ payment.course.name }}</p>
+<p>Batch: {{ payment.batch.name }}</p>
+<p>Amount Due: ₦{{ payment.amount_due }}</p>
+<p>Amount Paid: ₦{{ payment.amount_paid }}</p>
+<p>Status: {{ payment.get_status_display }}</p>
+
+<form method="post">
+  {% csrf_token %}
+  <label for="id_amount">Enter Payment Amount:</label>
+  <input id="id_amount" type="number" name="amount" step="0.01" required title="Enter the payment amount" placeholder="0.00" aria-label="Payment amount">
+  <button type="submit">Update</button>
+</form>
+{% endblock %}

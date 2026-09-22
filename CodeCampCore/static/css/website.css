@@ -1,0 +1,245 @@
+/****************************** 
+  GLOBAL UI FIXES
+******************************/
+
+/* Prevent content hiding under fixed navbar */
+body {
+    padding-top: 76px;
+    background-color: #f9fafb;
+    color: #1f2937;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Smooth transitions */
+a, button {
+    transition: all 0.25s ease;
+}
+
+/* Utility spacing */
+.section {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+}
+
+/******************************
+  NAVBAR
+******************************/
+
+nav {
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,.75);
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+nav .logo-text {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #4c1d95; /* purple-900 */
+}
+
+nav a {
+    font-weight: 500;
+    color: #1f2937; /* gray-800 */
+}
+
+nav a:hover {
+    color: #7c3aed !important; /* purple-600 */
+}
+
+/* Active link */
+nav a.active {
+    color: #5b21b6 !important; /* purple-700 */
+    font-weight: 600;
+}
+
+/* Mobile menu */
+#mobileMenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .25s ease-in-out;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+#mobileMenu.open {
+    max-height: 400px;
+}
+
+/******************************
+  HERO SECTION
+******************************/
+
+.hero {
+    background: linear-gradient(135deg, #3b0ca6 0%, #7a32ff 100%);
+    color: #ffffff;
+    padding: 5rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-title {
+    font-size: 2.75rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #3e0cb3;
+}
+
+.hero-subtitle {
+    font-size: 1.15rem;
+    color: #e2e8f0;
+    max-width: 580px;
+}
+
+/******************************
+  BUTTONS
+******************************/
+
+.btn-primary {
+    background-color: #7c3aed; /* purple-600 */
+    color: white;
+    padding: 0.75rem 1.6rem;
+    border-radius: 50px;
+    font-weight: 600;
+    display: inline-block;
+    box-shadow: 0 4px 12px rgba(124,58,237,.25);
+}
+
+.btn-primary:hover {
+    background-color: #5b21b6; /* purple-700 */
+}
+
+.btn-secondary {
+    background-color: #10b981; /* emerald-500 */
+    color: white;
+    padding: 0.75rem 1.6rem;
+    border-radius: 50px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.btn-secondary:hover {
+    background-color: #059669; /* emerald-600 */
+}
+
+/******************************
+  CARDS
+******************************/
+
+.card {
+    border-radius: 1rem;
+    background: white;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,.06);
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 32px rgba(0,0,0,.12);
+}
+
+/******************************
+  SECTIONS TITLES
+******************************/
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.section-subtitle {
+    color: #6b7280;
+    font-size: 1.05rem;
+    margin-top: .5rem;
+}
+
+/******************************
+  FOOTER
+******************************/
+
+footer {
+    background-color: #0f0a1b; /* dark purple/black blend */
+    padding-top: 4rem;
+    padding-bottom: 2.5rem;
+    margin-top: 60px;
+}
+
+footer h2,
+footer h3 {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+footer p {
+    color: #a5adbd; /* soft-gray */
+}
+
+footer a {
+    color: #d1d5db; /* gray-300 */
+}
+
+footer a:hover {
+    color: #a78bfa; /* purple-300 */
+}
+
+.footer-divider {
+    border-top: 1px solid #2f2840;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.footer-bottom {
+    font-size: .9rem;
+    color: #9ca3af;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+/******************************
+  ANIMATIONS
+******************************/
+
+.fade-in {
+    animation: fadeIn .9s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+    animation: slideUp .8s ease forwards;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Purple Glow Animation */
+@keyframes glowPulse {
+    0% {
+        box-shadow: 0 0 12px rgba(124, 58, 237, 0.5),
+                    0 0 24px rgba(139, 92, 246, 0.4),
+                    0 0 48px rgba(167, 139, 250, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.7),
+                    0 0 40px rgba(168, 85, 247, 0.5),
+                    0 0 70px rgba(192, 132, 252, 0.35);
+    }
+    100% {
+        box-shadow: 0 0 12px rgba(124, 58, 237, 0.5),
+                    0 0 24px rgba(139, 92, 246, 0.4),
+                    0 0 48px rgba(167, 139, 250, 0.3);
+    }
+}
+
+.animate-glow-pulse {
+    animation: glowPulse 3s ease-in-out infinite;
+}

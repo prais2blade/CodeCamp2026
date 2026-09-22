@@ -1,0 +1,34 @@
+{% extends "layouts/instructor_base.html" %}
+
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Create Assignment - {{ subject.name }}</h3>
+      </div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card-body">
+          <div class="form-group">
+            <label for="id_title">Title</label>
+            <input id="id_title" name="title" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="id_due_date">Due Date</label>
+            <input id="id_due_date" name="due_date" type="date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="id_file">Attachment</label>
+            <input id="id_file" name="file" type="file" class="form-control">
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn btn-primary" type="submit">Create Assignment</button>
+          <a href="{% url 'manage_assignments' subject.id %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

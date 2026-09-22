@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receipt {{ receipt.reference }}</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 20px; }
+    .header { text-align: center; }
+    .details { margin-top: 30px; }
+    .footer { margin-top: 50px; font-size: 0.9em; color: gray; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>CodeCamp Core Academy</h2>
+    <h3>Payment Receipt</h3>
+    <p>Receipt Ref: <strong>{{ receipt.reference }}</strong></p>
+  </div>
+  <div class="details">
+    <p><strong>Student:</strong> {{ payment.student.username }}</p>
+    <p><strong>Course:</strong> {{ payment.course.name }}</p>
+    <p><strong>Batch:</strong> {{ payment.batch.name }}</p>
+    <p><strong>Amount Paid:</strong> ₦{{ receipt.amount }}</p>
+    <p><strong>Total Paid (to date):</strong> ₦{{ payment.amount_paid }}</p>
+    <p><strong>Outstanding Balance:</strong> ₦{{ payment.remaining_balance }}</p>
+    <p><strong>Issued Date:</strong> {{ receipt.issued_date|date:"M d, Y" }}</p>
+  </div>
+  <div class="footer">
+    <p>Thank you for your payment. This receipt is system-generated.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}
+Attendance Reports
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto p-6">
+
+    <div class="mb-6">
+
+        <h1 class="text-3xl font-bold">
+            Attendance Reports
+        </h1>
+        <div class="flex gap-3 my-6">
+
+            <a href="?period=today" class="bg-blue-600 text-white px-4 py-2 rounded">
+                Today
+            </a>
+
+            <a href="?period=yesterday" class="bg-gray-600 text-white px-4 py-2 rounded">
+                Yesterday
+            </a>
+
+            <a href="?period=week" class="bg-green-600 text-white px-4 py-2 rounded">
+                Last 7 Days
+            </a>
+
+            <div class="bg-white rounded-xl shadow p-4 mb-6">
+
+                <form method="GET">
+
+                    <input type="hidden" name="period" value="custom">
+
+                    <div class="flex flex-wrap gap-4 items-end">
+
+
+                        <div>
+
+                            <label for="start_date" class="block mb-1">
+                                From
+                            </label>
+
+                            <input id="start_date" type="date" name="start_date" value="{{ start_input }}"
+                                class="border rounded px-3 py-2" title="Start date" placeholder="YYYY-MM-DD">
+
+                        </div>
+
+
+                        <div>
+
+                            <label for="end_date" class="block mb-1">
+                                To
+                            </label>
+
+                            <input id="end_date" type="date" name="end_date" value="{{ end_input }}"
+                                class="border rounded px-3 py-2" title="End date" placeholder="YYYY-MM-DD">
+
+                        </div>
+
+                        <div>
+
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
+                                Apply Filter
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+        <div class="flex gap-3 mb-6">
+
+            <a href="{% url 'export_attendance_csv' %}?period={{ report_type }}&start_date={{ start_input }}&end_date={{ end_input }}"
+                class="bg-purple-600 text-white px-4 py-2 rounded">
+                Export CSV
+            </a>
+
+            <a href="{% url 'export_attendance_excel' %}?period={{ report_type }}&start_date={{ start_input }}&end_date={{ end_input }}"
+                class="bg-green-600 text-white px-4 py-2 rounded">
+                Export Excel
+            </a>
+            <a href="{% url 'export_attendance_pdf' %}?period={{ report_type }}&start_date={{ start_input }}&end_date={{ end_input }}"
+                class="bg-red-600 text-white px-4 py-2 rounded">
+                Export PDF
+            </a>
+
+        </div>
+
+        <p class="text-gray-500">
+            {{ start_date }} - {{ end_date }}
+        </p>
+
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+
+        <div class="bg-white p-6 rounded-xl shadow">
+
+            <p class="text-gray-500">
+                Total Students
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2">
+                {{ total_students }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow">
+
+            <p class="text-gray-500">
+                Present Today
+            </p>
+
+            <h2 class="text-3xl font-bold text-green-600 mt-2">
+                {{ present_today }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow">
+
+            <p class="text-gray-500">
+                Absent Today
+            </p>
+
+            <h2 class="text-3xl font-bold text-red-600 mt-2">
+                {{ absent_today }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow">
+
+            <p class="text-gray-500">
+                Attendance Rate
+            </p>
+
+            <h2 class="text-3xl font-bold text-blue-600 mt-2">
+                {{ attendance_rate }}%
+            </h2>
+
+        </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow">
+
+        <div class="p-5 border-b">
+
+            <h2 class="text-xl font-semibold">
+                Recent Attendance
+            </h2>
+
+        </div>
+
+        <table class="w-full">
+
+            <thead class="bg-slate-800 text-white">
+
+                <tr>
+
+                    <th class="p-4 text-left">
+                        Student
+                    </th>
+
+                    <th class="p-4 text-left">
+                        Student ID
+                    </th>
+
+                    <th class="p-4 text-left">
+                        Check In
+                    </th>
+
+                    <th class="p-4 text-left">
+                        Check Out
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for attendance in recent_attendance %}
+
+                <tr class="border-b">
+
+                    <td class="p-4">
+
+                        {{ attendance.student.first_name }}
+                        {{ attendance.student.last_name }}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {{ attendance.student.student_id }}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {{ attendance.check_in|date:"H:i" }}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {% if attendance.check_out %}
+                        {{ attendance.check_out|date:"H:i" }}
+                        {% else %}
+                        -
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="4" class="text-center p-10 text-gray-500">
+                        No attendance records today.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

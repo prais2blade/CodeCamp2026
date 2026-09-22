@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Purple Glow Background */
+    .auth-bg {
+        min-height: 90vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        background:
+            radial-gradient(
+                circle at 20% 20%,
+                rgba(168, 85, 247, 0.55),
+                rgba(76, 29, 149, 0.85)
+            ),
+            linear-gradient(
+                135deg,
+                #4c0d8f,
+                #6b21a8,
+                #9333ea,
+                #c084fc
+            );
+        background-size: 300% 300%;
+        animation: gradientShift 12s ease infinite;
+        padding: 30px;
+    }
+
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Register Card — Same as login (bigger + clear + glowing) */
+    .auth-card {
+        background: rgba(255, 255, 255, 0.25);   /* clear glass */
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+
+        border-radius: 20px;
+        padding: 50px;
+        color: #2d1a73;
+        width: 520px;  /* Slightly wider than login for extra fields */
+        animation: fadeInUp 0.9s ease forwards;
+
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35),
+                    0 0 25px rgba(168, 85, 247, 0.5);
+    }
+
+    @keyframes fadeInUp {
+        from { transform: translateY(40px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Inputs — same as login */
+    .auth-card input,
+    .auth-card select {
+        background: rgba(255, 255, 255, 0.35);
+        color: #1c0f57;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        padding: 12px 16px;
+        font-size: 16px;
+        border-radius: 10px;
+    }
+
+    .auth-card input::placeholder {
+        color: rgba(60, 40, 120, 0.7);
+    }
+
+    .auth-card label {
+        color: #1a2a78;
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .toggle-password {
+        cursor: pointer;
+        color: #ddd;
+        position: absolute;
+        right: 14px;
+        top: 43px;
+    }
+
+    a {
+        color: #4520d1 !important;
+        font-weight: 600;
+    }
+</style>
+
+
+<div class="auth-bg">
+    <div class="auth-card">
+
+        <h3 class="text-center mb-4" style="font-weight: 700; font-size: 28px;">
+            Create an Account
+        </h3>
+
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'warning' }} p-2 text-center">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'register' %}">
+            {% csrf_token %}
+
+            <!-- Full Name -->
+            <div class="form-group mb-4">
+                <label>Full Name</label>
+                <input type="text" name="full_name" class="form-control" placeholder="John Doe"
+                    required>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group mb-4">
+                <label>Email Address</label>
+                <input type="email" name="email" class="form-control" placeholder="example@email.com"
+                    required>
+            </div>
+
+            <!-- Phone -->
+            <div class="form-group mb-4">
+                <label>Phone Number</label>
+                <input type="text" name="phone" class="form-control" placeholder="0803 123 4567"
+                    required>
+            </div>
+
+            <!-- Username -->
+            <div class="form-group mb-4">
+                <label>Username</label>
+                <input type="text" name="username" class="form-control"
+                    placeholder="Choose a username" required>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group mb-4 position-relative">
+                <label>Password</label>
+                <input type="password" name="password" class="form-control password-field"
+                    placeholder="Create a password" required>
+                <i class="fas fa-eye toggle-password"></i>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group mb-5 position-relative">
+                <label>Confirm Password</label>
+                <input type="password" name="confirm_password"
+                       class="form-control password-field"
+                       placeholder="Re-enter password" required>
+                <i class="fas fa-eye toggle-password"></i>
+            </div>
+
+            <!-- Submit -->
+            <button class="btn btn-light btn-block btn-lg text-dark font-weight-bold py-2">
+                Register
+            </button>
+        </form>
+
+        <p class="text-center mt-4">
+            Already have an account?
+            <a href="{% url 'login' %}">Login</a>
+        </p>
+
+    </div>
+</div>
+
+
+<script>
+    // Password toggle for both password fields
+    document.querySelectorAll(".toggle-password").forEach(icon => {
+        icon.addEventListener("click", function () {
+            const pwd = this.previousElementSibling;
+            const type = pwd.type === "password" ? "text" : "password";
+            pwd.type = type;
+            this.classList.toggle("fa-eye-slash");
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'layouts/hod_base.html' %}0
+{% block title %}Manage Instructors{% endblock %}
+{% block content %}
+<h2>Instructor Management</h2>
+<ul>
+    {% for instructor in instructors %}
+    <li>{{ instructor.user.username }} – {{ instructor.user.email }}</li>
+    {% empty %}
+    <li>No instructors registered yet.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

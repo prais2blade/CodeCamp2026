@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+
+    <!-- ========================================= -->
+    <!-- Meta -->
+    <!-- ========================================= -->
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- ========================================= -->
+    <!-- SEO -->
+    <!-- ========================================= -->
+
+    <title>
+        {% block title %}
+        CodeCamp Innovation Hub | Build the Future
+        {% endblock %}
+    </title>
+
+    <meta name="description"
+        content="{% block description %}Learn Programming, AI, Robotics, Cloud Computing, Web Development and more at CodeCamp Innovation Hub.{% endblock %}">
+
+    <meta name="keywords"
+        content="CodeCamp, Coding for Teens, AI, Python, JavaScript, Robotics, Programming">
+
+    <meta name="author" content="CodeCamp Innovation Hub">
+
+    <meta name="theme-color" content="#2563eb">
+
+    <!-- Open Graph -->
+
+    <meta property="og:type" content="website">
+
+    <meta property="og:title"
+        content="{% block og_title %}CodeCamp Innovation Hub{% endblock %}">
+
+    <meta property="og:description"
+        content="{% block og_description %}Empowering the next generation of innovators.{% endblock %}">
+
+    <meta property="og:image"
+        content="{% static 'img/social-preview.jpg' %}">
+
+    <meta property="og:url"
+        content="{{ request.build_absolute_uri }}">
+
+    <!-- ========================================= -->
+    <!-- Favicon -->
+    <!-- ========================================= -->
+
+    <link rel="icon"
+        href="{% static 'img/favicon.ico' %}">
+
+    <!-- ========================================= -->
+    <!-- Google Fonts -->
+    <!-- ========================================= -->
+
+    <link rel="preconnect"
+        href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- ========================================= -->
+    <!-- Tailwind -->
+    <!-- ========================================= -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+
+        tailwind.config = {
+
+            theme: {
+
+                extend: {
+
+                    fontFamily: {
+
+                        sans: ["Inter", "sans-serif"],
+
+                    },
+
+                    colors: {
+
+                        primary: "#2563eb",
+
+                        secondary: "#4f46e5",
+
+                        accent: "#06b6d4",
+
+                        success: "#10b981",
+
+                        warning: "#f59e0b",
+
+                        danger: "#ef4444",
+
+                    },
+
+                    boxShadow: {
+
+                        soft: "0 10px 25px rgba(0,0,0,.08)",
+
+                    },
+
+                    borderRadius: {
+
+                        xl2: "1rem",
+
+                    },
+
+                },
+
+            },
+
+        }
+
+    </script>
+
+    <!-- ========================================= -->
+    <!-- PDS Styles -->
+    <!-- ========================================= -->
+
+    <link rel="stylesheet"
+        href="{% static 'css/pds.css' %}">
+
+    <!-- ========================================= -->
+    <!-- Page CSS -->
+    <!-- ========================================= -->
+
+    {% block extra_css %}
+    {% endblock %}
+
+</head>
+
+<body class="bg-white text-slate-800 antialiased">
+
+    <!-- ========================================= -->
+    <!-- Navbar -->
+    <!-- ========================================= -->
+
+    {% include "teencamp/includes/navbar.html" %}
+
+    <!-- ========================================= -->
+    <!-- Django Messages -->
+    <!-- ========================================= -->
+
+    {% include "teencamp/components/messages.html" %}
+
+    <!-- ========================================= -->
+    <!-- Main -->
+    <!-- ========================================= -->
+
+    <main>
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+    <!-- ========================================= -->
+    <!-- Footer -->
+    <!-- ========================================= -->
+
+    {% include "teencamp/includes/footer.html" %}
+
+    <!-- ========================================= -->
+    <!-- Scripts -->
+    <!-- ========================================= -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            if (window.lucide) {
+
+                lucide.createIcons();
+
+            }
+
+        });
+
+    </script>
+
+    {% block extra_js %}
+    {% endblock %}
+
+</body>
+
+</html>

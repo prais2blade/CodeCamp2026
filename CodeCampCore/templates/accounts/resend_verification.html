@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width:450px;">
+    <h3 class="mb-3 text-center">Resend Verification Email</h3>
+    <form method="post">
+        {% csrf_token %}
+        <input type="email" name="email" class="form-control mb-3" placeholder="Enter your email" required>
+        <button type="submit" class="btn btn-primary btn-block">Resend Email</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+<nav class="bg-slate-900 text-white shadow">
+
+    <div class="max-w-7xl mx-auto px-6">
+
+        <div class="flex justify-between items-center h-16">
+
+            <div class="flex items-center gap-8">
+
+                <h1 class="font-bold text-xl">
+
+                    {{ system_settings.organization_name }}
+
+                </h1>
+
+                <a href="{% url 'school_admin:dashboard' %}" class="hover:text-blue-300">
+                    Dashboard
+                </a>
+
+                <a href="{% url 'school_admin:student_list' %}" class="hover:text-blue-300">
+                    Students
+                </a>
+
+                <a href="/api/attendance/scanner/" class="hover:text-blue-300">
+                    Scanner
+                </a>
+                <a href="/students/import/" class="hover:text-blue-300">
+                    Import
+                </a>
+                <a href="{% url 'reports_dashboard' %}" class="hover:text-blue-300">
+                    Reports
+                </a>
+                {% if codecamp_back_office_url %}
+                <a
+                    href="{{ codecamp_back_office_url }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="hover:text-blue-300"
+                >
+                    CodeCamp Back Office
+                </a>
+                {% endif %}
+                <div class="bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+
+                    Offline Queue:
+
+                    <span id="offline-count">
+
+                        0
+
+                    </span>
+
+                </div>
+                <div class="flex items-center gap-3">
+
+                    <span id="sync-status" class="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                        Online
+                    </span>
+
+                    <span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+                        Queue:
+                        <span id="offline-count">
+                            0
+                        </span>
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</nav>

@@ -1,0 +1,66 @@
+/* ==========================================================
+   PRAISETENT DESIGN SYSTEM (PDS)
+   Buttons
+   Version: 1.0
+========================================================== */
+
+.pds-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+
+    padding: .9rem 2rem;
+
+    border: none;
+
+    border-radius: var(--pds-radius-pill);
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition: var(--pds-transition);
+}
+
+.pds-btn:hover{
+    transform: translateY(-2px);
+}
+
+.pds-btn-primary{
+    background: var(--pds-primary);
+    color: white;
+}
+
+.pds-btn-primary:hover{
+    background:#1d4ed8;
+}
+
+.pds-btn-secondary{
+    background:white;
+    color:var(--pds-primary);
+
+    border:1px solid var(--pds-slate-200);
+}
+
+.pds-btn-secondary:hover{
+    background:var(--pds-slate-100);
+}
+
+.pds-btn-outline{
+
+    background:transparent;
+
+    color:white;
+
+    border:2px solid rgba(255,255,255,.35);
+
+}
+
+.pds-btn-outline:hover{
+
+    background:rgba(255,255,255,.08);
+
+}

@@ -1,0 +1,52 @@
+{% extends 'layouts/student_base.html' %}
+{% block title %}My Payments{% endblock %}
+{% block content %}
+<h2>My Payments</h2>
+{% if not request.user.profile.has_paid %}
+    <p style="background:#fdecea; color:#b71c1c; padding:10px;">
+    ⚠️ You haven’t made your first payment yet. 
+    Minimum amount due: ₦{{ due_payment }}.
+    </p>
+{% endif %}
+
+
+{% if payments %}
+<table border="1" cellpadding="6">
+    <tr>
+        <th>Course</th>
+        <th>Batch</th>
+        <th>Amount Due</th>
+        <th>Paid</th>
+        <th>Status</th>
+        <th>Ref</th>
+        <th>Date</th>
+    </tr>
+    {% for p in payments %}
+    <tr>
+        <td>{{ p.course.name }}</td>
+        <td>{{ p.batch.name }}</td>
+        <td>₦{{ p.amount_due }}</td>
+        <td>₦{{ p.amount_paid }}</td>
+        <td>
+            {% if p.status == 'paid' %}<span class="status-paid">Paid</span>
+            {% elif p.status == 'partial' %}<span class="status-partial">Partial</span>
+            {% else %}<span class="status-pending">Pending</span>{% endif %}
+        </td>
+        <td>{{ p.payment_ref }}</td>
+        <td>{{ p.payment_date|date:"Y-m-d" }}</td>
+        <td>
+            {% for receipt in p.receipts.all %}
+            <a href="{% url 'view_receipt' receipt.id %}" target="_blank">View</a> |
+            <a href="{% url 'view_receipt' receipt.id %}?download=true">Download PDF</a><br>
+            {% empty %}
+            No receipts yet
+            {% endfor %}
+        </td>
+
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No payment records yet.</p>
+{% endif %}
+{% endblock %}

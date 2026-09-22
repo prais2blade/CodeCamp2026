@@ -1,0 +1,25 @@
+/* ==========================================
+   Cards
+========================================== */
+
+.pds-card {
+
+    background: white;
+
+    border-radius: var(--pds-radius-lg);
+
+    box-shadow: var(--pds-shadow-soft);
+
+    padding: 2rem;
+
+    transition: var(--pds-transition);
+
+}
+
+.pds-card:hover {
+
+    transform: translateY(-6px);
+
+    box-shadow: var(--pds-shadow-medium);
+
+}

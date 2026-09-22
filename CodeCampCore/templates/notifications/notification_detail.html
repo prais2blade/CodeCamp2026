@@ -1,0 +1,32 @@
+{% extends 'layouts/hod_base.html' %}
+{% block title %}Notification{% endblock %}
+{% block content %}
+{% if log.attachments.exists %}
+  <h3>Attachments</h3>
+  <ul>
+    {% for a in log.attachments.all %}
+      <li><a href="{{ a.file.url }}" target="_blank">{{ a.filename|default:a.file.name }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<h2>{{ log.get_notification_type_display }} → {{ log.recipient }}</h2>
+<p><strong>Subject:</strong> {{ log.subject }}</p>
+<p><strong>Status:</strong> {{ log.status }}</p>
+<p><strong>Created:</strong> {{ log.created_at }}</p>
+<p><strong>Sent at:</strong> {{ log.sent_at }}</p>
+{% if log.error_message %}
+  <div style="background:#ffe6e6; padding:10px; border-radius:6px;">
+    <strong>Error:</strong> {{ log.error_message }}
+  </div>
+{% endif %}
+<hr>
+<h3>Body</h3>
+<div style="white-space:pre-wrap; border:1px solid #ddd; padding:10px; border-radius:6px;">
+  {{ log.body|safe }}
+</div>
+<p style="margin-top:12px;">
+  <a href="{% url 'resend_notification' log.pk %}">Resend</a> |
+  <a href="{% url 'notification_center' %}">Back</a>
+</p>
+{% endblock %}

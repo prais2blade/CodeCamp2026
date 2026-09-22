@@ -1,0 +1,55 @@
+{% load static %}
+{% block title %}Getting Started{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        color: #fff;
+    }
+    .step-card {
+        background: rgba(255,255,255,0.07);
+        border-radius: 20px;
+        padding: 35px;
+        text-align: center;
+        min-width: 320px;
+        transition: all .4s ease;
+    }
+    .step-icon {
+        font-size: 60px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container d-flex flex-column align-items-center" style="min-height: 95vh; padding-top: 4vh;">
+
+    <h2 class="mb-4">Let’s set you up for success 🚀</h2>
+
+    <div class="row justify-content-center g-4" style="gap: 25px;">
+
+        <div class="step-card col-md-3">
+            <div class="step-icon">🧭</div>
+            <h4>Choose Your Course</h4>
+            <p>Select a learning path that fits your goals.</p>
+        </div>
+
+        <div class="step-card col-md-3">
+            <div class="step-icon">🎯</div>
+            <h4>Join a Batch</h4>
+            <p>Pick your preferred session and timing.</p>
+        </div>
+
+        <div class="step-card col-md-3">
+            <div class="step-icon">📝</div>
+            <h4>Start Learning</h4>
+            <p>Attend classes, track progress, and grow.</p>
+        </div>
+
+    </div>
+
+    <a href="{% url 'complete_profile' %}" class="btn btn-light btn-lg text-dark font-weight-bold mt-5">
+        Continue
+    </a>
+
+</div>
+{% endblock %}

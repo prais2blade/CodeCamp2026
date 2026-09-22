@@ -1,0 +1,49 @@
+/* ==========================================
+   Typography
+========================================== */
+
+body {
+
+    font-family: "Inter", sans-serif;
+
+    color: var(--pds-slate-900);
+
+    background: var(--pds-slate-50);
+
+    line-height: 1.6;
+
+}
+
+.pds-display {
+
+    font-size: clamp(3rem, 6vw, 4.5rem);
+
+    font-weight: 800;
+
+    line-height: 1.1;
+
+}
+
+.pds-heading {
+
+    font-size: clamp(2rem, 4vw, 3rem);
+
+    font-weight: 700;
+
+}
+
+.pds-subheading {
+
+    font-size: 1.25rem;
+
+    color: var(--pds-slate-600);
+
+}
+
+.pds-body {
+
+    font-size: 1rem;
+
+    color: var(--pds-slate-600);
+
+}

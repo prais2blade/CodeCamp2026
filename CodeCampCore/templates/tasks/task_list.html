@@ -1,0 +1,24 @@
+{% extends "layouts/staff_base.html" %}
+
+{% block content %}
+<h2 class="text-xl font-bold mb-4">Tasks</h2>
+
+<a href="{% url 'create_task' %}" class="bg-purple-600 text-white px-4 py-2 rounded">+ New Task</a>
+
+<div class="mt-6 space-y-4">
+    {% for task in tasks %}
+        <div class="p-4 bg-white rounded shadow">
+            <h3 class="font-semibold">{{ task.title }}</h3>
+            <p>{{ task.description }}</p>
+
+            <p>Status: <strong>{{ task.status }}</strong></p>
+
+            <div class="mt-2 space-x-2">
+                <a href="{% url 'update_task_status' task.id 'todo' %}">Todo</a>
+                <a href="{% url 'update_task_status' task.id 'in_progress' %}">In Progress</a>
+                <a href="{% url 'update_task_status' task.id 'done' %}">Done</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

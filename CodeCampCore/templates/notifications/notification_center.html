@@ -1,0 +1,63 @@
+{% extends 'layouts/hod_base.html' %}
+{% block title %}Notification Center{% endblock %}
+{% block content %}
+<h2>Notification Center</h2>
+
+<form method="get" style="margin-bottom:10px;">
+  Type:
+  <select name="type">
+    <option value="">All</option>
+    <option value="payment_reminder">Payment Reminder</option>
+    <option value="new_session">New Session</option>
+    <option value="receipt">Receipt</option>
+    <option value="system">System</option>
+  </select>
+  Status:
+  <select name="status">
+    <option value="">All</option>
+    <option value="queued">Queued</option>
+    <option value="sent">Sent</option>
+    <option value="failed">Failed</option>
+  </select>
+  <input type="text" name="q" placeholder="search subject/recipient">
+  <button type="submit">Filter</button>
+  <a href="{% url 'export_notifications_csv' %}" style="margin-left:10px;">Export CSV</a>
+</form>
+
+<table border="1" cellpadding="6" style="width:100%; border-collapse:collapse;">
+  <tr><th>Type</th><th>Subject</th><th>Recipient</th><th>Status</th><th>Created</th><th>Sent</th><th>Action</th></tr>
+  {% for l in logs %}
+  <tr>
+    <td>{{ l.get_notification_type_display }}</td>
+    <td><a href="{% url 'notification_detail' l.pk %}">{{ l.subject|truncatechars:60 }}</a></td>
+    <td>{{ l.recipient }}</td>
+    <td>{{ l.status }}</td>
+    <td>{{ l.created_at|date:"Y-m-d H:i" }}</td>
+    <td>{% if l.sent_at %}{{ l.sent_at|date:"Y-m-d H:i" }}{% endif %}</td>
+    <td>
+      <a href="{% url 'resend_notification' l.pk %}">Resend</a>
+    </td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="7">No notifications yet.</td></tr>
+  {% endfor %}
+</table>
+<p style="margin:10px 0;">
+  <a href="{% url 'resend_failed_notifications' %}" style="background:#198754; color:white; padding:8px 12px; border-radius:6px; text-decoration:none;">
+    🔁 Retry All Failed Notifications
+  </a>
+</p>
+<a href="{% url 'notification_analytics' %}" class="analytics-link">📊 View Analytics</a>
+
+{% endblock %}
+{% block pagination %}
+  <div style="margin-top:10px;">
+    {% if logs.has_previous %}
+      <a href="?page={{ logs.previous_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+    {% endif %}
+    <span>Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span>
+    {% if logs.has_next %}
+      <a href="?page={{ logs.next_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+    {% endif %}
+  </div>
+{% endblock %}

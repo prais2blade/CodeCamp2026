@@ -1,0 +1,69 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Performance
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase text-emerald-700">Performance</p>
+            <h1 class="mt-2 text-3xl font-bold text-slate-950">Student Performance Records</h1>
+        </div>
+        <a href="{% url 'school_admin:performance_create' %}" class="inline-flex justify-center rounded-lg bg-emerald-800 px-5 py-3 font-semibold text-white hover:bg-emerald-900">
+            Upload Performance
+        </a>
+    </div>
+
+    <form method="GET" class="mt-8 grid gap-3 rounded-lg bg-white border border-slate-200 p-4 sm:grid-cols-[1fr_auto]">
+        <label class="sr-only" for="search">Search</label>
+        <input id="search" type="text" name="search" value="{{ search }}" placeholder="Search student, subject, term or title" class="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100">
+        <button type="submit" class="rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-950">Search</button>
+    </form>
+
+    <div class="mt-5 rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                        <th class="p-4 text-left">Student</th>
+                        <th class="p-4 text-left">Record</th>
+                        <th class="p-4 text-left">Score</th>
+                        <th class="p-4 text-left">Visible</th>
+                        <th class="p-4 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for record in records %}
+                    <tr>
+                        <td class="p-4 font-semibold">{{ record.student.full_name }}<br><span class="font-normal text-slate-500">{{ record.student.student_id }}</span></td>
+                        <td class="p-4">{{ record.title }}<br><span class="text-slate-500">{{ record.subject|default:"-" }} · {{ record.term|default:"-" }}</span></td>
+                        <td class="p-4">
+                            {% if record.score is not None and record.max_score %}
+                            {{ record.score }}/{{ record.max_score }}
+                            {% else %}
+                            {{ record.grade|default:"-" }}
+                            {% endif %}
+                        </td>
+                        <td class="p-4">{{ record.visible_to_foundations|yesno:"Yes,No" }}</td>
+                        <td class="p-4">
+                            <div class="flex flex-wrap gap-3">
+                                <a href="{% url 'school_admin:performance_edit' record.id %}" class="font-semibold text-slate-700 hover:text-slate-950">Edit</a>
+                                <a href="{% url 'school_admin:performance_delete' record.id %}" class="font-semibold text-red-700 hover:text-red-900">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-6 text-center text-slate-500">No performance records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

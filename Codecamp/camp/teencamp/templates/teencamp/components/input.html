@@ -1,0 +1,27 @@
+<div class="pds-form-group">
+
+    <label for="{{ field.id_for_label }}" class="pds-label">
+
+        {{ field.label }}
+
+        {% if field.field.required %}
+        <span class="text-red-500">*</span>
+        {% endif %}
+
+    </label>
+
+    {{ field }}
+
+    {% if field.help_text %}
+    <small class="text-slate-500">
+        {{ field.help_text }}
+    </small>
+    {% endif %}
+
+    {% for error in field.errors %}
+    <p class="text-red-500 text-sm mt-1">
+        {{ error }}
+    </p>
+    {% endfor %}
+
+</div>

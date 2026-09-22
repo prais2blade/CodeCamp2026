@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Software Solutions — CodeCamp{% endblock %}
+
+{% block content %}
+<section class="py-20 container mx-auto px-6">
+    <h1 class="text-3xl font-bold">Our Software Solutions</h1>
+    <p class="text-gray-600 mt-4 max-w-2xl">
+        We build modern, scalable digital solutions designed to help businesses work smarter and faster.
+        Explore the products and services available for your organization.
+    </p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10 mt-12">
+
+        <!-- Inventory / Barcode System -->
+        <div class="card rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-semibold">Inventory / Barcode Management System</h3>
+            <p class="mt-2 text-gray-600">
+                Track stock, automate receipts, and reduce errors.
+            </p>
+            <p class="text-sm text-gray-500 mt-1">Sales so far: 1</p>
+            <a href="#" class="btn-primary mt-4 inline-block">Request Demo</a>
+        </div>
+
+        <!-- Web Development -->
+        <div class="card rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-semibold">Web Development Services</h3>
+            <p class="mt-2 text-gray-600">
+                Beautiful websites and web applications for businesses.
+            </p>
+            <p class="text-sm text-gray-500 mt-1">Completed Projects: 5+</p>
+            <a href="#" class="btn-primary mt-4 inline-block">View Portfolio</a>
+        </div>
+
+        <!-- Automations -->
+        <div class="card rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-semibold">System Automations</h3>
+            <p class="mt-2 text-gray-600">
+                Automate repetitive tasks and streamline workflows.
+            </p>
+            <p class="text-sm text-gray-500 mt-1">Deployments: 1</p>
+            <a href="#" class="btn-primary mt-4 inline-block">Book Consultation</a>
+        </div>
+
+        <!-- Custom Development -->
+        <div class="card rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-semibold">Custom Software Development</h3>
+            <p class="mt-2 text-gray-600">
+                Need something unique? We can build a custom solution tailored to your needs.
+            </p>
+            <a href="#" class="btn-primary mt-4 inline-block">Get Quote</a>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

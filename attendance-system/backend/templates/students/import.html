@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}
+Import Students
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+
+    <a href="{% url 'students:student_template' %}" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-lg">
+
+        Download Sample Template
+
+    </a>
+
+</div>
+
+<div class="max-w-3xl mx-auto p-6">
+
+    <div class="bg-white rounded-xl shadow p-6">
+
+        <h1 class="text-3xl font-bold mb-6">
+            Import Students
+        </h1>
+
+        <form method="POST" enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <button type="submit" class="bg-blue-600 text-white px-4 py-3 rounded">
+                Import Students
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

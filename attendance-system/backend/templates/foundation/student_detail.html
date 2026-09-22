@@ -1,0 +1,106 @@
+{% extends "foundation/base.html" %}
+
+{% block title %}
+Student Monitoring
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase text-emerald-700">Sponsored Student</p>
+            <h1 class="mt-2 text-3xl font-bold text-slate-950">{{ student.full_name }}</h1>
+            <p class="mt-2 text-slate-600">{{ student.student_id }} · {{ student.teaching_class.name|default:student.class_name|default:"No class" }}</p>
+        </div>
+        <a href="{% url 'foundation_dashboard' %}" class="rounded-lg border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-slate-50">
+            Back To Dashboard
+        </a>
+    </div>
+
+    <div class="mt-8 grid sm:grid-cols-3 gap-4">
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Present Days</p>
+            <p class="mt-2 text-3xl font-bold">{{ attendance_summary.present_days }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Attendance Rate</p>
+            <p class="mt-2 text-3xl font-bold text-emerald-700">{{ attendance_summary.attendance_rate }}%</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Performance Records</p>
+            <p class="mt-2 text-3xl font-bold">{{ performance_records.count }}</p>
+        </div>
+    </div>
+
+    <div class="mt-8 grid lg:grid-cols-2 gap-5">
+        <div class="rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div class="border-b border-slate-200 px-5 py-4">
+                <h2 class="text-lg font-bold">Performance</h2>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for record in performance_records %}
+                <div class="p-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="font-bold">{{ record.title }}</p>
+                            <p class="text-sm text-slate-500">{{ record.subject|default:"-" }} · {{ record.term|default:"-" }}</p>
+                        </div>
+                        <p class="text-sm font-semibold text-slate-700">
+                            {% if record.score is not None and record.max_score %}
+                            {{ record.score }}/{{ record.max_score }}
+                            {% else %}
+                            {{ record.grade|default:"-" }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if record.notes %}
+                    <p class="mt-3 text-sm text-slate-700">{{ record.notes }}</p>
+                    {% endif %}
+                    {% if record.attachment %}
+                    <a href="{{ record.attachment.url }}" class="mt-3 inline-block text-sm font-semibold text-emerald-800 hover:text-emerald-950">
+                        View Attachment
+                    </a>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="p-6 text-center text-slate-500">No performance records uploaded yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div class="border-b border-slate-200 px-5 py-4">
+                <h2 class="text-lg font-bold">Recent Attendance</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr>
+                            <th class="p-4 text-left">Date</th>
+                            <th class="p-4 text-left">Check In</th>
+                            <th class="p-4 text-left">Check Out</th>
+                            <th class="p-4 text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for attendance in attendance_history %}
+                        <tr>
+                            <td class="p-4">{{ attendance.date }}</td>
+                            <td class="p-4">{{ attendance.check_in|date:"g:i A"|default:"-" }}</td>
+                            <td class="p-4">{{ attendance.check_out|date:"g:i A"|default:"-" }}</td>
+                            <td class="p-4">{{ attendance.status }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-6 text-center text-slate-500">No attendance records yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

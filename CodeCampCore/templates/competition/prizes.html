@@ -1,0 +1,218 @@
+{% extends "competition/base.html" %}
+{% block content %}
+
+<style>
+/* ===========================
+   GLOBAL CYBERPUNK EFFECTS
+=========================== */
+
+/* Background grid */
+.cdc-grid-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: 60px 60px;
+    background-image:
+        linear-gradient(rgba(155, 80, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(155, 80, 255, 0.08) 1px, transparent 1px);
+    z-index: -1;
+    animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+    from { background-position: 0 0; }
+    to { background-position: 120px 120px; }
+}
+
+/* Floating particles */
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(155, 80, 255, 0.5);
+    box-shadow: 0 0 10px rgba(155, 80, 255, 0.8);
+    animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+    from { transform: translateY(0) scale(1); opacity: 1; }
+    to { transform: translateY(-180px) scale(0.4); opacity: 0; }
+}
+
+/* Neon glow box */
+.glow-box {
+    background: rgba(10, 10, 22, 0.75);
+    border: 1px solid rgba(155, 80, 255, 0.4);
+    border-radius: 16px;
+    padding: 32px;
+    backdrop-filter: blur(8px);
+    box-shadow:
+        0 0 14px rgba(155, 80, 255, 0.5),
+        0 0 28px rgba(155, 80, 255, 0.25),
+        inset 0 0 14px rgba(155, 80, 255, 0.25);
+    transition: 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.glow-box:hover {
+    transform: translateY(-6px);
+    box-shadow:
+        0 0 20px rgba(155, 80, 255, 0.8),
+        0 0 40px rgba(155, 80, 255, 0.4),
+        inset 0 0 18px rgba(155, 80, 255, 0.4);
+}
+
+/* Animated neon border (circuit effect) */
+.glow-box:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(
+        120deg,
+        rgba(155, 80, 255, 0.8),
+        rgba(100, 40, 200, 0.4),
+        rgba(155, 80, 255, 0.8)
+    );
+    -webkit-mask: 
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    animation: borderGlow 6s linear infinite;
+}
+
+@keyframes borderGlow {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+/* Prize rows */
+.prize-row {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(155, 80, 255, 0.25);
+    box-shadow: inset 0 0 10px rgba(155, 80, 255, 0.2);
+    display: flex;
+    justify-content: space-between;
+    transition: 0.25s ease;
+}
+
+.prize-row:hover {
+    background: rgba(155, 80, 255, 0.15);
+    transform: scale(1.02);
+    box-shadow:
+        0 0 10px rgba(155, 80, 255, 0.5),
+        inset 0 0 15px rgba(155, 80, 255, 0.3);
+}
+
+/* Title glow */
+.glow-title {
+    text-shadow:
+        0 0 15px #a855f7,
+        0 0 40px #7e22ce;
+}
+
+/* Fade-in animation */
+.fade-in {
+    animation: fadeIn 1.3s ease forwards;
+    opacity: 0;
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- Background cyber grid -->
+<div class="cdc-grid-bg"></div>
+
+<!-- Floating neon particles -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const container = document.body;
+
+    for (let i = 0; i < 25; i++) {
+        const p = document.createElement("div");
+        p.className = "particle";
+        const size = Math.random() * 6 + 4;
+        p.style.width = size + "px";
+        p.style.height = size + "px";
+        p.style.left = Math.random() * window.innerWidth + "px";
+        p.style.top = Math.random() * window.innerHeight + "px";
+        p.style.animationDuration = (Math.random() * 6 + 4) + "s";
+        container.appendChild(p);
+    }
+});
+</script>
+
+<!-- MAIN CONTENT -->
+<div class="max-w-4xl mx-auto py-20 text-gray-200 fade-in" style="transform: translateY(20px);">
+
+    <h1 class="text-5xl font-black mb-12 text-center glow-title">
+        CRACKdaCODE Prize Pool
+    </h1>
+
+    <p class="text-center text-lg mb-16 max-w-2xl mx-auto text-gray-300">
+        Two categories. Two languages. One goal:
+        <span class="text-purple-400 font-semibold">outsmart the clock.</span>
+    </p>
+
+    <div class="space-y-14">
+
+        <!-- CATEGORY 10–14 -->
+        <div class="glow-box">
+            <h2 class="text-3xl font-bold mb-6 text-purple-300 glow-title">
+                Age Category: 10–14
+            </h2>
+
+            <div class="space-y-4">
+                <div class="prize-row text-lg">
+                    <span>🥇 1st Place</span>
+                    <span class="font-bold text-purple-300">₦500,000</span>
+                </div>
+
+                <div class="prize-row text-lg">
+                    <span>🥈 2nd Place</span>
+                    <span class="font-bold text-purple-300">₦250,000</span>
+                </div>
+
+                <div class="prize-row text-lg">
+                    <span>🥉 3rd Place</span>
+                    <span class="font-bold text-purple-300">₦100,000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CATEGORY 15–19 -->
+        <div class="glow-box">
+            <h2 class="text-3xl font-bold mb-6 text-purple-300 glow-title">
+                Age Category: 15–19
+            </h2>
+
+            <div class="space-y-4">
+                <div class="prize-row text-lg">
+                    <span>🥇 1st Place</span>
+                    <span class="font-bold text-purple-300">₦500,000</span>
+                </div>
+
+                <div class="prize-row text-lg">
+                    <span>🥈 2nd Place</span>
+                    <span class="font-bold text-purple-300">₦250,000</span>
+                </div>
+
+                <div class="prize-row text-lg">
+                    <span>🥉 3rd Place</span>
+                    <span class="font-bold text-purple-300">₦100,000</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

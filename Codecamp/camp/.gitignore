@@ -1,0 +1,18 @@
+# Uploaded media
+media/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Logs
+logs/
+
+# SQLite
+db.sqlite3
+
+# Static build
+staticfiles/
+
+# Environment
+.env

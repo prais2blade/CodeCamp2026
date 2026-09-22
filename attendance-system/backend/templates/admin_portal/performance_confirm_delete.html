@@ -1,0 +1,29 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Delete Performance
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <div class="rounded-lg bg-white border border-red-200 shadow-sm p-6">
+        <p class="text-sm font-semibold uppercase text-red-700">Delete Performance</p>
+        <h1 class="mt-2 text-3xl font-bold text-slate-950">{{ record.title }}</h1>
+        <p class="mt-4 text-slate-700">
+            This will remove the performance record for {{ record.student.full_name }}.
+        </p>
+
+        <form method="POST" class="mt-6 flex flex-wrap gap-2">
+            {% csrf_token %}
+            <button type="submit" class="rounded-lg bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800">
+                Delete Performance
+            </button>
+            <a href="{% url 'school_admin:performance_list' %}" class="rounded-lg border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-slate-50">
+                Cancel
+            </a>
+        </form>
+    </div>
+</section>
+
+{% endblock %}

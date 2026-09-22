@@ -1,0 +1,9 @@
+<form method="post" class="space-y-4">
+  {% csrf_token %}
+  <input name="name" placeholder="Name" class="w-full p-3 border rounded-lg">
+  <input name="email" placeholder="Email" class="w-full p-3 border rounded-lg">
+  <input name="phone" placeholder="Phone" class="w-full p-3 border rounded-lg">
+  <textarea name="message" placeholder="Message" class="w-full p-3 border rounded-lg h-32"></textarea>
+
+  <button class="btn-primary w-full">Send Message</button>
+</form>

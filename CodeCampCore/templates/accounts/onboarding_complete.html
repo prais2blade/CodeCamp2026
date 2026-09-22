@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}You’re All Set{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #159957, #155799);
+    }
+</style>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 92vh;">
+    <div class="auth-card text-center">
+
+        <h2 class="mb-3">Your Setup Is Complete 🎉</h2>
+        <p class="lead">You're ready to explore your dashboard and begin your learning journey.</p>
+
+        <a href="{% url 'student_dashboard' %}" class="btn btn-light btn-lg mt-4 text-dark font-weight-bold">
+            Go to Dashboard
+        </a>
+
+    </div>
+</div>
+{% endblock %}

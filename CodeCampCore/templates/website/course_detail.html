@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ course.name }} — CodeCamp{% endblock %}
+{% block content %}
+<section class="py-12 container mx-auto px-6">
+  <div class="grid md:grid-cols-3 gap-8">
+    <div class="md:col-span-2">
+      <h1 class="text-3xl font-bold">{{ course.name }}</h1>
+      <p class="text-gray-600 mt-2">{{ course.short_description|default:course.description }}</p>
+
+      <div class="mt-6 prose">
+        {{ course.description|safe }}
+      </div>
+
+      <div id="enroll" class="mt-8">
+        <a href="{% url 'register' %}" class="btn-primary">Enroll Now</a>
+        {% if course.brochure %}
+        <a href="{{ course.brochure.url }}" class="btn-secondary ml-4">Download brochure</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <aside>
+      {% if course.image %}
+      <img src="{{ course.image.url }}" alt="{{ course.name }}" class="rounded-lg w-full object-cover mb-4">
+      {% endif %}
+      <div class="bg-white p-4 rounded-lg shadow">
+        <p class="font-semibold">Duration</p>
+        <p class="text-gray-600">{{ course.duration_weeks }} weeks</p>
+
+        <p class="font-semibold mt-4">Fee</p>
+        <p class="text-gray-600">NGN {{ course.fee }}</p>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

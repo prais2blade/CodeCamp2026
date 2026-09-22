@@ -1,0 +1,88 @@
+{% extends "foundation/base.html" %}
+
+{% block title %}
+Foundation Dashboard
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase text-emerald-700">Sponsor Dashboard</p>
+            <h1 class="mt-2 text-3xl font-bold text-slate-950">{{ foundation.name }}</h1>
+        </div>
+
+        <form method="GET" class="flex gap-2">
+            <select name="days" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="30" {% if days == 30 %}selected{% endif %}>30 days</option>
+                <option value="60" {% if days == 60 %}selected{% endif %}>60 days</option>
+                <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option>
+                <option value="180" {% if days == 180 %}selected{% endif %}>180 days</option>
+                <option value="365" {% if days == 365 %}selected{% endif %}>365 days</option>
+            </select>
+            <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Apply</button>
+        </form>
+    </div>
+
+    <div class="mt-8 grid sm:grid-cols-3 gap-4">
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Sponsored Students</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.sponsored_students }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Avg Attendance</p>
+            <p class="mt-2 text-3xl font-bold text-emerald-700">{{ summary.average_attendance }}%</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Performance Records</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.performance_records }}</p>
+        </div>
+    </div>
+
+    <div class="mt-8 rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 px-5 py-4">
+            <h2 class="text-lg font-bold">Sponsored Students</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                        <th class="p-4 text-left">Student</th>
+                        <th class="p-4 text-left">Class</th>
+                        <th class="p-4 text-left">Attendance</th>
+                        <th class="p-4 text-left">Latest Performance</th>
+                        <th class="p-4 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for row in rows %}
+                    <tr>
+                        <td class="p-4 font-semibold">{{ row.student.full_name }}<br><span class="font-normal text-slate-500">{{ row.student.student_id }}</span></td>
+                        <td class="p-4">{{ row.student.teaching_class.name|default:row.student.class_name|default:"-" }}</td>
+                        <td class="p-4">{{ row.attendance.present_days }}/{{ row.attendance.days }} days · {{ row.attendance.attendance_rate }}%</td>
+                        <td class="p-4">
+                            {% if row.latest_performance %}
+                            {{ row.latest_performance.title }}{% if row.latest_performance.grade %} · {{ row.latest_performance.grade }}{% endif %}
+                            {% else %}
+                            <span class="text-slate-500">No record</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            <a href="{% url 'foundation_student_detail' row.student.id %}" class="font-semibold text-emerald-800 hover:text-emerald-950">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-6 text-center text-slate-500">No students assigned yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,50 @@
+{% load static %}
+
+<section id="gallery" class="py-24 bg-slate-50">
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+
+        {% include "teencamp/components/section_header.html" with badge="Gallery" title="Learning in Action" subtitle="Take a look at our students collaborating, building projects and enjoying hands-on technology experiences." %}
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+
+            <div class="col-span-2 row-span-2">
+                <img
+                    src="{% static 'img/students-coding-1.jpg' %}"
+                    alt="Students coding"
+                    class="rounded-3xl object-cover w-full h-full shadow-soft hover:scale-105 transition duration-500">
+            </div>
+
+            <div>
+                <img
+                    src="{% static 'img/students-coding-2.jpg' %}"
+                    alt="Coding class"
+                    class="rounded-3xl object-cover w-full h-64 shadow-soft hover:scale-105 transition duration-500">
+            </div>
+
+            <div>
+                <img
+                    src="{% static 'img/students-coding-3.png' %}"
+                    alt="Group work"
+                    class="rounded-3xl object-cover w-full h-64 shadow-soft hover:scale-105 transition duration-500">
+            </div>
+
+            <div>
+                <img
+                    src="{% static 'img/students-coding-4.jpg' %}"
+                    alt="AI session"
+                    class="rounded-3xl object-cover w-full h-64 shadow-soft hover:scale-105 transition duration-500">
+            </div>
+
+            <div>
+                <img
+                    src="{% static 'img/students-coding-5.jpg' %}"
+                    alt="Presentation"
+                    class="rounded-3xl object-cover w-full h-64 shadow-soft hover:scale-105 transition duration-500">
+            </div>
+
+        </div>
+
+    </div>
+
+</section>

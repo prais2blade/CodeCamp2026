@@ -1,0 +1,47 @@
+{% extends "backoffice/base.html" %}
+{% load humanize %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">All Registrations</h2>
+
+<div class="overflow-x-auto bg-white shadow rounded">
+  <table class="min-w-full text-sm text-left">
+    <thead class="bg-gray-100 text-xs uppercase">
+      <tr>
+        <th class="py-3 px-4">Name</th>
+        <th class="py-3 px-4">Email</th>
+        <th class="py-3 px-4">Phone</th>
+        <th class="py-3 px-4">Batch</th>
+        <th class="py-3 px-4">Amount</th>
+        <th class="py-3 px-4">Verified</th>
+        <th class="py-3 px-4">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reg in registrations %}
+      <tr class="border-t">
+        <td class="py-2 px-4">{{ reg.full_name }}</td>
+        <td class="py-2 px-4">{{ reg.parent_email }}</td>
+        <td class="py-2 px-4">{{ reg.parent_phone }}</td>
+        <td class="py-2 px-4">{{ reg.batch }}</td>
+        <td class="py-2 px-4">₦{{ reg.price_paid|intcomma }}</td>
+        <td class="py-2 px-4">
+          {% if reg.payment_verified %}
+            <span class="text-green-700 font-semibold">Yes</span>
+          {% else %}
+            <span class="text-red-700 font-semibold">No</span>
+          {% endif %}
+        </td>
+        <td class="py-2 px-4">
+          <a href="{% url 'backoffice:reg-detail' reg.pk %}" class="text-purple-700 underline">View</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="py-4 px-4 text-center text-gray-500">No registrations found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

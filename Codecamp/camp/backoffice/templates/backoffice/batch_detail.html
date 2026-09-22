@@ -1,0 +1,326 @@
+{% extends "backoffice/base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto p-6">
+
+    <!-- Header -->
+
+    <div class="flex justify-between items-center mb-8">
+
+        <div>
+
+            <h1 class="text-3xl font-bold">
+
+                {{ batch.name }}
+
+            </h1>
+
+            <p class="text-gray-500">
+
+                {{ batch.code }}
+
+            </p>
+
+        </div>
+
+        <div>
+
+            <a href="{% url 'backoffice:batch-update' batch.pk %}"
+               class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg">
+
+                Edit Batch
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- KPI -->
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500 text-sm">
+
+                Capacity
+
+            </p>
+
+            <h2 class="text-3xl font-bold">
+
+                {{ batch.capacity }}
+
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500 text-sm">
+
+                Occupied
+
+            </p>
+
+            <h2 class="text-3xl font-bold">
+
+                {{ batch.current_size }}
+
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500 text-sm">
+
+                Remaining
+
+            </p>
+
+            <h2 class="text-3xl font-bold">
+
+                {{ batch.remaining_seats }}
+
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500 text-sm">
+
+                Priority
+
+            </p>
+
+            <h2 class="text-3xl font-bold">
+
+                {{ batch.priority }}
+
+            </h2>
+
+        </div>
+
+    </div>
+
+    <!-- Occupancy -->
+
+    <div class="bg-white rounded-xl shadow p-6 mb-8">
+
+        <h2 class="text-xl font-semibold mb-4">
+
+            Occupancy
+
+        </h2>
+
+        <div class="w-full bg-gray-200 rounded-full h-5">
+
+            <div
+                class="bg-green-600 h-5 rounded-full"
+                style="width:{% widthratio batch.current_size batch.capacity 100 %}%">
+
+            </div>
+
+        </div>
+
+        <p class="mt-3 text-gray-600">
+
+            {{ batch.current_size }}
+
+            of
+
+            {{ batch.capacity }}
+
+            seats occupied
+
+            ({{ batch.remaining_seats }} remaining)
+
+        </p>
+
+    </div>
+
+    <!-- Batch Information -->
+
+    <div class="bg-white rounded-xl shadow p-6 mb-8">
+
+        <h2 class="text-xl font-semibold mb-5">
+
+            Batch Information
+
+        </h2>
+
+        <div class="grid grid-cols-2 gap-6">
+
+            <div>
+
+                <strong>Mode</strong>
+
+                <p>{{ batch.mode }}</p>
+
+            </div>
+
+            <div>
+
+                <strong>Reporting Time</strong>
+
+                <p>{{ batch.reporting_time }}</p>
+
+            </div>
+
+            <div>
+
+                <strong>Start Date</strong>
+
+                <p>{{ batch.start_date }}</p>
+
+            </div>
+
+            <div>
+
+                <strong>End Date</strong>
+
+                <p>{{ batch.end_date }}</p>
+
+            </div>
+
+            <div>
+
+                <strong>Reserved</strong>
+
+                <p>
+
+                    {% if batch.reserved_for_existing_students %}
+
+                        ✅ Reserved
+
+                    {% else %}
+
+                        ❌ Public
+
+                    {% endif %}
+
+                </p>
+
+            </div>
+
+            <div>
+
+                <strong>Accepting Registrations</strong>
+
+                <p>
+
+                    {% if batch.accept_new_registrations %}
+
+                        ✅ Yes
+
+                    {% else %}
+
+                        ❌ No
+
+                    {% endif %}
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Students -->
+
+    <div class="bg-white rounded-xl shadow">
+
+        <div class="p-5 border-b">
+
+            <h2 class="text-xl font-semibold">
+
+                Students Assigned
+
+            </h2>
+
+        </div>
+
+        <table class="w-full">
+
+            <thead class="bg-slate-800 text-white">
+
+                <tr>
+
+                    <th class="p-4 text-left">
+
+                        Student
+
+                    </th>
+
+                    <th class="p-4 text-left">
+
+                        Parent
+
+                    </th>
+
+                    <th class="p-4 text-left">
+
+                        Status
+
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for student in students %}
+
+                <tr class="border-b">
+
+                    <td class="p-4">
+
+                        {{ student.full_name }}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {{ student.parent_name }}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {{ student.registration_status }}
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="3"
+                        class="text-center p-8 text-gray-500">
+
+                        No students assigned.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

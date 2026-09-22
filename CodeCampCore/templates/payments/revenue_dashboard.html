@@ -1,0 +1,241 @@
+{% extends 'layouts/hod_base.html' %}
+{% load static %}
+
+{% block title %}Revenue Dashboard{% endblock %}
+{% block content %}
+
+<section class="content">
+  <div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-chart-line mr-2"></i>💰 Revenue Dashboard</h2>
+
+    <!-- ========================== -->
+    <!-- 🔹 KPI CARDS -->
+    <!-- ========================== -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="small-box bg-success text-white p-3 rounded">
+          <div class="inner">
+            <h4>Total Income</h4>
+            <h3>₦{{ stats.total_income|floatformat:2 }}</h3>
+          </div>
+          <div class="icon"><i class="fas fa-wallet"></i></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="small-box bg-warning text-dark p-3 rounded">
+          <div class="inner">
+            <h4>Outstanding Balance</h4>
+            <h3>₦{{ stats.total_balance|floatformat:2 }}</h3>
+          </div>
+          <div class="icon"><i class="fas fa-hand-holding-usd"></i></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="small-box bg-info text-white p-3 rounded">
+          <div class="inner">
+            <h4>Total Due</h4>
+            <h3>₦{{ stats.total_due|floatformat:2 }}</h3>
+          </div>
+          <div class="icon"><i class="fas fa-receipt"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 🔸 PAYMENT STATUS SUMMARY -->
+    <!-- ========================== -->
+    <div class="card card-outline card-primary mb-4 shadow-sm">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-clipboard-list mr-2"></i>Payment Status Summary</h3>
+      </div>
+      <div class="card-body">
+        <ul class="list-inline">
+          <li class="list-inline-item"><span class="badge badge-success">✅ Paid:</span> {{ stats.paid_count }}</li>
+          <li class="list-inline-item"><span class="badge badge-warning">🟠 Partial:</span> {{ stats.partial_count }}</li>
+          <li class="list-inline-item"><span class="badge badge-danger">🔴 Pending:</span> {{ stats.pending_count }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 📚 COURSE BREAKDOWN TABLE -->
+    <!-- ========================== -->
+    <div class="card card-outline card-secondary mb-4 shadow-sm">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-book-open mr-2"></i>Course Breakdown</h3>
+      </div>
+      <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>Course</th>
+              <th>Total Due (₦)</th>
+              <th>Total Paid (₦)</th>
+              <th>Balance (₦)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for course in course_stats %}
+            <tr>
+              <td>{{ course.name }}</td>
+              <td>₦{{ course.total_due|default:0|floatformat:2 }}</td>
+              <td>₦{{ course.total_income|default:0|floatformat:2 }}</td>
+              <td>₦{{ course.total_due|default:0|floatformat:2|add:"-"|add:course.total_income|default:0|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 🔹 EXPORT BUTTONS -->
+    <!-- ========================== -->
+    <div class="mb-4">
+      <a href="{% url 'export_revenue_csv' %}" class="btn btn-primary mr-2">
+        ⬇ Export Revenue CSV
+      </a>
+      <a href="{% url 'export_monthly_trend_csv' %}" class="btn btn-info">
+        📤 Export Monthly Trend CSV
+      </a>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 📊 CHARTS SECTION -->
+    <!-- ========================== -->
+    <div class="row">
+      <!-- Course Revenue Chart -->
+      <div class="col-md-6 mb-4">
+        <div class="card card-outline card-success shadow-sm">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Revenue Distribution by Course</h3>
+          </div>
+          <div class="card-body">
+            <canvas id="courseRevenueChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Trend Chart -->
+      <div class="col-md-6 mb-4">
+        <div class="card card-outline card-primary shadow-sm">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Monthly Revenue Trend</h3>
+          </div>
+          <div class="card-body">
+            <canvas id="revenueTrendChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Status Pie Chart -->
+    <div class="card card-outline card-danger shadow-sm mb-5">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Payment Status Breakdown</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="paymentStatusChart" height="200"></canvas>
+      </div>
+    </div>
+
+  </div><!-- /.container-fluid -->
+</section>
+
+<!-- ========================== -->
+<!-- 📈 Chart.js Scripts -->
+<!-- ========================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  const data = JSON.parse('{{ chart_data|escapejs }}');
+
+  // --- 1️⃣ Course Revenue (Bar) ---
+  new Chart(document.getElementById('courseRevenueChart'), {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: 'Paid (₦)',
+          data: data.paid,
+          backgroundColor: 'rgba(46, 204, 113, 0.8)',
+        },
+        {
+          label: 'Due (₦)',
+          data: data.due,
+          backgroundColor: 'rgba(231, 76, 60, 0.7)',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+
+  // --- 2️⃣ Monthly Revenue Trend (Line) ---
+  new Chart(document.getElementById('revenueTrendChart'), {
+    type: 'line',
+    data: {
+      labels: data.trend_labels,
+      datasets: [
+        {
+          label: 'Paid (₦)',
+          data: data.paid_data,
+          borderColor: 'rgba(46, 204, 113, 0.9)',
+          backgroundColor: 'rgba(46, 204, 113, 0.15)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'Due (₦)',
+          data: data.due_data,
+          borderColor: 'rgba(231, 76, 60, 0.9)',
+          backgroundColor: 'rgba(231, 76, 60, 0.1)',
+          fill: true,
+          tension: 0.3,
+          borderDash: [5, 5],
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { 
+        y: { beginAtZero: true, ticks: { callback: val => '₦' + val.toLocaleString() } }
+      },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ₦${ctx.parsed.y.toLocaleString()}`
+          }
+        }
+      }
+    }
+  });
+
+  // --- 3️⃣ Payment Status (Pie) ---
+  new Chart(document.getElementById('paymentStatusChart'), {
+    type: 'pie',
+    data: {
+      labels: data.status_labels,
+      datasets: [{
+        data: data.status_counts,
+        backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+});
+</script>
+
+{% endblock %}

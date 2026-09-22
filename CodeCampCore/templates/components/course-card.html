@@ -1,0 +1,12 @@
+<div class="card" data-aos="zoom-in" data-aos-delay="{{ forloop.counter|add:2 }}00">
+  {% if course.image %}
+  <img src="{{ course.image.url }}" class="rounded mb-4">
+  {% endif %}
+  <h3 class="text-xl font-semibold">{{ course.title }}</h3>
+  <p class="text-gray-600 mt-2">{{ course.short_description }}</p>
+
+  <a href="{{ course.get_absolute_url }}"
+     class="mt-4 inline-block btn-primary">
+    View Course
+  </a>
+</div>

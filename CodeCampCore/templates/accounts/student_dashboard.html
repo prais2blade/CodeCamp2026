@@ -1,0 +1,259 @@
+{% extends 'layouts/student_base.html' %}
+{% load static %}
+{% load custom_tags %}  {# for div/mul filters #}
+{% load payment_tags %}
+
+{% block page_title %}
+Student Dashboard
+{% endblock page_title %}
+
+{% block main_content %}
+<h2>Welcome, {{ request.user.username }}</h2>
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- ========================== -->
+    <!-- 💳 PAYMENT SUMMARY CARD -->
+    <!-- ========================== -->
+    {% if summary %}
+    <div class="row mb-4">
+      <div class="col-lg-12">
+        <div class="card card-outline card-primary shadow-sm">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">
+              <i class="fas fa-wallet mr-2"></i> Payment Summary
+            </h3>
+            <span class="badge 
+              {% if summary.status == 'paid' %}
+                badge-success
+              {% elif summary.status == 'partial' %}
+                badge-warning
+              {% else %}
+                badge-danger
+              {% endif %}">
+              {{ summary.status|upper }}
+            </span>
+          </div>
+
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-md-2 col-6 mb-3">
+                <strong>Course</strong><br>
+                <span>{{ summary.course_name }}</span>
+              </div>
+              <div class="col-md-2 col-6 mb-3">
+                <strong>Amount Due</strong><br>
+                ₦{{ summary.amount_due|floatformat:2 }}
+              </div>
+              <div class="col-md-2 col-6 mb-3">
+                <strong>Amount Paid</strong><br>
+                ₦{{ summary.amount_paid|floatformat:2 }}
+              </div>
+              <div class="col-md-2 col-6 mb-3">
+                <strong>Balance</strong><br>
+                ₦{{ summary.balance|floatformat:2 }}
+              </div>
+              <div class="col-md-2 col-6 mb-3">
+                <strong>Monthly Payment</strong><br>
+                ₦{{ summary.monthly_payment|floatformat:2 }}
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            {% if summary.amount_due and summary.amount_paid %}
+            {% with progress=summary.amount_paid|div:summary.amount_due|mul:100 %}
+            <div class="mt-3">
+              <label><strong>Payment Progress</strong> — {{ progress|floatformat:0 }}%</label>
+              <div class="progress" style="height: 12px;">
+                <div class="progress-bar 
+                    {% if progress >= 100 %}
+                      bg-success
+                    {% elif progress >= 50 %}
+                      bg-warning
+                    {% else %}
+                      bg-danger
+                    {% endif %}"
+                    role="progressbar"
+                    title="Payment progress: {{ progress|floatformat:0 }}%"
+                    style="width: {{ progress|floatformat:0 }}%;"
+                    aria-valuenow="{{ progress|floatformat:0 }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100">
+                </div>
+              </div>
+            </div>
+            {% endwith %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Financial Summary -->
+    <div class="row mb-4">
+      <div class="col-md-4 col-12 mb-3">
+        <div class="info-box bg-info text-white">
+          <span class="info-box-icon"><i class="fas fa-money-bill-wave"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Total Fee</span>
+            <span class="info-box-number">₦{{ summary.amount_due|floatformat:2 }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 col-12 mb-3">
+        <div class="info-box bg-success text-white">
+          <span class="info-box-icon"><i class="fas fa-check-circle"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Paid</span>
+            <span class="info-box-number">₦{{ summary.amount_paid|floatformat:2 }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 col-12 mb-3">
+        <div class="info-box bg-warning text-dark">
+          <span class="info-box-icon"><i class="fas fa-exclamation-circle"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Outstanding</span>
+            <span class="info-box-number">₦{{ summary.balance|floatformat:2 }}</span>
+          </div>
+        </div>
+      </div>
+      <span style="color:{{ summary.status|payment_color }};">{{ summary.status|title }}</span>
+    </div>
+    {% endif %}
+
+    <!-- ========================== -->
+    <!-- 📊 ATTENDANCE STATISTICS -->
+    <!-- ========================== -->
+    <div class="row">
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+          <div class="inner">
+            <h3>{{ total_attendance }}</h3>
+            <p>Total Attendance</p>
+          </div>
+          <div class="icon"><i class="ion ion-stats-bars"></i></div>
+          <a href="{% url 'student_view_attendance' %}" class="small-box-footer">
+            More info <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+          <div class="inner">
+            <h3>{{ attendance_present }}</h3>
+            <p>Present</p>
+          </div>
+          <div class="icon"><i class="ion ion-checkmark"></i></div>
+          <a href="{% url 'student_view_attendance' %}" class="small-box-footer">
+            More info <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+          <div class="inner">
+            <h3>{{ attendance_absent }}</h3>
+            <p>Absent</p>
+          </div>
+          <div class="icon"><i class="ion ion-close-circled"></i></div>
+          <a href="{% url 'student_view_attendance' %}" class="small-box-footer">
+            More info <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+          <div class="inner">
+            <h3>{{ total_subjects }}</h3>
+            <p>Total Subjects</p>
+          </div>
+          <div class="icon"><i class="ion ion-pie-graph"></i></div>
+          <a href="{% url 'student_course' %}" class="small-box-footer">
+            More info <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 📈 ATTENDANCE CHARTS -->
+    <!-- ========================== -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card card-danger shadow-sm">
+          <div class="card-header">
+            <h3 class="card-title">Attendance Summary</h3>
+            <div class="card-tools">
+              <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-minus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="pieChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card card-success shadow-sm">
+          <div class="card-header">
+            <h3 class="card-title">Attendance by Subject</h3>
+            <div class="card-tools">
+              <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-minus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="barChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.container-fluid -->
+</section>
+{% endblock main_content %}
+
+{% block custom_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+  // --- PIE CHART (Attendance Summary) ---
+  new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Absent', 'Present'],
+      datasets: [{
+        data: [{{ attendance_absent }}, {{ attendance_present }}],
+        backgroundColor: ['#f56954', '#00a65a']
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  // --- BAR CHART (Attendance by Subject) ---
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ subject_name|safe }},
+      datasets: [
+        { label: 'Present', backgroundColor: 'rgba(60,141,188,0.9)', data: {{ data_present|safe }} },
+        { label: 'Absent', backgroundColor: 'rgba(210,214,222,1)', data: {{ data_absent|safe }} }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+});
+</script>
+{% endblock custom_js %}

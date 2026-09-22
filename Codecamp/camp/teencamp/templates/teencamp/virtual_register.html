@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow">
+  <h2 class="text-2xl font-bold mb-4 text-purple-700">Register for Virtual Code Camp</h2>
+  <p class="text-sm text-gray-500 mb-4">Only 20 seats are available. Fill the form to reserve your seat.</p>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="mt-4 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700" type="submit">
+      Submit Registration
+    </button>
+  </form>
+
+  {% if form.non_field_errors %}
+    <div class="mt-4 text-red-600">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Logged Out{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+    <div class="auth-card text-center">
+
+        <h3>You have been logged out.</h3>
+        <p class="mt-2">Come back soon.</p>
+
+        <a href="{% url 'login' %}" class="btn btn-light btn-lg text-dark font-weight-bold mt-3">
+            Login Again
+        </a>
+    </div>
+</div>
+{% endblock %}

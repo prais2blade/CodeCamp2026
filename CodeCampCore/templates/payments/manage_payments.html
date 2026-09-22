@@ -1,0 +1,28 @@
+{% extends 'layouts/hod_base.html' %}
+{% block title %}Manage Payments{% endblock %}
+{% block content %}
+<h2>All Student Payments</h2>
+
+<table border="1" cellpadding="6">
+<tr><th>Student</th><th>Course</th><th>Batch</th><th>Due</th><th>Paid</th><th>Status</th><th>Action</th></tr>
+{% for p in payments %}
+<tr>
+  <td>{{ p.student.username }}</td>
+  <td>{{ p.course.name }}</td>
+  <td>{{ p.batch.name }}</td>
+  <td>₦{{ p.amount_due }}</td>
+  <td>₦{{ p.amount_paid }}</td>
+  <td>{{ p.get_status_display }}</td>
+  <td><a href="{% url 'update_payment' p.id %}">Update</a></td>
+  <td>
+    {% for receipt in p.receipts.all %}
+    <a href="{% url 'view_receipt' receipt.id %}" target="_blank">View</a> |
+    <a href="{% url 'view_receipt' receipt.id %}?download=true">Download PDF</a><br>
+    {% empty %}
+    No receipts yet
+    {% endfor %}
+  </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

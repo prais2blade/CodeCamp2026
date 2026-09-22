@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Complete Your Profile{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #4b6cb7, #182848);
+    }
+</style>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 92vh;">
+    <div class="auth-card" style="max-width: 650px;">
+
+        <h3 class="text-center mb-4">Complete Your Profile ✅</h3>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                {{ form.phone.label_tag }}
+                {{ form.phone }}
+            </div>
+
+            <div class="form-group">
+                {{ form.avatar.label_tag }}
+                {{ form.avatar }}
+            </div>
+
+            <div class="form-group">
+                {{ form.bio.label_tag }}
+                {{ form.bio }}
+            </div>
+
+            <button class="btn btn-light btn-lg btn-block text-dark font-weight-bold mt-4">
+                Save & Continue
+            </button>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

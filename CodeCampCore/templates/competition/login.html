@@ -1,0 +1,17 @@
+{% extends 'competition/base.html' %}
+{% block content %}
+<section class="cdc-section">
+  <div class="cdc-container cdc-auth-card">
+    <h2 class="cdc-section-title">Log in</h2>
+    <form method="post" class="cdc-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="cdc-btn cdc-btn-primary">Log in</button>
+    </form>
+    <p class="cdc-auth-meta">
+      New here?
+      <a href="{% url 'competition:register' edition.year %}">Register for CRACKdaCODE</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

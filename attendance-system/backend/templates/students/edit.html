@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit Student
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto p-6">
+
+    <div class="bg-white rounded-xl shadow p-6">
+
+        <h1 class="text-3xl font-bold mb-6">
+
+            Edit Student
+
+        </h1>
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            {% csrf_token %}
+
+            <div class="space-y-4">
+
+                {{ form.as_p }}
+
+            </div>
+
+            <button
+                type="submit"
+                class="bg-blue-600 text-white px-5 py-3 rounded-lg mt-4"
+            >
+
+                Update Student
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

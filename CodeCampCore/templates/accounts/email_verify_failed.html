@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Verification Failed{% endblock %}
+
+{% block content %}
+<style>
+    body { background: linear-gradient(135deg, #93291e, #ed213a); }
+</style>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 92vh;">
+    <div class="auth-card text-center">
+
+        <h2>Email Verification Failed ❌</h2>
+        <p class="mt-2">The verification link may have expired or is invalid.</p>
+
+        <a href="{% url 'resend_verification' %}" class="btn btn-light btn-lg mt-4 text-dark font-weight-bold">
+            Resend Link
+        </a>
+
+    </div>
+</div>
+{% endblock %}

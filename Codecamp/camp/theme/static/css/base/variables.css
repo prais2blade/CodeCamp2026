@@ -1,0 +1,85 @@
+/* ==========================================================
+   PRAISETENT DESIGN SYSTEM (PDS)
+   Variables
+   Version: 1.0
+========================================================== */
+
+:root {
+
+    /* ==========================
+       Brand Colors
+    ========================== */
+
+    --pds-primary: #2563EB;
+    --pds-secondary: #4F46E5;
+    --pds-accent: #06B6D4;
+
+    /* ==========================
+       Status
+    ========================== */
+
+    --pds-success: #10B981;
+    --pds-warning: #F59E0B;
+    --pds-danger: #EF4444;
+
+    /* ==========================
+       Neutral
+    ========================== */
+
+    --pds-white: #FFFFFF;
+
+    --pds-slate-50: #F8FAFC;
+    --pds-slate-100: #F1F5F9;
+    --pds-slate-200: #E2E8F0;
+    --pds-slate-300: #CBD5E1;
+    --pds-slate-400: #94A3B8;
+    --pds-slate-500: #64748B;
+    --pds-slate-600: #475569;
+    --pds-slate-700: #334155;
+    --pds-slate-800: #1E293B;
+    --pds-slate-900: #0F172A;
+
+    /* ==========================
+       Radius
+    ========================== */
+
+    --pds-radius-sm: 10px;
+    --pds-radius-md: 16px;
+    --pds-radius-lg: 24px;
+    --pds-radius-xl: 32px;
+    --pds-radius-pill: 9999px;
+
+    /* ==========================
+       Shadows
+    ========================== */
+
+    --pds-shadow-soft:
+        0 8px 24px rgba(15,23,42,.08);
+
+    --pds-shadow-medium:
+        0 16px 40px rgba(15,23,42,.12);
+
+    --pds-shadow-large:
+        0 30px 80px rgba(15,23,42,.18);
+
+    /* ==========================
+       Spacing
+    ========================== */
+
+    --pds-space-xs: .25rem;
+    --pds-space-sm: .5rem;
+    --pds-space-md: 1rem;
+    --pds-space-lg: 1.5rem;
+    --pds-space-xl: 2rem;
+    --pds-space-2xl: 3rem;
+    --pds-space-3xl: 4rem;
+
+    /* ==========================
+       Transition
+    ========================== */
+
+    --pds-transition-fast: .2s ease;
+    --pds-transition: .35s ease;
+    --pds-transition-slow: .6s ease;
+
+}

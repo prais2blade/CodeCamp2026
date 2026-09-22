@@ -1,0 +1,31 @@
+{% extends 'layouts/student_base.html' %}
+{% block title %}Choose Batch{% endblock %}
+{% block content %}
+<h2>Select a Batch for {{ request.user.profile.course.name }}</h2>
+
+<form method="post">
+  {% csrf_token %}
+  <label for="batch-select">Choose your batch:</label>
+  <select name="batch_id" id="batch-select" required>
+    <option value="">-- Select Batch --</option>
+    {% for batch in batches %}
+      <option value="{{ batch.id }}" {% if batch.is_full %}disabled{% endif %}>
+        {{ batch.name }} |
+        {{ batch.mode|title }} | {{ batch.batch_type|title }} |
+        {{ batch.session_period|title }} | {{ batch.get_days_pattern_display }} |
+        {{ batch.current_students }}/{{ batch.max_students }}
+        {% if batch.is_full %}(Full – New session in 2 months){% endif %}
+      </option>
+    {% endfor %}
+  </select>
+  <button type="submit">Join Batch</button>
+</form>
+
+{% if not batches %}
+<p>No published batches are available for this course yet.</p>
+{% endif %}
+
+{% for message in messages %}
+<p>{{ message }}</p>
+{% endfor %}
+{% endblock %}

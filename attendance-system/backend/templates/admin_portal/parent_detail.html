@@ -1,0 +1,144 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Parent Detail
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase text-emerald-700">Parent</p>
+            <h1 class="mt-2 text-3xl font-bold text-slate-950">{{ parent.full_name }}</h1>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <form method="POST" action="{% url 'school_admin:parent_reset_password' parent.id %}">
+                {% csrf_token %}
+                <button type="submit" class="rounded-lg bg-emerald-800 px-5 py-3 font-semibold text-white hover:bg-emerald-900">
+                    Send Login Details
+                </button>
+            </form>
+            <a href="{% url 'school_admin:parent_edit' parent.id %}" class="inline-flex justify-center rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-950">
+                Edit Parent
+            </a>
+            <a href="{% url 'school_admin:parent_delete' parent.id %}" class="inline-flex justify-center rounded-lg bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800">
+                Delete Parent
+            </a>
+            <a href="{% url 'school_admin:parent_list' %}" class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-slate-50">
+                Back To Parents
+            </a>
+        </div>
+    </div>
+
+    <div class="mt-8 grid lg:grid-cols-3 gap-5">
+        <div class="rounded-lg bg-white border border-slate-200 shadow-sm p-6">
+            <h2 class="text-lg font-bold">Contact</h2>
+            <dl class="mt-5 space-y-4 text-sm">
+                <div>
+                    <dt class="text-slate-500">Phone</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.phone_number }}</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500">WhatsApp</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.whatsapp_number|default:"-" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500">Email</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.email|default:"-" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500">Notifications</dt>
+                    <dd class="mt-1 font-semibold">
+                        Email: {{ parent.receive_email|yesno:"Yes,No" }} · WhatsApp: {{ parent.receive_whatsapp|yesno:"Yes,No" }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="rounded-lg bg-white border border-slate-200 shadow-sm p-6">
+            <h2 class="text-lg font-bold">Portal Status</h2>
+            <dl class="mt-5 space-y-4 text-sm">
+                <div>
+                    <dt class="text-slate-500">Account</dt>
+                    <dd class="mt-1 font-semibold">
+                        {% if parent.is_active %}Active{% else %}Inactive{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500">Must Change Password</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.must_change_password|yesno:"Yes,No" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500">Last Login</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.last_login_at|date:"M j, Y g:i A"|default:"Never" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500">Last Password Change</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.last_password_change|date:"M j, Y g:i A"|default:"Never" }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="rounded-lg bg-white border border-slate-200 shadow-sm p-6">
+            <h2 class="text-lg font-bold">Record</h2>
+            <dl class="mt-5 space-y-4 text-sm">
+                <div>
+                    <dt class="text-slate-500">Created</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.created_at|date:"M j, Y g:i A" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-slate-500">Updated</dt>
+                    <dd class="mt-1 font-semibold">{{ parent.updated_at|date:"M j, Y g:i A" }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
+    <div class="mt-6 rounded-lg bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 px-5 py-4">
+            <h2 class="text-lg font-bold">Linked Children</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                        <th class="p-4 text-left">Student</th>
+                        <th class="p-4 text-left">Student ID</th>
+                        <th class="p-4 text-left">Relationship</th>
+                        <th class="p-4 text-left">Class</th>
+                        <th class="p-4 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for link in student_links %}
+                    <tr>
+                        <td class="p-4 font-semibold">{{ link.student.full_name }}</td>
+                        <td class="p-4">{{ link.student.student_id }}</td>
+                        <td class="p-4">{{ link.relationship }}</td>
+                        <td class="p-4">
+                            {% if link.student.teaching_class %}
+                            {{ link.student.teaching_class.name }}
+                            {% else %}
+                            <span class="text-amber-700">Not assigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            <a href="{% url 'students:student_detail' link.student.id %}" class="font-semibold text-emerald-800 hover:text-emerald-950">
+                                View Student
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-6 text-center text-slate-500">No linked children found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

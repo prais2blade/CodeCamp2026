@@ -1,0 +1,131 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Admin Dashboard
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase text-emerald-700">
+                School Admin
+            </p>
+            <h1 class="mt-2 text-3xl font-bold text-slate-950">
+                Welcome, {{ request.user.get_full_name|default:request.user.username }}
+            </h1>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'school_admin:staff_create' %}" class="rounded-lg bg-emerald-800 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-900">
+                Create Staff
+            </a>
+            <a href="{% url 'school_admin:class_create' %}" class="rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-950">
+                Create Class
+            </a>
+            <a href="{% url 'school_admin:foundation_create' %}" class="rounded-lg bg-white border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-slate-50">
+                Add Foundation
+            </a>
+            <a href="{% url 'students:create_student' %}" class="rounded-lg bg-white border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-slate-50">
+                Add Student
+            </a>
+        </div>
+    </div>
+
+    <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-7 gap-4">
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Students</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.students }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Classes</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.classes }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Staff</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.staff }}</p>
+        </div>
+        <a href="{% url 'school_admin:parent_list' %}" class="rounded-lg bg-white border border-slate-200 p-5 hover:bg-slate-50">
+            <p class="text-sm text-slate-500">Parents</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.parents }}</p>
+        </a>
+        <a href="{% url 'school_admin:foundation_list' %}" class="rounded-lg bg-white border border-slate-200 p-5 hover:bg-slate-50">
+            <p class="text-sm text-slate-500">Foundations</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.foundations }}</p>
+        </a>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Present Today</p>
+            <p class="mt-2 text-3xl font-bold text-emerald-700">{{ summary.present_today }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Unassigned</p>
+            <p class="mt-2 text-3xl font-bold text-amber-700">{{ summary.unassigned_students }}</p>
+        </div>
+    </div>
+
+    <div class="mt-8 grid lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 rounded-lg bg-white border border-slate-200 shadow-sm">
+            <div class="border-b border-slate-200 px-5 py-4 flex items-center justify-between gap-4">
+                <h2 class="text-lg font-bold">Classes</h2>
+                <a href="{% url 'school_admin:class_list' %}" class="text-sm font-semibold text-emerald-800 hover:text-emerald-950">
+                    Manage
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr>
+                            <th class="p-4 text-left">Class</th>
+                            <th class="p-4 text-left">Staff</th>
+                            <th class="p-4 text-left">Students</th>
+                            <th class="p-4 text-left">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for teaching_class in class_rows %}
+                        <tr>
+                            <td class="p-4 font-semibold">{{ teaching_class.name }}</td>
+                            <td class="p-4">
+                                {% if teaching_class.staff %}
+                                {{ teaching_class.staff.get_full_name|default:teaching_class.staff.username }}
+                                {% else %}
+                                <span class="text-amber-700">Not assigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-4">{{ teaching_class.student_count }}</td>
+                            <td class="p-4">
+                                <a href="{% url 'school_admin:class_edit' teaching_class.id %}" class="font-semibold text-emerald-800 hover:text-emerald-950">
+                                    Edit
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-6 text-center text-slate-500">No classes yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="rounded-lg bg-white border border-slate-200 shadow-sm">
+            <div class="border-b border-slate-200 px-5 py-4">
+                <h2 class="font-bold">Recent Assignments</h2>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for assignment in recent_assignments %}
+                <div class="px-5 py-4">
+                    <p class="font-semibold">{{ assignment.title }}</p>
+                    <p class="text-sm text-slate-500">{{ assignment.teaching_class.name }}</p>
+                </div>
+                {% empty %}
+                <div class="px-5 py-6 text-sm text-slate-500">No assignments yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

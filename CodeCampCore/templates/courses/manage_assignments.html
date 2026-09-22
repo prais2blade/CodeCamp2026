@@ -1,0 +1,30 @@
+{% extends "layouts/instructor_base.html" %}
+{% block content %}
+
+<h3>{{ subject.name }} - Assignments</h3>
+
+<a href="{% url 'create_assignment' subject.id %}" class="btn btn-primary mb-3">
+    + New Assignment
+</a>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Title</th>
+        <th>Due Date</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for a in assignments %}
+    <tr>
+        <td>{{ a.title }}</td>
+        <td>{{ a.due_date }}</td>
+        <td>
+            <a href="{% url 'submit_assignment' a.id %}" class="btn btn-sm btn-success">
+                Submissions
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

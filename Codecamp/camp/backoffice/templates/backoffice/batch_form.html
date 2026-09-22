@@ -1,0 +1,248 @@
+{% extends "backoffice/base.html" %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto p-6">
+
+    <div class="bg-white rounded-xl shadow-lg">
+
+        <!-- Header -->
+
+        <div class="border-b px-8 py-6">
+
+            <h1 class="text-3xl font-bold">
+
+                Edit Batch
+
+            </h1>
+
+            <p class="text-gray-500 mt-2">
+
+                {{ object.name }}
+
+            </p>
+
+        </div>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="p-8 space-y-8">
+
+                <!-- General -->
+
+                <div>
+
+                    <h2 class="text-xl font-semibold mb-5">
+
+                        General Information
+
+                    </h2>
+
+                    <div class="grid grid-cols-2 gap-6">
+
+                        <div>
+
+                            <label class="block mb-2 font-medium">
+
+                                Batch Name
+
+                            </label>
+
+                            {{ form.name }}
+
+                        </div>
+
+                        <div>
+
+                            <label class="block mb-2 font-medium">
+
+                                Priority
+
+                            </label>
+
+                            {{ form.priority }}
+
+                        </div>
+
+                        <div>
+
+                            <label class="block mb-2 font-medium">
+
+                                Capacity
+
+                            </label>
+
+                            {{ form.capacity }}
+
+                        </div>
+
+                        <div>
+
+                            <label class="block mb-2 font-medium">
+
+                                Reporting Time
+
+                            </label>
+
+                            {{ form.reporting_time }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Dates -->
+
+                <div>
+
+                    <h2 class="text-xl font-semibold mb-5">
+
+                        Schedule
+
+                    </h2>
+
+                    <div class="grid grid-cols-2 gap-6">
+
+                        <div>
+
+                            <label class="block mb-2 font-medium">
+
+                                Start Date
+
+                            </label>
+
+                            {{ form.start_date }}
+
+                        </div>
+
+                        <div>
+
+                            <label class="block mb-2 font-medium">
+
+                                End Date
+
+                            </label>
+
+                            {{ form.end_date }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Registration -->
+
+                <div>
+
+                    <h2 class="text-xl font-semibold mb-5">
+
+                        Registration Settings
+
+                    </h2>
+
+                    <div class="space-y-5">
+
+                        <div class="flex items-center justify-between border rounded-lg p-5">
+
+                            <div>
+
+                                <h3 class="font-semibold">
+
+                                    Reserved Batch
+
+                                </h3>
+
+                                <p class="text-sm text-gray-500">
+
+                                    Existing students only.
+
+                                </p>
+
+                            </div>
+
+                            {{ form.reserved_for_existing_students }}
+
+                        </div>
+
+                        <div class="flex items-center justify-between border rounded-lg p-5">
+
+                            <div>
+
+                                <h3 class="font-semibold">
+
+                                    Accept New Registrations
+
+                                </h3>
+
+                                <p class="text-sm text-gray-500">
+
+                                    Controls whether allocation is allowed.
+
+                                </p>
+
+                            </div>
+
+                            {{ form.accept_new_registrations }}
+
+                        </div>
+
+                        <div class="flex items-center justify-between border rounded-lg p-5">
+
+                            <div>
+
+                                <h3 class="font-semibold">
+
+                                    Active Batch
+
+                                </h3>
+
+                                <p class="text-sm text-gray-500">
+
+                                    Inactive batches are ignored.
+
+                                </p>
+
+                            </div>
+
+                            {{ form.is_active }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+
+            <div class="border-t px-8 py-6 flex justify-between">
+
+                <a href="{% url 'backoffice:batch-detail' object.pk %}"
+                   class="px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300">
+
+                    Cancel
+
+                </a>
+
+                <button
+                    type="submit"
+                    class="bg-purple-700 hover:bg-purple-800 text-white px-8 py-3 rounded-lg">
+
+                    Save Changes
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

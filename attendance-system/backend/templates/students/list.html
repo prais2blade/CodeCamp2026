@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}
+Students
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto p-6">
+
+    <!-- Header -->
+
+    <div class="flex justify-between items-center mb-6">
+
+        <div>
+
+            <h1 class="text-3xl font-bold">
+                Student Management
+            </h1>
+
+            <p class="text-gray-500">
+                Manage all registered students
+            </p>
+
+        </div>
+
+        <div class="flex gap-3">
+
+            <div class="flex gap-3">
+
+                <a href="{% url 'students:create_student' %}"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg">
+                    + Add Student
+                </a>
+
+                <button form="bulk-form" type="submit" formaction="{% url 'students:bulk_qr_download' %}"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-lg">
+                    Download QR ZIP
+                </button>
+
+                <button form="bulk-form" type="submit" formaction="{% url 'students:bulk_id_cards' %}"
+                    class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-lg">
+                    Generate ID Cards
+                </button>
+
+                <button form="bulk-form" type="submit" formaction="{% url 'students:bulk_id_cards' %}"
+                    name="all_students" value="1"
+                    class="bg-emerald-800 hover:bg-emerald-900 text-white px-5 py-3 rounded-lg">
+                    Generate All ID Cards
+                </button>
+
+                <button form="regenerate-missing-qr-form" type="submit"
+                    class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-lg">
+                    Regenerate Missing QRs
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Search -->
+
+    <form id="regenerate-missing-qr-form" method="POST" action="{% url 'students:regenerate_missing_qr_codes' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    </form>
+
+    <div class="bg-white rounded-xl shadow p-5 mb-6">
+
+        <form method="GET">
+
+            <label for="search" class="sr-only">Search students</label>
+
+            <input type="text" id="search" name="search" value="{{ search }}"
+                placeholder="Search by name or student ID..."
+                class="w-full border border-gray-300 rounded-lg px-4 py-3">
+
+        </form>
+
+    </div>
+
+    <!-- Bulk QR Form -->
+
+    <form id="bulk-form" method="POST" action="{% url 'students:bulk_qr_download' %}">
+
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+
+            <div class="overflow-x-auto">
+
+                <table class="w-full">
+
+                    <thead class="bg-slate-800 text-white">
+
+                        <tr>
+
+                            <th class="p-4 text-left">
+
+                                <input type="checkbox" id="select-all" title="Select all students"
+                                    aria-label="Select all students">
+
+                            </th>
+
+                            <th class="p-4 text-left">
+                                Student
+                            </th>
+
+                            <th class="p-4 text-left">
+                                Student ID
+                            </th>
+
+                            <th class="p-4 text-left">
+                                Status
+                            </th>
+
+                            <th class="p-4 text-left">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for student in students %}
+
+                        <tr class="border-b hover:bg-gray-50">
+
+                            <!-- Checkbox -->
+
+                            <td class="p-4">
+
+                                <input type="checkbox" name="students" value="{{ student.id }}" class="student-checkbox"
+                                    aria-label="Select student {{ student.first_name }} {{ student.last_name }}">
+
+                            </td>
+
+                            <!-- Student -->
+
+                            <td class="p-4">
+
+                                <div class="flex items-center gap-4">
+
+                                    {% if student.photo %}
+
+                                    <img src="{{ student.photo.url }}"
+                                        alt="Photo of {{ student.first_name }} {{ student.last_name }}"
+                                        class="w-12 h-12 rounded-full object-cover">
+
+                                    {% else %}
+
+                                    <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+
+                                        <span class="font-bold text-gray-600">
+
+                                            {{ student.first_name|first }}
+
+                                        </span>
+
+                                    </div>
+
+                                    {% endif %}
+
+                                    <div>
+
+                                        <p class="font-semibold">
+
+                                            {{ student.first_name }}
+                                            {{ student.last_name }}
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+                            <!-- Student ID -->
+
+                            <td class="p-4">
+
+                                {{ student.student_id }}
+
+                            </td>
+
+                            <!-- Status -->
+
+                            <td class="p-4">
+
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                                    Active
+                                </span>
+
+                            </td>
+
+                            <!-- Actions -->
+
+                            <td class="p-4">
+
+                                <div class="flex flex-wrap gap-2">
+
+                                    <a href="{% url 'students:student_detail' student.id %}"
+                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                                        View
+                                    </a>
+
+                                    <a href="{% url 'students:student_id_card' student.id %}"
+                                        class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                                        ID Card
+                                    </a>
+
+                                    <a href="{% url 'students:parent_portal' student.portal_token %}" target="_blank"
+                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                                        Portal
+                                    </a>
+
+                                    <a href="{% url 'students:edit_student' student.id %}"
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm">
+                                        Edit
+                                    </a>
+
+                                    <a href="{% url 'students:delete_student' student.id %}"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm">
+                                        Delete
+                                    </a>
+
+                                    <button type="submit" formaction="{% url 'students:regenerate_student_qr' student.id %}"
+                                        class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded text-sm">
+                                        QR
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td colspan="5" class="text-center py-10 text-gray-500">
+                                No students found.
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+
+    const selectAll =
+        document.getElementById("select-all");
+
+    if (selectAll) {
+
+        selectAll.addEventListener(
+            "change",
+            function () {
+
+                document
+                    .querySelectorAll(".student-checkbox")
+                    .forEach(function (checkbox) {
+
+                        checkbox.checked =
+                            selectAll.checked;
+
+                    });
+
+            }
+        );
+
+    }
+
+</script>
+
+{% endblock %}

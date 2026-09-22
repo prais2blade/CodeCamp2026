@@ -1,0 +1,52 @@
+{% extends 'layouts/hod_base.html' %}
+{% block title %}Manage Batches{% endblock %}
+{% block content %}
+<h2>All Batches</h2>
+<p><a href="/admin/scheduling/batch/add/">➕ Create New Batch</a></p>
+
+<table border="1" cellpadding="6">
+<tr>
+  <th>Course</th><th>Mode</th><th>Type</th><th>Session</th>
+  <th>Days</th><th>Start</th><th>End</th><th>Students</th><th>Status</th><th>Action</th>
+</tr>
+{% for batch in batches %}
+<tr>
+  <td>{{ batch.course.name }}</td>
+  <td>{{ batch.mode|title }}</td>
+  <td>{{ batch.batch_type|title }}</td>
+  <td>{{ batch.session_period|title }}</td>
+  <td>{{ batch.get_days_pattern_display }}</td>
+  <td>{{ batch.start_date }}</td>
+  <td>{{ batch.end_date }}</td>
+  <td>
+    {{ batch.current_students }}/{{ batch.max_students }}
+    {% if batch.is_full %}
+      <span class="text-danger">(Full)</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if batch.is_published %}
+      <span class="text-success">Published</span>
+    {% else %}
+      <span class="text-danger">Inactive</span>
+    {% endif %}
+  </td>
+  <td>
+    <a href="{% url 'toggle_batch_status' batch.id %}">
+      {% if batch.is_published %}Deactivate{% else %}Publish{% endif %}
+    </a>
+  </td>
+  <td>
+    {{ batch.current_students }}/{{ batch.max_students }}
+    {% if batch.is_full %}
+      <span style="color:red;">(Full – New Session in 2 months)</span>
+    {% else %}
+      <span style="color:green;">(Open)</span>
+    {% endif %}
+  </td>
+</tr>
+{% empty %}
+<tr><td colspan="10">No batches created yet.</td></tr>
+{% endfor %}
+</table>
+{% endblock %}

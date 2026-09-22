@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% block title %}
+        Staff Portal
+        {% endblock %}
+    </title>
+    {% include "components/pwa_head.html" %}
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-900">
+
+    <header class="bg-slate-950 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="h-16 flex items-center justify-between gap-4">
+                <a href="{% url 'staff_dashboard' %}" class="font-bold text-lg">
+                    Staff Portal
+                </a>
+
+                {% if request.user.is_authenticated %}
+                <nav class="flex items-center gap-2 text-sm">
+                    <a href="{% url 'staff_dashboard' %}" class="px-3 py-2 rounded-lg hover:bg-slate-800">
+                        Dashboard
+                    </a>
+                    <a href="{% url 'staff_scanner' %}" class="px-3 py-2 rounded-lg hover:bg-slate-800">
+                        Scanner
+                    </a>
+                    <a href="{% url 'staff_assignments' %}" class="px-3 py-2 rounded-lg hover:bg-slate-800">
+                        Assignments
+                    </a>
+                    <a href="{% url 'staff_announcements' %}" class="px-3 py-2 rounded-lg hover:bg-slate-800">
+                        Announcements
+                    </a>
+                    <a href="{% url 'staff_change_password' %}" class="px-3 py-2 rounded-lg hover:bg-slate-800">
+                        Password
+                    </a>
+                    {% if request.user.is_superuser or request.user.role == "ADMIN" %}
+                    <a href="{% url 'school_admin:dashboard' %}" class="px-3 py-2 rounded-lg hover:bg-slate-800">
+                        Admin
+                    </a>
+                    {% if codecamp_back_office_url %}
+                    <a
+                        href="{{ codecamp_back_office_url }}"
+                        target="_blank"
+                        rel="noopener"
+                        class="px-3 py-2 rounded-lg border border-slate-700 hover:bg-slate-800"
+                    >
+                        Back Office
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                    <a href="{% url 'staff_logout' %}" class="px-3 py-2 rounded-lg bg-white text-slate-950 hover:bg-slate-200">
+                        Logout
+                    </a>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+            {% for message in messages %}
+            <div class="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% include "components/pwa_script.html" %}
+
+</body>
+
+</html>

@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto p-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
+
+        <div>
+            <h1 class="text-4xl font-bold text-slate-800">
+                Attendance Dashboard
+            </h1>
+
+            <p class="text-slate-500 mt-1">
+                {{ today }}
+            </p>
+        </div>
+
+        <div class="mt-4 md:mt-0">
+
+            <a href="/api/attendance/scanner/"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow">
+                Scan Student
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- Statistics Cards -->
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500">
+                Total Students
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2">
+                {{ total_students }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500">
+                Present
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2 text-green-600">
+                {{ present }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500">
+                In Center
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2 text-blue-600">
+                {{ checked_in }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500">
+                Checked Out
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2 text-red-600">
+                {{ checked_out }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+
+            <p class="text-gray-500">
+                Absent
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2 text-orange-600">
+                {{ absent }}
+            </h2>
+
+        </div>
+
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 mb-6">
+
+        <h3 class="font-bold mb-3">
+
+            Sync Status
+
+        </h3>
+        <div class="bg-white rounded-xl shadow p-5 mb-6">
+
+            <h3 class="font-bold mb-4">
+
+                Sync Activity Log
+
+            </h3>
+
+            <div id="sync-log-viewer" class="space-y-2 max-h-80 overflow-y-auto">
+
+            </div>
+
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+
+            <div>
+
+                <p class="text-gray-500">
+                    Connection
+                </p>
+
+                <p id="sync-dashboard-status">
+
+                    Online
+
+                </p>
+
+            </div>
+
+            <div>
+
+                <p class="text-gray-500">
+                    Pending Queue
+                </p>
+
+                <p id="sync-dashboard-queue">
+
+                    0
+
+                </p>
+
+            </div>
+
+            <div>
+
+                <p class="text-gray-500">
+                    Last Sync
+                </p>
+
+                <p id="last-sync">
+
+                    Never
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Search -->
+
+    <div class="bg-white rounded-xl shadow p-5 mb-6">
+
+        <form method="GET">
+
+            <input type="text" name="search" value="{{ search }}" placeholder="Search..."
+                class="w-full border border-gray-300 rounded-lg px-4 py-3" hx-get="{% url 'dashboard' %}"
+                hx-trigger="keyup changed delay:500ms" hx-target="#student-table" hx-swap="innerHTML" />
+
+        </form>
+
+    </div>
+
+    <!-- Status Filter -->
+
+    <div class="flex gap-3 mt-4">
+
+        <button hx-get="?status=all" hx-target="#student-table" class="bg-slate-800 text-white px-4 py-2 rounded">
+            All
+        </button>
+
+        <button hx-get="?status=ABSENT" hx-target="#student-table" class="bg-gray-500 text-white px-4 py-2 rounded">
+            Absent
+        </button>
+
+        <button hx-get="?status=IN CENTER" hx-target="#student-table" class="bg-green-600 text-white px-4 py-2 rounded">
+            In Center
+        </button>
+
+        <button hx-get="?status=CHECKED OUT" hx-target="#student-table" class="bg-red-600 text-white px-4 py-2 rounded">
+            Checked Out
+        </button>
+
+    </div>
+
+    <!-- Students Table -->
+
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full">
+
+                <thead class="bg-slate-800 text-white">
+
+                    <tr>
+
+                        <th class="text-left p-4">
+                            Student
+                        </th>
+
+                        <th class="text-left p-4">
+                            Check In
+                        </th>
+
+                        <th class="text-left p-4">
+                            Check Out
+                        </th>
+
+                        <th class="text-left p-4">
+                            Status
+                        </th>
+
+                        <th class="text-left p-4">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="student-table">
+
+                    {% for row in student_rows %}
+
+                    <tr class="border-b hover:bg-gray-50">
+
+                        <!-- Student -->
+
+                        <td class="p-4">
+
+                            <div class="flex items-center gap-4">
+
+                                {% if row.student.photo %}
+
+                                <img src="{{ row.student.photo.url }}"
+                                    alt="{{ row.student.first_name }} {{ row.student.last_name }} profile photo"
+                                    class="w-12 h-12 rounded-full object-cover">
+
+                                {% else %}
+
+                                <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+
+                                    <span class="text-gray-600 text-sm font-bold">
+                                        {{ row.student.first_name|first }}
+                                    </span>
+
+                                </div>
+
+                                {% endif %}
+
+                                <div>
+
+                                    <p class="font-semibold text-slate-800">
+
+                                        {{ row.student.first_name }}
+                                        {{ row.student.last_name }}
+
+                                    </p>
+
+                                    <p class="text-sm text-gray-500">
+
+                                        {{ row.student.student_id }}
+
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+                        <!-- Check In -->
+
+                        <td class="p-4">
+
+                            {% if row.attendance and row.attendance.check_in %}
+                            {{ row.attendance.check_in|date:"H:i" }}
+                            {% else %}
+                            -
+                            {% endif %}
+
+                        </td>
+
+                        <!-- Check Out -->
+
+                        <td class="p-4">
+
+                            {% if row.attendance and row.attendance.check_out %}
+                            {{ row.attendance.check_out|date:"H:i" }}
+                            {% else %}
+                            -
+                            {% endif %}
+
+                        </td>
+
+                        <!-- Status -->
+
+                        <td class="p-4">
+
+                            {% if row.status == "IN CENTER" %}
+
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                                IN CENTER
+                            </span>
+
+                            {% elif row.status == "CHECKED OUT" %}
+
+                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
+                                CHECKED OUT
+                            </span>
+
+                            {% else %}
+
+                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-semibold">
+                                ABSENT
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <!-- Actions -->
+
+                        <td class="p-4">
+
+                            <div class="flex flex-wrap gap-2">
+
+                                <a href="{% url 'students:student_detail' row.student.id %}"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                                    View
+                                </a>
+
+                                <a href="{% url 'students:student_id_card' row.student.id %}"
+                                    class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                                    ID Card
+                                </a>
+
+                                <a href="{% url 'students:parent_portal' row.student.portal_token %}" target="_blank"
+                                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                                    Portal
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="5" class="text-center py-10 text-gray-500">
+                            No students found.
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'layouts/student_base.html' %}
+
+{% block page_title %}Edit Profile{% endblock page_title %}
+
+{% block main_content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Profile Details</h3>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="card-body">
+          <div class="form-group">
+            <label for="id_phone">Phone</label>
+            <input id="id_phone" name="phone" class="form-control" value="{{ profile.phone }}" placeholder="Phone number">
+          </div>
+          <div class="form-group">
+            <label>Course</label>
+            <input class="form-control" value="{{ profile.course.name|default:'Not selected' }}" disabled>
+          </div>
+          <div class="form-group">
+            <label>Batch</label>
+            <input class="form-control" value="{{ profile.batch.name|default:'Not selected' }}" disabled>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn btn-primary" type="submit">Save Profile</button>
+          <a href="{% url 'student_profile' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock main_content %}

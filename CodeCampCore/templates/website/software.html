@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="py-16">
+  <h1 class="text-3xl font-bold">Software Solutions</h1>
+  <p class="text-gray-600 mt-3">Modern, scalable solutions for businesses.</p>
+
+  <div class="grid md:grid-cols-2 gap-10 mt-10">
+    <div class="p-6 bg-white rounded-lg shadow">
+      <h3 class="font-semibold text-xl">Estate Management Software</h3>
+      <p class="mt-3 text-gray-600">Visitor management, residents database, ANPR, automated check-in and more.</p>
+      <a href="/software/estate-management/" class="mt-4 inline-block px-4 py-2 bg-primary text-white rounded">Learn More</a>
+    </div>
+
+    <div class="p-6 bg-white rounded-lg shadow">
+      <h3 class="font-semibold text-xl">Inventory / Barcode Management System</h3>
+      <p class="mt-3 text-gray-600">Track stock, generate barcodes, and automate records.</p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

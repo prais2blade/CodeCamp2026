@@ -1,0 +1,55 @@
+{% if request.user.is_superuser %}
+    {% extends "layouts/admin_base.html" %}
+{% else %}
+    {% extends "layouts/hod_base.html" %}
+{% endif %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h3 class="mb-3">{{ course.name }} - Subjects</h3>
+
+    <a href="{% url 'create_subject' course.id %}" class="btn btn-primary mb-3">
+        + Add Subject
+    </a>
+
+    <div class="card">
+        <div class="card-body table-responsive">
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Instructor</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for subject in subjects %}
+                    <tr>
+                        <td>{{ subject.name }}</td>
+                        <td>{{ subject.instructor.username }}</td>
+
+                        <td>
+                            <a href="{% url 'edit_subject' subject.id %}" class="btn btn-sm btn-info">
+                                Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No subjects yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

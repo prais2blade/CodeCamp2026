@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Home — CodeCamp{% endblock %}
+
+{% block meta_description %}Industry-leading tech training programs and practical software solutions for individuals and
+businesses in Nigeria.{% endblock %}
+
+{% block content %}
+{% include "components/hero.html" %}
+<section class="p-4 text-white rounded-xl animate-glow-pulse" 
+         style="background: linear-gradient(145deg, #5b21b6, #7c3aed);">
+  <div class="container mx-auto px-6 py-20">
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">Empowering People & Businesses With Skills and
+          Software That Drive Results</h1>
+        <p class="mt-6 text-lg max-w-2xl">We run project-based tech training and build practical software — from Estate
+          Management systems to Inventory & Barcode tools.</p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="{% url 'website:training_programs' %}"
+            class="px-6 py-3 bg-white text-blue-700 rounded-full font-semibold shadow">Enroll in a Training Program</a>
+          <a href="{% url 'website:software_solutions' %}"
+            class="px-6 py-3 bg-transparent border border-white rounded-full font-semibold">Request Software Demo</a>
+        </div>
+
+        <div class="mt-8 flex gap-6 text-sm">
+          <div>
+            <div class="text-2xl font-bold">50+</div>
+            <div class="text-gray-200">Students trained yearly</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold">10+</div>
+            <div class="text-gray-200">Active software deployments</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold">98%</div>
+            <div class="text-gray-200">Satisfaction rate</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="bg-white rounded-xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+          <ul class="mt-4 space-y-3 text-gray-700">
+            <li><a href="{% url 'website:training_programs' %}" class="underline">Explore Training Programs</a></li>
+            <li><a href="{% url 'website:software_solutions' %}" class="underline">View Software Solutions</a></li>
+            <li><a href="{% url 'website:contact' %}" class="underline">Contact Sales</a></li>
+          </ul>
+        </div>
+
+        <div class="mt-6">
+          <img src="{% static 'images/home-illustration.png' %}" alt="home-illustration"
+            class="rounded-xl object-cover w-full h-64">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container mx-auto px-6 py-16">
+  <h2 class="text-2xl font-bold">Our Core Services</h2>
+  <div class="grid md:grid-cols-3 gap-6 mt-6">
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h3 class="font-semibold">Tech Training Programs</h3>
+      <p class="text-gray-600 mt-2">Hands-on training to prepare you for real careers in Full-Stack Development, Data
+        Analysis, AI and more.</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h3 class="font-semibold">Software Products</h3>
+      <p class="text-gray-600 mt-2">Estate Management, Inventory & Barcode, automations and tailored web applications.
+      </p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h3 class="font-semibold">Consultancy & Support</h3>
+      <p class="text-gray-600 mt-2">Digital transformation support, product strategy and maintenance.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bg-gray-50 py-12">
+  <div class="container mx-auto px-6">
+    <h2 class="text-2xl font-bold">Popular Courses</h2>
+    <div class="grid md:grid-cols-3 gap-6 mt-6">
+      {% for course in featured %}
+      <div class="bg-white rounded-lg shadow p-4">
+        {% if course.image %}
+        <img src="{{ course.image.url }}" alt="{{ course.name }}" class="h-36 w-full object-cover rounded">
+        {% endif %}
+        <h3 class="mt-4 font-semibold">{{ course.name }}</h3>
+        <p class="mt-2 text-gray-600">{{ course.short_description|default:course.description|truncatechars:120 }}</p>
+        <div class="mt-3 flex gap-2">
+          <a href="{% url 'website:course_detail' course.slug %}" class="text-sm underline">View</a>
+          <a href="{% url 'register' %}"
+            class="ml-auto btn-primary px-3 py-1 rounded text-white bg-blue-600">Enroll</a>
+        </div>
+      </div>
+      {% empty %}
+      <p>No courses yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

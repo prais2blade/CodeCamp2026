@@ -1,0 +1,58 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Staff Onboarding
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+    <div class="rounded-lg bg-white border border-slate-200 shadow-sm p-6">
+        <p class="text-sm font-semibold uppercase text-emerald-700">Staff Onboarding</p>
+        <h1 class="mt-2 text-3xl font-bold text-slate-950">
+            {{ staff_user.get_full_name|default:staff_user.username }}
+        </h1>
+
+        <div class="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
+            <p class="text-sm font-semibold text-amber-900">
+                Temporary password
+            </p>
+            <p class="mt-2 font-mono text-2xl font-bold text-slate-950 break-all">
+                {{ temporary_password }}
+            </p>
+            <p class="mt-3 text-sm text-amber-900">
+                The staff member must change this password before using the dashboard.
+            </p>
+        </div>
+
+        <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            {% if email_notification %}
+            Email status: {{ email_notification.get_status_display }} to {{ email_notification.recipient }}
+            {% else %}
+            Email status: not sent because no email address is available.
+            {% endif %}
+        </div>
+
+        <dl class="mt-6 space-y-4 text-sm">
+            <div>
+                <dt class="text-slate-500">Username</dt>
+                <dd class="mt-1 font-semibold">{{ staff_user.username }}</dd>
+            </div>
+            <div>
+                <dt class="text-slate-500">Staff Login</dt>
+                <dd class="mt-1 font-semibold break-all">{{ staff_login_url }}</dd>
+            </div>
+        </dl>
+
+        <div class="mt-6 flex flex-wrap gap-2">
+            <a href="{% url 'school_admin:staff_list' %}" class="rounded-lg bg-emerald-800 px-5 py-3 font-semibold text-white hover:bg-emerald-900">
+                Back To Staff
+            </a>
+            <a href="{% url 'school_admin:class_list' %}" class="rounded-lg border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-slate-50">
+                Assign Class
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

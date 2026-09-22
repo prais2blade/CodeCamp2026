@@ -1,0 +1,20 @@
+{% extends 'layouts/student_base.html' %}
+{% block title %}My Course{% endblock %}
+{% block content %}
+<h2>My Course: {{ course.name }}</h2>
+<p>{{ course.description }}</p>
+
+<h3>Subjects</h3>
+<ul>
+    {% for subject in subjects %}
+        <li>
+            {{ subject.name }}
+            {% if subject.instructor %}
+                — Instructor: {{ subject.instructor.username }}
+            {% endif %}
+        </li>
+    {% empty %}
+        <li>No subjects available for this course yet.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

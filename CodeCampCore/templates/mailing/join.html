@@ -1,0 +1,6 @@
+<form action="{% url 'join_mailing_list' %}" method="post">
+  {% csrf_token %}
+  <input type="email" name="email" placeholder="Enter your email" required>
+  <button type="submit">Join Mailing List</button>
+</form>
+<p>Stay updated with the latest courses and sessions by joining our mailing list!</p>

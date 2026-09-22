@@ -1,0 +1,15 @@
+<a
+    href="{{ href|default:'#' }}"
+    class="pds-btn {{ variant|default:'pds-btn-primary' }} {{ class|default:'' }}"
+>
+
+    {% if icon %}
+        <i
+            data-lucide="{{ icon }}"
+            class="w-5 h-5">
+        </i>
+    {% endif %}
+
+    {{ label }}
+
+</a>

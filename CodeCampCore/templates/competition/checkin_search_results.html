@@ -1,0 +1,18 @@
+{% extends 'competition/base.html' %}
+{% block content %}
+<section class="cdc-section">
+  <div class="cdc-container">
+    <h2 class="cdc-section-title">Search Results for "{{ query }}"</h2>
+    <ul class="cdc-list">
+      {% for p in participants %}
+        <li>
+          {{ p.full_name }} ({{ p.get_track_display }}) -
+          <a href="{% url 'competition:staff_do_checkin' edition.year p.id %}" class="cdc-btn cdc-btn-xs">Check In</a>
+        </li>
+      {% empty %}
+        <li>No matching participants.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

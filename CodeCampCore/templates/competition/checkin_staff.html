@@ -1,0 +1,48 @@
+{% extends 'competition/base.html' %}
+{% block content %}
+<section class="cdc-section">
+  <div class="cdc-container">
+    <h2 class="cdc-section-title">Staff Check-in</h2>
+
+    <form method="get" class="cdc-form cdc-search-form">
+      <input type="text" name="q" placeholder="Search by participant name" value="{{ query }}">
+      <button type="submit" class="cdc-btn cdc-btn-primary">Search</button>
+    </form>
+
+    <table class="cdc-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Track</th>
+          <th>Team</th>
+          <th>Email</th>
+          <th>Checked In</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in participants %}
+          <tr>
+            <td>{{ p.full_name }}</td>
+            <td>{{ p.get_track_display }}</td>
+            <td>{{ p.team_name|default:"Solo" }}</td>
+            <td>{{ p.email }}</td>
+            <td>{{ p.checked_in }}</td>
+            <td>
+              {% if not p.checked_in %}
+                <a href="{% url 'competition:staff_do_checkin' edition.year p.id %}" class="cdc-btn cdc-btn-xs">Check In</a>
+              {% else %}
+                Done
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6">No participants found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'layouts/student_base.html' %}
+
+{% block page_title %}Attendance{% endblock page_title %}
+
+{% block main_content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <div class="small-box bg-info">
+          <div class="inner">
+            <h3>{{ total_attendance }}</h3>
+            <p>Total Records</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="small-box bg-success">
+          <div class="inner">
+            <h3>{{ attendance_present }}</h3>
+            <p>Present</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="small-box bg-danger">
+          <div class="inner">
+            <h3>{{ attendance_absent }}</h3>
+            <p>Absent</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Attendance Records</h3>
+      </div>
+      <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Batch</th>
+              <th>Status</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in attendance_records %}
+            <tr>
+              <td>{{ record.date|date:"Y-m-d" }}</td>
+              <td>{{ record.subject.name }}</td>
+              <td>{{ record.batch.name|default:"-" }}</td>
+              <td>
+                <span class="badge
+                  {% if record.status == 'Present' %}badge-success
+                  {% elif record.status == 'Absent' %}badge-danger
+                  {% elif record.status == 'Late' %}badge-warning
+                  {% else %}badge-secondary{% endif %}">
+                  {{ record.status }}
+                </span>
+              </td>
+              <td>{{ record.remarks|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center">No attendance records yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock main_content %}

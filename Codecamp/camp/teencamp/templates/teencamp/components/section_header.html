@@ -1,0 +1,25 @@
+<div class="max-w-3xl mx-auto text-center mb-16">
+
+    {% if badge %}
+        <span class="inline-flex px-4 py-2 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
+
+            {{ badge }}
+
+        </span>
+    {% endif %}
+
+    <h2 class="pds-heading mt-4">
+
+        {{ title }}
+
+    </h2>
+
+    {% if subtitle %}
+        <p class="pds-subheading mt-4">
+
+            {{ subtitle }}
+
+        </p>
+    {% endif %}
+
+</div>

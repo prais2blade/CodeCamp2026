@@ -1,0 +1,25 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CRACKdaCODE Archive</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="{% static 'competition/css/base.css' %}">
+</head>
+<body class="cdc-body">
+  <div class="cdc-container" style="padding:40px 0;">
+    <h1 class="cdc-section-title">CRACKdaCODE Archive</h1>
+    <ul class="cdc-list">
+      {% for e in editions %}
+        <li>
+          <a href="{% url 'competition:home' e.year %}">{{ e.name }} ({{ e.year }})</a>
+          {% if e.is_active %}<span> – Active</span>{% endif %}
+        </li>
+      {% empty %}
+        <li>No editions yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>

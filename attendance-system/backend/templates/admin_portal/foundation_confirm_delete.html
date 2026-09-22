@@ -1,0 +1,35 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Delete Foundation
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <div class="rounded-lg bg-white border border-red-200 shadow-sm p-6">
+        <p class="text-sm font-semibold uppercase text-red-700">Delete Foundation</p>
+        <h1 class="mt-2 text-3xl font-bold text-slate-950">{{ foundation.name }}</h1>
+        <p class="mt-4 text-slate-700">
+            This will remove the foundation portal account and its sponsored-student links. Student records will not be deleted.
+        </p>
+
+        {% if foundation.sponsored_count %}
+        <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            This foundation has {{ foundation.sponsored_count }} sponsored student link(s).
+        </div>
+        {% endif %}
+
+        <form method="POST" class="mt-6 flex flex-wrap gap-2">
+            {% csrf_token %}
+            <button type="submit" class="rounded-lg bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800">
+                Delete Foundation
+            </button>
+            <a href="{% url 'school_admin:foundation_detail' foundation.id %}" class="rounded-lg border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-slate-50">
+                Cancel
+            </a>
+        </form>
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'competition/base.html' %}
+{% block content %}
+<section class="cdc-hero" {% if competition_start_iso %}data-start="{{ competition_start_iso }}" {% endif %}>
+  <div class="cdc-container cdc-hero-inner">
+    <div>
+      <h1 class="cdc-hero-title">{{ edition.name }}</h1>
+      <p class="cdc-hero-subtitle">
+        5 hours. Real problems. Real code.<br>
+        Hack your way to the podium.
+      </p>
+
+      {% if competition_start_iso %}
+      <div class="cdc-countdown">
+        <span class="cdc-countdown-label">Starts in:</span>
+        <span id="cdc-countdown-timer">Calculating…</span>
+      </div>
+      {% endif %}
+
+      <div class="cdc-hero-actions">
+        {% if registration_open %}
+        <a href="{% url 'competition:register' edition.year %}" class="cdc-btn cdc-btn-primary">Join the Competition</a>
+        {% else %}
+        <span class="cdc-btn cdc-btn-ghost">Registration Closed</span>
+        {% endif %}
+        <a href="{% url 'competition:categories' edition.year %}" class="cdc-btn cdc-btn-ghost">View Tracks</a>
+      </div>
+    </div>
+    <div class="cdc-hero-visual">
+      <div class="cdc-code-grid"></div>
+      <div class="cdc-orbit"></div>
+    </div>
+  </div>
+</section>
+<section class="cdc-section">
+  <div class="cdc-container">
+    <h2 class="cdc-section-title">Why CRACKdaCODE?</h2>
+    <div class="cdc-cards">
+      <div class="cdc-card">
+        <h3>High-intensity challenge</h3>
+        <p>Time-boxed coding sprints that push you to design, build, and refine under pressure.</p>
+      </div>
+      <div class="cdc-card">
+        <h3>Real-world briefs</h3>
+        <p>Curated problem statements based on real industry use-cases.</p>
+      </div>
+      <div class="cdc-card">
+        <h3>Network & visibility</h3>
+        <p>Meet other builders, connect with judges, and showcase your work to sponsors.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

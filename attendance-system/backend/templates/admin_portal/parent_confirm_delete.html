@@ -1,0 +1,40 @@
+{% extends "admin_portal/base.html" %}
+
+{% block title %}
+Delete Parent
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <div class="rounded-lg bg-white border border-red-200 shadow-sm p-6">
+        <p class="text-sm font-semibold uppercase text-red-700">Delete Parent</p>
+        <h1 class="mt-2 text-3xl font-bold text-slate-950">
+            {{ parent.full_name }}
+        </h1>
+        <p class="mt-4 text-slate-700">
+            This will remove the parent portal account and unlink this parent from their children. Student records will not be deleted.
+        </p>
+
+        {% if student_links %}
+        <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Linked children:
+            {% for link in student_links %}
+            {{ link.student.full_name }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" class="mt-6 flex flex-wrap gap-2">
+            {% csrf_token %}
+            <button type="submit" class="rounded-lg bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800">
+                Delete Parent
+            </button>
+            <a href="{% url 'school_admin:parent_detail' parent.id %}" class="rounded-lg border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-slate-50">
+                Cancel
+            </a>
+        </form>
+    </div>
+</section>
+
+{% endblock %}

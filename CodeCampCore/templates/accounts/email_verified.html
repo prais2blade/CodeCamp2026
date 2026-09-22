@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Email Verified{% endblock %}
+
+{% block content %}
+<style>
+    body { background: linear-gradient(135deg, #1d976c, #93f9b9); }
+</style>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 92vh;">
+    <div class="auth-card text-center">
+
+        <h2 class="mb-3">Email Verified 🎉</h2>
+        <p>Your account is now active.</p>
+
+        <a href="{% url 'onboarding_steps' %}" class="btn btn-light btn-lg mt-4 text-dark font-weight-bold">
+            Continue
+        </a>
+
+    </div>
+</div>
+{% endblock %}

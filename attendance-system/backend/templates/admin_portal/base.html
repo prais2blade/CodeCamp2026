@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% block title %}
+        School Admin
+        {% endblock %}
+    </title>
+    {% include "components/pwa_head.html" %}
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-900">
+
+    <header class="bg-emerald-950 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="min-h-16 flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
+                <a href="{% url 'school_admin:dashboard' %}" class="font-bold text-lg">
+                    Admin Dashboard
+                </a>
+
+                {% if request.user.is_authenticated %}
+                {% if request.user.is_superuser or request.user.role == "ADMIN" %}
+                <nav class="flex flex-wrap items-center gap-2 text-sm">
+                    <a href="{% url 'school_admin:dashboard' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Dashboard
+                    </a>
+                    <a href="{% url 'school_admin:staff_list' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Staff
+                    </a>
+                    <a href="{% url 'school_admin:class_list' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Classes
+                    </a>
+                    <a href="{% url 'school_admin:student_list' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Students
+                    </a>
+                    <a href="{% url 'school_admin:parent_list' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Parents
+                    </a>
+                    <a href="{% url 'school_admin:foundation_list' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Foundations
+                    </a>
+                    <a href="{% url 'school_admin:performance_list' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Performance
+                    </a>
+                    <a href="{% url 'staff_dashboard' %}" class="px-3 py-2 rounded-lg hover:bg-emerald-900">
+                        Staff Portal
+                    </a>
+                    {% if codecamp_back_office_url %}
+                    <a
+                        href="{{ codecamp_back_office_url }}"
+                        target="_blank"
+                        rel="noopener"
+                        class="px-3 py-2 rounded-lg border border-emerald-700 text-emerald-50 hover:bg-emerald-900"
+                    >
+                        CodeCamp Back Office
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'school_admin:logout' %}" class="px-3 py-2 rounded-lg bg-white text-emerald-950 hover:bg-emerald-100">
+                        Logout
+                    </a>
+                </nav>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+            {% for message in messages %}
+            <div class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% include "components/pwa_script.html" %}
+
+</body>
+
+</html>

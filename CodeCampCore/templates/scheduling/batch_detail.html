@@ -1,0 +1,51 @@
+{% extends 'layouts/hod_base.html' %}
+
+{% block title %}Batch Detail{% endblock title %}
+
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">{{ batch.name }} - {{ batch.course.name }}</h3>
+      </div>
+      <div class="card-body">
+        <p><strong>Mode:</strong> {{ batch.mode|title }}</p>
+        <p><strong>Type:</strong> {{ batch.batch_type|title }}</p>
+        <p><strong>Session:</strong> {{ batch.session_period|title }}</p>
+        <p><strong>Dates:</strong> {{ batch.start_date }} to {{ batch.end_date }}</p>
+
+        <h4 class="mt-4">Weekly Sessions</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Subject</th>
+                <th>Instructor</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for session in sessions %}
+              <tr>
+                <td>{{ session.day|title }}</td>
+                <td>{{ session.time_period|title }}</td>
+                <td>{{ session.subject.name }}</td>
+                <td>{{ session.instructor.username|default:"-" }}</td>
+                <td>{{ session.duration_hours }} hrs</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center">No sessions scheduled yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content %}

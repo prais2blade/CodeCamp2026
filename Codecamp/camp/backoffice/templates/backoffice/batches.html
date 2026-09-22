@@ -1,0 +1,329 @@
+{% extends "backoffice/base.html" %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto p-6">
+
+    <!-- ========================================= -->
+    <!-- Header -->
+    <!-- ========================================= -->
+
+    <div class="flex justify-between items-center mb-8">
+
+        <div>
+
+            <h1 class="text-3xl font-bold text-gray-800">
+                Batch Management
+            </h1>
+
+            <p class="text-gray-500 mt-1">
+                Manage CodeCamp batches and monitor occupancy.
+            </p>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- Statistics -->
+    <!-- ========================================= -->
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+        <div class="bg-white rounded-xl shadow p-6">
+
+            <p class="text-sm text-gray-500">
+                Total Batches
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2">
+                {{ batches|length }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6">
+
+            <p class="text-sm text-gray-500">
+                Total Capacity
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2">
+                {{ total_capacity }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6">
+
+            <p class="text-sm text-gray-500">
+                Occupied Seats
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2">
+                {{ occupied_seats }}
+            </h2>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6">
+
+            <p class="text-sm text-gray-500">
+                Available Seats
+            </p>
+
+            <h2 class="text-3xl font-bold mt-2">
+                {{ available_seats }}
+            </h2>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- Batch Table -->
+    <!-- ========================================= -->
+
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full">
+
+                <thead class="bg-slate-800 text-white">
+
+                    <tr>
+
+                        <th class="text-left px-5 py-4">
+                            Priority
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+                            Batch
+                        </th>
+
+                        <th class="text-left px-5 py-4">
+                            Mode
+                        </th>
+
+                        <th class="text-center px-5 py-4">
+                            Capacity
+                        </th>
+
+                        <th class="text-center px-5 py-4">
+                            Occupancy
+                        </th>
+
+                        <th class="text-center px-5 py-4">
+                            Reserved
+                        </th>
+
+                        <th class="text-center px-5 py-4">
+                            Accepting
+                        </th>
+
+                        <th class="text-center px-5 py-4">
+                            Status
+                        </th>
+
+                        <th class="text-center px-5 py-4">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for batch in batches %}
+
+                    <tr class="border-b hover:bg-gray-50">
+
+                        <td class="px-5 py-5 font-semibold">
+                            {{ batch.priority }}
+                        </td>
+
+                        <td class="px-5 py-5">
+
+                            <div class="font-semibold">
+                                {{ batch.name }}
+                            </div>
+
+                            <div class="text-xs text-gray-500">
+                                {{ batch.code }}
+                            </div>
+
+                        </td>
+
+                        <td class="px-5 py-5">
+
+                            {% if batch.mode == "PHYSICAL" %}
+
+                            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
+
+                                Physical
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs">
+
+                                Virtual
+
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="text-center px-5 py-5">
+
+                            {{ batch.current_size }} /
+                            {{ batch.capacity }}
+
+                            <div class="text-xs text-gray-500">
+
+                                {{ batch.remaining_seats }}
+                                seat{{ batch.remaining_seats|pluralize }}
+                                remaining
+
+                            </div>
+
+                        </td>
+
+                        <td class="px-5 py-5 w-64">
+
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+
+                                <div class="bg-green-500 h-3 rounded-full"
+                                    style="width:{% widthratio batch.current_size batch.capacity 100 %}%">
+
+                                </div>
+
+                            </div>
+
+                            <div class="text-xs mt-2 text-gray-500">
+
+                                {% widthratio batch.current_size batch.capacity 100 %}%
+
+                            </div>
+
+                        </td>
+
+                        <td class="text-center px-5 py-5">
+
+                            {% if batch.reserved_for_existing_students %}
+
+                            <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs">
+
+                                Reserved
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+
+                                Public
+
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="text-center px-5 py-5">
+
+                            {% if batch.accept_new_registrations %}
+
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+
+                                Open
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs">
+
+                                Closed
+
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="text-center px-5 py-5">
+
+                            {% if batch.is_full %}
+
+                            <span class="bg-red-600 text-white px-3 py-1 rounded-full text-xs">
+
+                                FULL
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="bg-green-600 text-white px-3 py-1 rounded-full text-xs">
+
+                                ACTIVE
+
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="text-center px-5 py-5">
+
+                            <div class="flex justify-center gap-2">
+
+                                <a href="{% url 'backoffice:batch-detail' batch.pk %}"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm">
+
+                                    View
+
+                                </a>
+
+                                <a href="{% url 'backoffice:batch-update' batch.pk %}"
+                                    class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded text-sm">
+
+                                    Edit
+
+                                </a>
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="9" class="text-center py-12 text-gray-500">
+
+                            No batches have been created.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

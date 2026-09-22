@@ -1,0 +1,693 @@
+{% extends "teencamp/base.html" %}
+{% load static %}
+
+{% block title %}Register | Teen CodeCamp{% endblock %}
+
+{% block content %}
+
+<!-- ===================================================== -->
+<!-- HERO -->
+<!-- ===================================================== -->
+
+<section class="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 py-16">
+
+  <div class="max-w-7xl mx-auto px-6">
+
+    <div class="max-w-3xl">
+
+      <span class="inline-flex items-center rounded-full bg-white/10 px-4 py-2 text-white text-sm">
+
+        Teen CodeCamp 2026
+
+      </span>
+
+      <h1 class="mt-6 text-5xl font-extrabold text-white">
+
+        Register Your Child
+
+      </h1>
+
+      <p class="mt-5 text-xl text-blue-100 leading-relaxed">
+
+        Complete the registration form below and upload your payment
+        receipt. After payment verification, your child will be assigned
+        automatically to the next available class.
+
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ===================================================== -->
+<!-- REGISTRATION -->
+<!-- ===================================================== -->
+
+<section class="bg-slate-50 py-20">
+
+  <div class="max-w-7xl mx-auto px-6">
+
+    <div class="grid lg:grid-cols-3 gap-10">
+
+      <!-- ========================================= -->
+      <!-- LEFT COLUMN -->
+      <!-- ========================================= -->
+
+      <div class="lg:col-span-2">
+
+        {% if form.errors %}
+
+        <div class="mb-8 rounded-xl border border-red-200 bg-red-50 p-6">
+
+          <div class="flex items-start gap-4">
+
+            <i data-lucide="alert-circle" class="w-6 h-6 text-red-600">
+            </i>
+
+            <div>
+
+              <h3 class="font-semibold text-red-700">
+
+                Please correct the errors below
+
+              </h3>
+
+              <ul class="mt-4 list-disc list-inside text-red-600">
+
+                {% for field in form %}
+
+                {% for error in field.errors %}
+
+                <li>
+
+                  <strong>{{ field.label }}</strong>
+
+                  — {{ error }}
+
+                </li>
+
+                {% endfor %}
+
+                {% endfor %}
+
+                {% for error in form.non_field_errors %}
+
+                <li>{{ error }}</li>
+
+                {% endfor %}
+
+              </ul>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
+
+          {% csrf_token %}
+
+          {% include "teencamp/components/progress_steps.html" %}
+          <!-- ===================================================== -->
+          <!-- STUDENT INFORMATION -->
+          <!-- ===================================================== -->
+
+          <div class="pds-card">
+
+            <div class="flex items-center gap-3 mb-8">
+
+              <i data-lucide="graduation-cap" class="w-7 h-7 text-blue-600">
+              </i>
+
+              <h2 class="text-2xl font-bold">
+
+                Student Information
+
+              </h2>
+
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+
+              {% include "teencamp/components/input.html" with field=form.first_name %}
+
+              {% include "teencamp/components/input.html" with field=form.last_name %}
+
+              {% include "teencamp/components/input.html" with field=form.age %}
+
+              {% include "teencamp/components/input.html" with field=form.mode %}
+
+            </div>
+
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- PARENT INFORMATION -->
+          <!-- ===================================================== -->
+
+          <div class="pds-card">
+
+            <div class="flex items-center gap-3 mb-8">
+
+              <i data-lucide="users" class="w-7 h-7 text-blue-600">
+              </i>
+
+              <h2 class="text-2xl font-bold">
+
+                Parent / Guardian Information
+
+              </h2>
+
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+
+              {% include "teencamp/components/input.html" with field=form.parent_name %}
+
+              {% include "teencamp/components/input.html" with field=form.relationship %}
+
+              {% include "teencamp/components/input.html" with field=form.parent_phone %}
+
+              {% include "teencamp/components/input.html" with field=form.parent_whatsapp %}
+
+              <div class="md:col-span-2">
+
+                {% include "teencamp/components/input.html" with field=form.parent_email %}
+
+              </div>
+
+            </div>
+
+          </div>
+          <!-- ===================================================== -->
+          <!-- PAYMENT RECEIPT -->
+          <!-- ===================================================== -->
+
+          <div class="pds-card">
+
+            <div class="flex items-center gap-3 mb-8">
+
+              <i data-lucide="upload-cloud" class="w-7 h-7 text-blue-600">
+              </i>
+
+              <h2 class="text-2xl font-bold">
+
+                Payment Receipt
+
+              </h2>
+
+            </div>
+
+            {% include "teencamp/components/upload.html" with field=form.receipt %}
+
+            <div class="mt-6 rounded-xl bg-slate-50 border border-slate-200 p-5">
+
+              <h4 class="font-semibold text-slate-800">
+
+                Accepted File Types
+
+              </h4>
+
+              <div class="mt-3 grid grid-cols-2 gap-3 text-sm text-slate-600">
+
+                <div class="flex items-center gap-2">
+
+                  <i data-lucide="check" class="w-4 h-4 text-green-600"></i>
+
+                  JPG / JPEG
+
+                </div>
+
+                <div class="flex items-center gap-2">
+
+                  <i data-lucide="check" class="w-4 h-4 text-green-600"></i>
+
+                  PNG
+
+                </div>
+
+                <div class="flex items-center gap-2">
+
+                  <i data-lucide="check" class="w-4 h-4 text-green-600"></i>
+
+                  PDF
+
+                </div>
+
+                <div class="flex items-center gap-2">
+
+                  <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+
+                  Maximum Size: 5MB
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- SECURITY NOTICE -->
+          <!-- ===================================================== -->
+
+          <div class="rounded-xl border border-green-200 bg-green-50 p-6">
+
+            <div class="flex items-start gap-4">
+
+              <i data-lucide="shield-check" class="w-6 h-6 text-green-600 mt-1">
+              </i>
+
+              <div>
+
+                <h3 class="font-semibold text-green-900">
+
+                  Your Information Is Secure
+
+                </h3>
+
+                <p class="mt-2 text-green-800 leading-relaxed">
+
+                  All information submitted during registration is treated as
+                  confidential and is used solely for CodeCamp administration,
+                  communication, and student management.
+
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- SUBMIT -->
+          <!-- ===================================================== -->
+
+          <div class="pds-card">
+
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+
+              <div>
+
+                <h3 class="text-xl font-bold">
+
+                  Ready to Submit?
+
+                </h3>
+
+                <p class="mt-2 text-slate-600">
+
+                  Please review your information before completing your
+                  registration.
+
+                </p>
+
+              </div>
+
+              <button type="submit" class="pds-btn pds-btn-primary inline-flex items-center gap-2">
+
+                <i data-lucide="check-circle" class="w-5 h-5">
+                </i>
+
+                Complete Registration
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </form>
+
+      </div>
+      <!-- ========================================= -->
+      <!-- RIGHT SIDEBAR -->
+      <!-- ========================================= -->
+
+      <aside class="space-y-6 lg:sticky lg:top-24 self-start">
+
+        <!-- ===================================== -->
+        <!-- CAMP SUMMARY -->
+        <!-- ===================================== -->
+
+        <div class="pds-card">
+
+          <div class="flex items-center gap-3 mb-6">
+
+            <i data-lucide="graduation-cap" class="w-6 h-6 text-blue-600">
+            </i>
+
+            <h3 class="text-xl font-bold">
+
+              Camp Summary
+
+            </h3>
+
+          </div>
+
+          <ul class="space-y-4 text-slate-700">
+
+            <li class="flex items-center gap-3">
+
+              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+
+              6 Weeks Intensive Training
+
+            </li>
+
+            <li class="flex items-center gap-3">
+
+              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+
+              HTML, CSS & JavaScript
+
+            </li>
+
+            <li class="flex items-center gap-3">
+
+              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+
+              Python Programming
+
+            </li>
+
+            <li class="flex items-center gap-3">
+
+              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+
+              Artificial Intelligence
+
+            </li>
+
+            <li class="flex items-center gap-3">
+
+              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+
+              Real-world Projects
+
+            </li>
+
+            <li class="flex items-center gap-3">
+
+              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+
+              Certificate of Completion
+
+            </li>
+
+          </ul>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- PAYMENT DETAILS -->
+        <!-- ===================================== -->
+
+        <div class="pds-card">
+
+          <div class="flex items-center gap-3 mb-6">
+
+            <i data-lucide="building-2" class="w-6 h-6 text-blue-600">
+            </i>
+
+            <h3 class="text-xl font-bold">
+
+              Payment Details
+
+            </h3>
+
+          </div>
+
+          <div class="space-y-6">
+
+            <div>
+
+              <p class="font-semibold">
+
+                Moniepoint MFB
+
+              </p>
+
+              <p class="text-slate-600">
+
+                CodeCamp Innovation Hub Limited
+
+              </p>
+
+              <p class="font-bold text-lg">
+
+                7032192478
+
+              </p>
+
+            </div>
+
+            <hr>
+
+            <div>
+
+              <p class="font-semibold">
+
+                Kuda MFB
+
+              </p>
+
+              <p class="text-slate-600">
+
+                CodeCamp Innovation Hub Limited
+
+              </p>
+
+              <p class="font-bold text-lg">
+
+                3004089048
+
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- CONTACT -->
+        <!-- ===================================== -->
+
+        <div class="pds-card">
+
+          <div class="flex items-center gap-3 mb-6">
+
+            <i data-lucide="phone" class="w-6 h-6 text-blue-600">
+            </i>
+
+            <h3 class="text-xl font-bold">
+
+              Need Assistance?
+
+            </h3>
+
+          </div>
+
+          <div class="space-y-5">
+
+            <div class="flex items-start gap-3">
+
+              <i data-lucide="phone" class="w-5 h-5 text-blue-600 mt-1"></i>
+
+              <div>
+
+                <p>+234 703 219 2478</p>
+
+                <p>+234 916 914 8543</p>
+
+              </div>
+
+            </div>
+
+            <div class="flex items-center gap-3">
+
+              <i data-lucide="mail" class="w-5 h-5 text-blue-600"></i>
+
+              <span>info@praisetent.com</span>
+
+            </div>
+
+            <div class="flex items-center gap-3">
+
+              <i data-lucide="message-circle" class="w-5 h-5 text-green-600"></i>
+
+              <span>WhatsApp Support</span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- WHAT HAPPENS NEXT -->
+        <!-- ===================================== -->
+
+        <div class="pds-card">
+
+          <div class="flex items-center gap-3 mb-6">
+
+            <i data-lucide="list-checks" class="w-6 h-6 text-blue-600">
+            </i>
+
+            <h3 class="text-xl font-bold">
+
+              What Happens Next?
+
+            </h3>
+
+          </div>
+
+          <div class="space-y-6">
+
+            <div class="flex gap-4">
+
+              <div
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-bold">
+
+                1
+
+              </div>
+
+              <div>
+
+                <h4 class="font-semibold">
+
+                  Submit Registration
+
+                </h4>
+
+                <p class="text-sm text-slate-600">
+
+                  Complete the form and upload your payment receipt.
+
+                </p>
+
+              </div>
+
+            </div>
+
+            <div class="flex gap-4">
+
+              <div
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-bold">
+
+                2
+
+              </div>
+
+              <div>
+
+                <h4 class="font-semibold">
+
+                  Payment Verification
+
+                </h4>
+
+                <p class="text-sm text-slate-600">
+
+                  Our finance team verifies your payment.
+
+                </p>
+
+              </div>
+
+            </div>
+
+            <div class="flex gap-4">
+
+              <div
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-bold">
+
+                3
+
+              </div>
+
+              <div>
+
+                <h4 class="font-semibold">
+
+                  Batch Allocation
+
+                </h4>
+
+                <p class="text-sm text-slate-600">
+
+                  Your child is assigned to the next available batch.
+
+                </p>
+
+              </div>
+
+            </div>
+
+            <div class="flex gap-4">
+
+              <div
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-bold">
+
+                4
+
+              </div>
+
+              <div>
+
+                <h4 class="font-semibold">
+
+                  Confirmation
+
+                </h4>
+
+                <p class="text-sm text-slate-600">
+
+                  You receive confirmation via Email and WhatsApp.
+
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </aside>
+    </div>
+    <!-- End Grid -->
+
+  </div>
+  <!-- End Container -->
+
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+
+  document.addEventListener("DOMContentLoaded", function () {
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
+  });
+
+</script>
+
+{% endblock %}

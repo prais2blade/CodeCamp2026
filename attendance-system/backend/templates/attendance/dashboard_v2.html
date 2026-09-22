@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-slate-100">
+
+<div class="max-w-7xl mx-auto p-6">
+
+    <div class="flex justify-between items-center mb-6">
+
+        <div>
+
+            <h1 class="text-3xl font-bold">
+                Attendance Dashboard
+            </h1>
+
+            <p class="text-gray-500">
+                {{ today }}
+            </p>
+
+        </div>
+
+        <a
+            href="/api/attendance/scanner/"
+            class="bg-blue-600 text-white px-5 py-3 rounded-lg"
+        >
+            Scan Student
+        </a>
+
+    </div>
+
+    <div class="grid md:grid-cols-5 gap-4 mb-6">
+
+        <div class="bg-white rounded-xl shadow p-5">
+            <p>Total Students</p>
+            <h2 class="text-3xl font-bold">
+                {{ total_students }}
+            </h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+            <p>Present</p>
+            <h2 class="text-3xl font-bold text-green-600">
+                {{ present }}
+            </h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+            <p>In Center</p>
+            <h2 class="text-3xl font-bold text-blue-600">
+                {{ checked_in }}
+            </h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+            <p>Checked Out</p>
+            <h2 class="text-3xl font-bold text-red-600">
+                {{ checked_out }}
+            </h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+            <p>Absent</p>
+            <h2 class="text-3xl font-bold text-orange-600">
+                {{ absent }}
+            </h2>
+        </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5 mb-6">
+
+        <form>
+
+            <input
+                type="text"
+                name="search"
+                value="{{ search }}"
+                placeholder="Search Student..."
+                class="w-full border rounded-lg px-4 py-3"
+            >
+
+        </form>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+
+        <table class="w-full">
+
+            <thead class="bg-slate-800 text-white">
+
+                <tr>
+
+                    <th class="p-4 text-left">
+                        Student
+                    </th>
+
+                    <th class="p-4 text-left">
+                        Check In
+                    </th>
+
+                    <th class="p-4 text-left">
+                        Check Out
+                    </th>
+
+                    <th class="p-4 text-left">
+                        Status
+                    </th>
+
+                    <th class="p-4 text-left">
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for attendance in attendances %}
+
+                <tr class="border-b">
+
+                    <td class="p-4">
+
+                        <div class="flex items-center gap-3">
+
+                            {% if attendance.student.photo %}
+
+                                <img
+                                    src="{{ attendance.student.photo.url }}"
+                                    alt="{{ attendance.student.first_name }} {{ attendance.student.last_name }}"
+                                    class="w-12 h-12 rounded-full object-cover"
+                                />
+
+                            {% else %}
+
+                                <div
+                                    class="w-12 h-12 rounded-full bg-gray-300"
+                                ></div>
+
+                            {% endif %}
+
+                            <div>
+
+                                <div class="font-semibold">
+
+                                    {{ attendance.student.first_name }}
+                                    {{ attendance.student.last_name }}
+
+                                </div>
+
+                                <div class="text-sm text-gray-500">
+
+                                    {{ attendance.student.student_id }}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {{ attendance.check_in|date:"H:i" }}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {{ attendance.check_out|date:"H:i" }}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        {% if attendance.check_in and not attendance.check_out %}
+
+                            <span
+                                class="bg-green-100 text-green-700 px-3 py-1 rounded-full"
+                            >
+                                IN CENTER
+                            </span>
+
+                        {% elif attendance.check_out %}
+
+                            <span
+                                class="bg-red-100 text-red-700 px-3 py-1 rounded-full"
+                            >
+                                CHECKED OUT
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="p-4">
+
+                        <div class="flex gap-2">
+
+                            <a
+                                href="{% url 'student_detail' attendance.student.id %}"
+                                class="bg-blue-500 text-white px-3 py-2 rounded"
+                            >
+                                View
+                            </a>
+
+                            <a
+                                href="{% url 'student_id_card' attendance.student.id %}"
+                                class="bg-purple-500 text-white px-3 py-2 rounded"
+                            >
+                                ID Card
+                            </a>
+
+                            <a
+                                href="{% url 'parent_portal' attendance.student.portal_token %}"
+                                class="bg-green-500 text-white px-3 py-2 rounded"
+                            >
+                                Portal
+                            </a>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="text-center p-8"
+                    >
+                        No attendance records found
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>

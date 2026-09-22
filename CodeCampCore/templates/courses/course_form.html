@@ -1,0 +1,71 @@
+{% extends "layouts/admin_base.html" %}
+
+{% block page_title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="card">
+        <div class="card-body">
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label>Name</label>
+                        {{ form.name }}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Duration</label>
+                        {{ form.duration_weeks }}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Fee</label>
+                        {{ form.fee }}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Published</label><br>
+                        {{ form.is_published }}
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label>Short Description</label>
+                        {{ form.short_description }}
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label>Description</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Image</label>
+                        {{ form.image }}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Brochure</label>
+                        {{ form.brochure }}
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn-success">Save</button>
+                <a href="{% url 'manage_courses' %}" class="btn btn-secondary">Cancel</a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

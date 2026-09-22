@@ -1,0 +1,114 @@
+{% extends "staff/base.html" %}
+
+{% block title %}
+Staff Dashboard
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+            <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">
+                Staff Dashboard
+            </p>
+            <h1 class="mt-2 text-3xl font-bold text-slate-950">
+                Welcome, {{ request.user.get_full_name|default:request.user.username }}
+            </h1>
+        </div>
+
+        <a
+            href="{% url 'staff_scanner' %}"
+            class="inline-flex justify-center rounded-lg bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800"
+        >
+            Open Scanner
+        </a>
+    </div>
+
+    <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Assigned Classes</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.classes }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Students</p>
+            <p class="mt-2 text-3xl font-bold">{{ summary.students }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Present Today</p>
+            <p class="mt-2 text-3xl font-bold text-green-700">{{ summary.present_today }}</p>
+        </div>
+        <div class="rounded-lg bg-white border border-slate-200 p-5">
+            <p class="text-sm text-slate-500">Absent Today</p>
+            <p class="mt-2 text-3xl font-bold text-amber-700">{{ summary.absent_today }}</p>
+        </div>
+    </div>
+
+    <div class="mt-8 grid lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 rounded-lg bg-white border border-slate-200 shadow-sm">
+            <div class="border-b border-slate-200 px-5 py-4">
+                <h2 class="text-lg font-bold">Classes</h2>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                {% for item in class_cards %}
+                <a
+                    href="{% url 'staff_class_detail' item.class.id %}"
+                    class="block px-5 py-4 hover:bg-slate-50"
+                >
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-950">{{ item.class.name }}</h3>
+                            <p class="text-sm text-slate-500">{{ item.student_count }} student(s)</p>
+                        </div>
+                        <div class="text-right text-sm">
+                            <p class="font-semibold text-green-700">{{ item.present_today }} present</p>
+                            <p class="text-slate-500">{{ item.absent_today }} absent</p>
+                        </div>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="px-5 py-8 text-center text-slate-500">
+                    No classes assigned yet.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="space-y-5">
+            <div class="rounded-lg bg-white border border-slate-200 shadow-sm">
+                <div class="border-b border-slate-200 px-5 py-4">
+                    <h2 class="font-bold">Recent Assignments</h2>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    {% for assignment in assignments %}
+                    <div class="px-5 py-4">
+                        <p class="font-semibold">{{ assignment.title }}</p>
+                        <p class="text-sm text-slate-500">{{ assignment.teaching_class.name }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="px-5 py-6 text-sm text-slate-500">No assignments yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="rounded-lg bg-white border border-slate-200 shadow-sm">
+                <div class="border-b border-slate-200 px-5 py-4">
+                    <h2 class="font-bold">Recent Announcements</h2>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    {% for announcement in announcements %}
+                    <div class="px-5 py-4">
+                        <p class="font-semibold">{{ announcement.title }}</p>
+                        <p class="text-sm text-slate-500">{{ announcement.teaching_class.name }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="px-5 py-6 text-sm text-slate-500">No announcements yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

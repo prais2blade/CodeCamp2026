@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome to CodeCamp{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1f3b73, #4b79a1, #21d4fd);
+        background-size: 400% 400%;
+        animation: gradientShift 12s ease infinite;
+    }
+</style>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 92vh;">
+    <div class="auth-card text-center" style="max-width: 600px;">
+
+        <h2 class="mb-3">Welcome, {{ user.username }} 🎉</h2>
+        <p class="lead">Your account has been created successfully.</p>
+        <p>To continue, please verify your email.</p>
+
+        <a href="{% url 'verify_email_sent' %}" class="btn btn-light btn-lg mt-4 text-dark font-weight-bold">
+            Continue
+        </a>
+
+    </div>
+</div>
+{% endblock %}

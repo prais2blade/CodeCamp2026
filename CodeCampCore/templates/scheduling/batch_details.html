@@ -1,0 +1,22 @@
+{% extends 'layouts/hod_base.html' %}
+{% block title %}Batch Detail{% endblock %}
+{% block content %}
+<h2>Batch: {{ batch.name }} ({{ batch.course.name }})</h2>
+<p>Mode: {{ batch.mode|title }} | Contact Hours/Week: {{ batch.contact_hours_per_week }}</p>
+
+<h3>Weekly Sessions</h3>
+<table border="1" cellpadding="6">
+    <tr><th>Day</th><th>Time</th><th>Subject</th><th>Instructor</th><th>Duration</th></tr>
+    {% for session in sessions %}
+    <tr>
+        <td>{{ session.day|title }}</td>
+        <td>{{ session.time_period|title }}</td>
+        <td>{{ session.subject.name }}</td>
+        <td>{{ session.instructor.username }}</td>
+        <td>{{ session.duration_hours }} hrs</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No sessions scheduled yet.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}
