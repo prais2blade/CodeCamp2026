@@ -69,13 +69,24 @@ class Command(BaseCommand):
         self.stdout.write(f"Temporary Password for all transferred students: {temp_password}\n")
 
         # 2. Resolve Academy Tenant
-        tenant = Tenant.objects.filter(is_default=True).first() or Tenant.objects.first()
+        tenant = None
+        try:
+            tenant = Tenant.objects.filter(is_default=True).first() or Tenant.objects.first()
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"⚠️ Tenant resolution skipped (table or record not found: {e})"))
 
         # 3. Resolve Courses & Batches for Mapping
-        default_course = Course.objects.filter(is_published=True).first()
-        python_course = Course.objects.filter(name__icontains="python").first() or default_course
-        web_course = Course.objects.filter(name__icontains="web").first() or default_course
-        innovators_course = Course.objects.filter(name__icontains="innovator").first() or default_course
+        default_course = None
+        python_course = None
+        web_course = None
+        innovators_course = None
+        try:
+            default_course = Course.objects.filter(is_published=True).first()
+            python_course = Course.objects.filter(name__icontains="python").first() or default_course
+            web_course = Course.objects.filter(name__icontains="web").first() or default_course
+            innovators_course = Course.objects.filter(name__icontains="innovator").first() or default_course
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"⚠️ Course resolution skipped (table or record not found: {e})"))
 
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
