@@ -32,24 +32,36 @@
 
       <div class="card bg-light border-0 p-3 mb-4" style="border-radius: 10px;">
         <div class="row align-items-center">
-          <div class="col-md-5 mb-3 mb-md-0">
+          <div class="col-md-4 mb-3 mb-md-0">
             <label class="font-weight-bold text-dark mb-1">
               <i class="far fa-calendar-check text-primary mr-1"></i> New Cohort Start Date:
             </label>
             <input type="date" name="start_date" class="form-control form-control-lg border-primary shadow-sm" required value="{{ today_iso }}" style="border-radius: 8px;">
             <small class="form-text text-muted">Official date training and billing begins.</small>
           </div>
-          <div class="col-md-7 pl-md-4">
+          <div class="col-md-4 mb-3 mb-md-0">
+            <label class="font-weight-bold text-dark mb-1">
+              <i class="fas fa-graduation-cap text-success mr-1"></i> Course Track (Optional):
+            </label>
+            <select name="reassign_course" class="form-control form-control-lg shadow-sm" style="border-radius: 8px;">
+              <option value="">-- Keep Each Student's Current Course --</option>
+              {% for c in courses %}
+                <option value="{{ c.pk }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="form-text text-muted">Leave unchanged to keep existing courses.</small>
+          </div>
+          <div class="col-md-4 pl-md-3">
             <div class="custom-control custom-checkbox mb-2">
               <input type="checkbox" class="custom-control-input" id="update_due_date" name="update_due_date" checked>
               <label class="custom-control-label font-weight-bold text-dark" for="update_due_date">
-                Recalculate Next Monthly Billing Due Date (+30 days from start date)
+                Recalculate Next Due Date (+30d)
               </label>
             </div>
             <div class="custom-control custom-checkbox">
               <input type="checkbox" class="custom-control-input" id="align_batch" name="align_batch" checked>
               <label class="custom-control-label font-weight-bold text-dark" for="align_batch">
-                Auto-assign/align students to a Batch starting on or near this date
+                Auto-align with active Batch
               </label>
             </div>
           </div>

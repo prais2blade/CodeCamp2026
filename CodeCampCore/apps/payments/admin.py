@@ -16,7 +16,13 @@ class PaymentAdmin(admin.ModelAdmin):
         'next_due_date',
         'payment_date',
     )
-    list_filter = ('status', 'course', 'batch', 'billing_start_date', 'next_due_date')
+    list_filter = (
+        ('course', admin.RelatedOnlyFieldListFilter),
+        ('batch', admin.RelatedOnlyFieldListFilter),
+        'status',
+        'billing_start_date',
+        'next_due_date',
+    )
     search_fields = (
         'student__username',
         'student__email',

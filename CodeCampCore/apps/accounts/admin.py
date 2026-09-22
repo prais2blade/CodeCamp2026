@@ -23,7 +23,15 @@ class ProfileAdmin(admin.ModelAdmin):
         'is_approved',
         'has_paid',
     )
-    list_filter = ('role', 'is_verified', 'is_approved', 'has_paid', 'start_date', 'course', 'batch')
+    list_filter = (
+        ('course', admin.RelatedOnlyFieldListFilter),
+        ('batch', admin.RelatedOnlyFieldListFilter),
+        'has_paid',
+        'start_date',
+        'role',
+        'is_verified',
+        'is_approved',
+    )
     search_fields = (
         'user__username',
         'user__email',
@@ -31,6 +39,8 @@ class ProfileAdmin(admin.ModelAdmin):
         'user__last_name',
         'phone',
         'external_attendance_id',
+        'course__name',
+        'batch__name',
     )
     actions = ['bulk_update_start_date']
 
@@ -46,10 +56,19 @@ class ProfileAdmin(admin.ModelAdmin):
 
             update_due_date = request.POST.get('update_due_date') == 'on'
             align_batch = request.POST.get('align_batch') == 'on'
+            reassign_course_id = request.POST.get('reassign_course')
+            reassign_course = None
+            if reassign_course_id:
+                try:
+                    reassign_course = Course.objects.get(pk=int(reassign_course_id))
+                except Exception:
+                    pass
 
             updated_count = 0
             for profile in queryset:
                 profile.start_date = start_date
+                if reassign_course:
+                    profile.course = reassign_course
 
                 # Optional: Align batch for the course
                 if align_batch and profile.course:
@@ -99,10 +118,12 @@ class ProfileAdmin(admin.ModelAdmin):
             )
             return HttpResponseRedirect(request.get_full_path())
 
+        from apps.courses.models import Course
         context = {
             'opts': self.model._meta,
             'profiles': queryset,
             'today_iso': timezone.localdate().isoformat(),
+            'courses': Course.objects.all(),
         }
         return render(request, 'admin/accounts/profile/bulk_update_start_date.html', context)
 
