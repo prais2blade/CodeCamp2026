@@ -1,34 +1,48 @@
 {% load static %}
 {% load tz %}
-<footer class="site-footer">
-  <div class="container mx-auto px-6 grid md:grid-cols-3 gap-8">
+<footer class="bg-[#050210] border-t border-purple-900/40 text-slate-300 py-14">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-3 gap-10">
     <div>
-      <img src="{% static 'images/logo.png' %}" alt="CodeCamp" class="h-10 mb-4"/>
-      <p class="text-sm text-gray-300">Empowering individuals and businesses with technology, skills, and automation.</p>
+      <div class="flex items-center space-x-3 mb-4">
+        <img src="{% static 'images/logo.png' %}" 
+             alt="CodeCamp" 
+             class="site-logo"
+             style="max-height: 38px; width: auto; object-fit: contain;"
+             onerror="this.style.display='none'"/>
+        <span class="text-white font-extrabold text-xl tracking-tight">CodeCamp</span>
+      </div>
+      <p class="text-sm text-slate-400 leading-relaxed mb-4">
+        CodeCamp Innovation Hub powers tech education, practical software engineering, and smart enterprise automation across Africa.
+      </p>
+      <div class="text-xs text-slate-500 font-semibold">
+        Admissions: <a href="mailto:admissions@codecamp.com.ng" class="text-purple-400 hover:underline">admissions@codecamp.com.ng</a>
+      </div>
     </div>
 
     <div>
-      <h3 class="text-white font-semibold mb-2">Quick Links</h3>
-      <ul class="text-gray-300 space-y-2">
-        <li><a href="/" class="hover:text-primaryLight">Home</a></li>
-        <li><a href="{% url 'website:training_programs' %}" class="hover:text-primaryLight">Training</a></li>
-        <li><a href="{% url 'website:software_solutions' %}" class="hover:text-primaryLight">Software</a></li>
-        <li><a href="{% url 'website:contact' %}" class="hover:text-primaryLight">Contact</a></li>
+      <h3 class="text-white font-bold text-sm uppercase tracking-wider mb-4">Quick Navigation</h3>
+      <ul class="text-sm text-slate-400 space-y-2.5">
+        <li><a href="/" class="hover:text-purple-300 transition">Home</a></li>
+        <li><a href="{% url 'website:training_programs' %}" class="hover:text-purple-300 transition">Innovation Hub Programmes</a></li>
+        <li><a href="{% url 'website:software_solutions' %}" class="hover:text-purple-300 transition">Enterprise Software</a></li>
+        <li><a href="{% url 'website:about' %}" class="hover:text-purple-300 transition">About CodeCamp</a></li>
+        <li><a href="{% url 'website:contact' %}" class="hover:text-purple-300 transition">Contact & Location</a></li>
       </ul>
     </div>
 
     <div>
-      <h3 class="text-white font-semibold mb-2">Follow Us</h3>
-      <ul class="text-gray-300 space-y-2">
-        <li><a href="#" class="hover:text-primaryLight">Facebook</a></li>
-        <li><a href="#" class="hover:text-primaryLight">Instagram</a></li>
-        <li><a href="#" class="hover:text-primaryLight">WhatsApp</a></li>
-        <li><a href="#" class="hover:text-primaryLight">LinkedIn</a></li>
+      <h3 class="text-white font-bold text-sm uppercase tracking-wider mb-4">Portals & Community</h3>
+      <ul class="text-sm text-slate-400 space-y-2.5">
+        <li><a href="{% url 'login' %}" class="hover:text-purple-300 transition"><i class="fas fa-sign-in-alt mr-2 text-purple-400"></i>Student & Staff Login</a></li>
+        <li><a href="{% url 'register' %}" class="hover:text-purple-300 transition"><i class="fas fa-user-plus mr-2 text-purple-400"></i>Online Application</a></li>
+        <li><a href="https://attendance.codecamp.com.ng" class="hover:text-purple-300 transition"><i class="fas fa-qrcode mr-2 text-purple-400"></i>Kiosk Attendance Hub</a></li>
+        <li><span class="text-slate-500 text-xs">Summer Camp 2026: Concluded</span></li>
       </ul>
     </div>
   </div>
 
-  <div class="footer-bottom text-center mt-8 border-t border-gray-800 pt-4">
-    © {% now "Y" %} CodeCamp — All Rights Reserved.
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-purple-900/30 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
+    <p>© {% now "Y" %} CodeCamp Innovation Hub. All rights reserved.</p>
+    <p class="mt-2 sm:mt-0">Empowering tech leaders and building smart software.</p>
   </div>
 </footer>

@@ -2,50 +2,118 @@
 {% load tz %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>
-        {% block title %}CodeCamp — Empowering Tech Careers & Smart Businesses{% endblock %}
+        {% block title %}CodeCamp Innovation Hub — Practical Tech Training & Software{% endblock %}
     </title>
 
     <!-- SEO -->
-    <meta name="description" content="{% block meta_description %}Practical tech training, software solutions, and automation for businesses in Nigeria.{% endblock %}">
-    <meta name="keywords" content="CodeCamp, tech training Nigeria, software solutions, estate management software, coding school Nigeria">
+    <meta name="description" content="{% block meta_description %}CodeCamp Innovation Hub. Subsidized ₦35,000/month practical engineering tracks in Full-Stack Web, Data Science, AI, Cloud/DevOps, Cyber Security, UI/UX, and Robotics.{% endblock %}">
+    <meta name="keywords" content="CodeCamp, CodeCamp Innovation Hub, tech training Nigeria, coding bootcamp, coding school Nigeria, software engineering">
 
-    <!-- Tailwind CSS -->
-<link rel="stylesheet" href="{% static 'css/main.css' %}">
-<link rel="stylesheet" href="{% static 'css/website.css' %}">
+    <!-- Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            950: '#2e1065',
+                        },
+                        darkbg: '#090518',
+                        darkcard: '#120a2e',
+                        darkborder: '#23154f'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
 
     <!-- AOS CSS -->
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+            background-color: #090518;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        /* Enforce logo scaling regardless of layout */
+        .site-logo {
+            max-height: 42px !important;
+            height: 42px !important;
+            width: auto !important;
+            object-fit: contain !important;
+            display: inline-block !important;
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(18, 10, 46, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.18);
+        }
+
+        .glow-button {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+            transition: all 0.25s ease;
+        }
+        .glow-button:hover {
+            box-shadow: 0 6px 26px rgba(124, 58, 237, 0.6);
+            transform: translateY(-1px);
+        }
+    </style>
+
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-gray-50 text-gray-800 antialiased">
+<body class="bg-[#090518] text-slate-100 antialiased selection:bg-purple-600 selection:text-white">
 
     {% include 'components/navbar.html' %}
 
-    <main>
+    <main class="min-h-screen">
         {% block content %}
         {% endblock %}
     </main>
-    {% include 'components/crack.html' %}
+
     {% include 'components/footer.html' %}
 
-    <!-- AOS -->
+    <!-- AOS Script -->
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
         AOS.init({
-            offset: 100,
-            duration: 800,
+            offset: 80,
+            duration: 700,
             easing: 'ease-out-quart',
-            once: false,
+            once: true,
         });
     </script>
 
