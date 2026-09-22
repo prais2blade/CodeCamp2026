@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global brand customization */
+:root {
+    --primary: #0066CC;
+    --secondary: #00A86B;
+    --muted: #F5F7FA;
+    --dark: #111827;
+}
+
+/* Reusable components */
+.btn-primary {
+    @apply px-5 py-3 rounded-lg bg-primary text-white transition transform hover:-translate-y-1 hover:shadow-lg;
+    @apply px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition;
+}
+
+.btn-secondary {
+    @apply px-5 py-3 rounded-lg bg-secondary text-white transition transform hover:-translate-y-1 hover:shadow-lg;
+    @apply px-4 py-2 rounded-lg bg-secondary text-white hover:bg-secondary/90 transition;
+}
+
+.section-title {
+    @apply text-3xl font-bold text-dark mb-4;
+}
+
+.card {
+    @apply transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl;
+    @apply p-6 bg-white rounded-xl shadow hover:shadow-lg transition;
+}
+
+.img-zoom {
+  @apply transition-transform duration-500 hover:scale-105;
+}
