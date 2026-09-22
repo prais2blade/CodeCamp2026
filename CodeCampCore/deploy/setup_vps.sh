@@ -30,7 +30,10 @@ LOG_DIR="/var/log/codecamp"
 # 1. System Updates & Dependencies
 # ------------------------------------------------------------------------------
 echo -e "\n${YELLOW}[1/8] Installing Ubuntu System Packages & Libraries...${NC}"
-apt update -y
+# Remove obsolete or broken third-party PostgreSQL repos if present
+rm -f /etc/apt/sources.list.d/pgdg.list* /etc/apt/sources.list.d/*postgresql* 2>/dev/null || true
+
+apt update -y || apt update --fix-missing -y || true
 apt install -y \
     python3 \
     python3-pip \
