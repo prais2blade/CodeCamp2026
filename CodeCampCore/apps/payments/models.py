@@ -20,6 +20,8 @@ class Payment(models.Model):
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     monthly_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # 🆕
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    billing_start_date = models.DateField(null=True, blank=True, help_text="Date when monthly billing commences.")
+    next_due_date = models.DateField(null=True, blank=True, help_text="Next scheduled monthly tuition due date.")
     payment_ref = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     payment_date = models.DateTimeField(auto_now_add=True)
     verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_payments')

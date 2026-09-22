@@ -67,6 +67,11 @@ class Profile(models.Model):
     )
 
     # Progression tracking
+    start_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Official cohort or program start date."
+    )
     has_paid = models.BooleanField(default=False)
     registration_paid = models.BooleanField(default=False)
     tuition_paid = models.BooleanField(default=False)
