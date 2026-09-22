@@ -377,31 +377,67 @@ def student_dashboard(request):
     return render(request, "accounts/student_dashboard.html", context)
 
 # ---------------------------------------------------------
-# STAFF onboarding and management
+# ---------------------------------------------------------
+# STAFF & TEACHER ONBOARDING AND MANAGEMENT
 # ---------------------------------------------------------
 
 @login_required
 def create_staff(request):
+    """Onboards a teacher, instructor, or staff member directly from the dashboard."""
     if not (request.user.is_superuser or request.user.profile.role == 'hod'):
-        messages.error(request, "Access denied.")
+        messages.error(request, "Access denied. Administrator privileges required.")
         return redirect('admin_dashboard')
 
     if request.method == "POST":
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        role = request.POST.get('role')
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        role = request.POST.get('role', 'instructor').strip()
+        course_id = request.POST.get('course_id')
+        password = request.POST.get('password', '').strip() or "CodeCamp2026!"
+        auto_approve = request.POST.get('is_approved') == 'on' or request.user.is_superuser
 
-        user = User.objects.create_user(username=username, email=email, password="default123")
+        if not email:
+            messages.error(request, "Email address is required.")
+            return redirect('/account/admin/dashboard/#staff')
+
+        if not username:
+            username = email.split('@')[0].lower()
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, f"User with username '{username}' already exists.")
+            return redirect('/account/admin/dashboard/#staff')
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, f"User with email '{email}' already exists.")
+            return redirect('/account/admin/dashboard/#staff')
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+        )
+
+        course = Course.objects.filter(id=course_id).first() if course_id else None
 
         Profile.objects.create(
             user=user,
             role=role,
+            phone=phone,
+            course=course,
             is_verified=True,
-            is_approved=False
+            is_approved=auto_approve,
+            onboarding_stage='finished',
         )
 
-        messages.success(request, "Staff created. Awaiting admin approval.")
-        return redirect('admin_dashboard')
+        role_display = "Teacher / Instructor" if role == 'instructor' else role.upper()
+        name_display = user.get_full_name() or user.username
+        messages.success(request, f"🎉 {role_display} '{name_display}' onboarded successfully and active in the system!")
+        return redirect('/account/admin/dashboard/#staff')
 
     return render(request, 'accounts/create_staff.html')
 
@@ -410,14 +446,58 @@ def create_staff(request):
 def approve_staff(request, user_id):
     if not request.user.is_superuser:
         messages.error(request, "Only admin can approve staff.")
-        return redirect('admin_dashboard')
+        return redirect('/account/admin/dashboard/#staff')
 
-    profile = Profile.objects.get(user__id=user_id)
+    profile = get_object_or_404(Profile, user__id=user_id)
     profile.is_approved = True
-    profile.save()
+    profile.save(update_fields=['is_approved'])
 
-    messages.success(request, "Staff approved.")
-    return redirect('admin_dashboard')
+    messages.success(request, f"Staff member '{profile.user.get_full_name() or profile.user.username}' has been approved.")
+    return redirect('/account/admin/dashboard/#staff')
+
+
+@login_required
+def admin_staff_toggle_status(request, user_id):
+    """Activates or deactivates an instructor/staff account."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('/account/admin/dashboard/#staff')
+
+    if request.method == "POST":
+        user = get_object_or_404(User, id=user_id)
+        if user == request.user:
+            messages.error(request, "You cannot deactivate your own account.")
+            return redirect('/account/admin/dashboard/#staff')
+
+        user.is_active = not user.is_active
+        user.save(update_fields=['is_active'])
+
+        state = "activated" if user.is_active else "deactivated"
+        messages.success(request, f"Teacher/Staff account '{user.get_full_name() or user.username}' has been {state}.")
+        return redirect('/account/admin/dashboard/#staff')
+
+    return redirect('/account/admin/dashboard/#staff')
+
+
+@login_required
+def admin_staff_delete(request, user_id):
+    """Removes an instructor/staff account."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('/account/admin/dashboard/#staff')
+
+    if request.method == "POST":
+        user = get_object_or_404(User, id=user_id)
+        if user == request.user:
+            messages.error(request, "You cannot delete your own account.")
+            return redirect('/account/admin/dashboard/#staff')
+
+        name = user.get_full_name() or user.username
+        user.delete()
+        messages.success(request, f"Teacher/Staff record for '{name}' was removed.")
+        return redirect('/account/admin/dashboard/#staff')
+
+    return redirect('/account/admin/dashboard/#staff')
 
 
 # ---------------------------------------------------------
@@ -594,7 +674,7 @@ def admin_dashboard(request):
     attendance_records = Attendance.objects.all().select_related('student', 'subject', 'batch').order_by('-date', '-check_in_time')[:60]
 
     # Staff / Instructors
-    staff_members = Profile.objects.filter(role__in=['instructor', 'hod', 'staff', 'support']).select_related('user').order_by('-user__date_joined')
+    staff_members = Profile.objects.filter(role__in=['instructor', 'hod', 'staff', 'support']).select_related('user', 'course').order_by('-user__date_joined')
 
     # Dropdown lookups for modals
     all_courses = Course.objects.all().order_by('name')

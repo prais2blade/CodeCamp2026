@@ -34,6 +34,8 @@ urlpatterns = [
     path('admin/attendance/mark/', views.admin_attendance_mark, name='admin_attendance_mark'),
     path('admin/staff/create/', views.create_staff, name='create_staff'),
     path('admin/staff/approve/<int:user_id>/', views.approve_staff, name='approve_staff'),
+    path('admin/staff/<int:user_id>/toggle/', views.admin_staff_toggle_status, name='admin_staff_toggle_status'),
+    path('admin/staff/<int:user_id>/delete/', views.admin_staff_delete, name='admin_staff_delete'),
 
     # Profile
     path('student/profile/', views.student_profile, name='student_profile'),

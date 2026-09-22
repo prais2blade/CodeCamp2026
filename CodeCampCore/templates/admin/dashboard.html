@@ -316,7 +316,7 @@
   <!-- ========================================================= -->
   <div class="admin-hero">
     <div class="row align-items-center">
-      <div class="col-lg-8">
+      <div class="col-lg-7">
         <div class="hero-tag">
           <i class="fas fa-shield-alt text-warning"></i> Master Administration Center
         </div>
@@ -324,7 +324,7 @@
           CodeCamp Operations & Academic Console
         </h1>
         <p class="text-white-50 mb-3" style="font-size: 1.05rem; max-width: 650px;">
-          Manage students, Innovation Hub cohorts, tuition billing, live kiosk attendance, and programmes directly without leaving this dashboard.
+          Manage students, teachers & faculty, Innovation Hub cohorts, tuition billing, live kiosk attendance, and programmes directly.
         </p>
         <div class="d-flex flex-wrap gap-2 align-items-center">
           <span class="badge badge-pill badge-light px-3 py-2 font-weight-bold mr-2">
@@ -338,9 +338,12 @@
           </span>
         </div>
       </div>
-      <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
-        <button class="btn btn-warning btn-lg font-weight-bold px-4 shadow-sm" data-toggle="modal" data-target="#enrollStudentModal">
-          <i class="fas fa-user-plus mr-2"></i> Enroll Student
+      <div class="col-lg-5 text-lg-right mt-3 mt-lg-0 d-flex flex-column flex-sm-row justify-content-lg-end">
+        <button class="btn btn-warning btn-lg font-weight-bold px-3 shadow-sm mr-sm-2 mb-2 mb-sm-0" data-toggle="modal" data-target="#enrollStudentModal">
+          <i class="fas fa-user-plus mr-1"></i> Enroll Student
+        </button>
+        <button class="btn btn-light btn-lg font-weight-bold px-3 shadow-sm" data-toggle="modal" data-target="#onboardTeacherModal">
+          <i class="fas fa-chalkboard-teacher text-primary mr-1"></i> Onboard Teacher
         </button>
       </div>
     </div>
@@ -471,13 +474,14 @@
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" id="overview-tab" data-toggle="pill" href="#overview" role="tab">
-        <i class="fas fa-chart-pie"></i> Analytics & Trends
+      <a class="nav-link" id="staff-tab" data-toggle="pill" href="#staff" role="tab">
+        <i class="fas fa-chalkboard-teacher"></i> Teachers & Faculty
+        <span class="badge-counter">{{ staff_members.count }}</span>
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" id="staff-tab" data-toggle="pill" href="#staff" role="tab">
-        <i class="fas fa-chalkboard-teacher"></i> Instructors & Staff
+      <a class="nav-link" id="overview-tab" data-toggle="pill" href="#overview" role="tab">
+        <i class="fas fa-chart-pie"></i> Analytics & Trends
       </a>
     </li>
   </ul>
@@ -1117,7 +1121,149 @@
     </div>
 
     <!-- ------------------------------------------------------- -->
-    <!-- TAB 6: 📊 ANALYTICS & TRENDS -->
+    <!-- TAB 6: 👨‍🏫 TEACHERS & FACULTY -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="staff" role="tabpanel">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-chalkboard-teacher text-indigo" style="color: #6366f1;"></i> Academic Faculty & Teachers Directory
+            </h3>
+            <p class="text-muted small mb-0">Onboard new instructors, assign curriculum subjects, and manage faculty credentials.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="search-input-wrap mr-2">
+              <i class="fas fa-search"></i>
+              <input type="text" id="teacherSearchInput" class="form-control" placeholder="Search teacher, email, subject...">
+            </div>
+            <button class="btn btn-cc-primary" data-toggle="modal" data-target="#onboardTeacherModal">
+              <i class="fas fa-user-plus mr-1"></i> Onboard Teacher / Faculty
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-modern" id="teachersTable">
+            <thead>
+              <tr>
+                <th>Teacher / Faculty Member</th>
+                <th>Role</th>
+                <th>Assigned Programme</th>
+                <th>Account Status</th>
+                <th>Approval</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for st in staff_members %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="mr-3 font-weight-bold text-white rounded-circle d-flex align-items-center justify-content-center"
+                         style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #ec4899);">
+                      {{ st.user.first_name|first|default:st.user.username|first|upper }}
+                    </div>
+                    <div>
+                      <div class="font-weight-bold text-dark">
+                        {{ st.user.get_full_name|default:st.user.username }}
+                      </div>
+                      <div class="small text-muted">
+                        <i class="far fa-envelope mr-1"></i>{{ st.user.email }}
+                        {% if st.phone %} • <i class="fas fa-phone mr-1"></i>{{ st.phone }}{% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  {% if st.role == 'instructor' %}
+                    <span class="badge badge-info font-weight-bold px-2 py-1"><i class="fas fa-chalkboard mr-1"></i> Teacher / Instructor</span>
+                  {% elif st.role == 'hod' %}
+                    <span class="badge badge-warning text-dark font-weight-bold px-2 py-1"><i class="fas fa-user-tie mr-1"></i> Head of Dept (HOD)</span>
+                  {% else %}
+                    <span class="badge badge-secondary font-weight-bold px-2 py-1 text-uppercase">{{ st.role }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if st.course %}
+                    <span class="badge badge-light border font-weight-bold text-dark px-2 py-1">
+                      <i class="fas fa-book text-primary mr-1"></i> {{ st.course.name }}
+                    </span>
+                  {% else %}
+                    <span class="badge badge-light text-muted">All Subjects / General</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if st.user.is_active %}
+                    <span class="badge badge-pill badge-success font-weight-bold px-2 py-1">
+                      <i class="fas fa-check-circle mr-1"></i> Active
+                    </span>
+                  {% else %}
+                    <span class="badge badge-pill badge-danger font-weight-bold px-2 py-1">
+                      <i class="fas fa-ban mr-1"></i> Deactivated
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if st.is_approved %}
+                    <span class="badge badge-pill badge-light border text-success font-weight-bold px-2 py-1">
+                      <i class="fas fa-shield-alt mr-1"></i> Approved
+                    </span>
+                  {% else %}
+                    <span class="badge badge-pill badge-warning text-dark font-weight-bold px-2 py-1">
+                      <i class="fas fa-clock mr-1"></i> Pending
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle font-weight-bold" data-toggle="dropdown">
+                      Manage
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                      {% if not st.is_approved %}
+                        <a href="{% url 'approve_staff' st.user.id %}" class="dropdown-item text-success font-weight-bold">
+                          <i class="fas fa-check mr-2"></i> Approve Faculty Member
+                        </a>
+                      {% endif %}
+                      <form action="{% url 'admin_staff_toggle_status' st.user.id %}" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">
+                          {% if st.user.is_active %}
+                            <i class="fas fa-user-slash mr-2 text-warning"></i> Deactivate Account
+                          {% else %}
+                            <i class="fas fa-user-check mr-2 text-success"></i> Reactivate Account
+                          {% endif %}
+                        </button>
+                      </form>
+                      <div class="dropdown-divider"></div>
+                      <form action="{% url 'admin_staff_delete' st.user.id %}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this faculty record?');">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item text-danger font-weight-bold">
+                          <i class="fas fa-trash-alt mr-2"></i> Remove Faculty Record
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  <i class="fas fa-chalkboard-teacher fa-3x mb-3 text-muted"></i>
+                  <h5>No faculty or teachers registered yet.</h5>
+                  <p>Click "Onboard Teacher / Faculty" above to add instructors for the 2026 intake.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
+    <!-- TAB 7: 📊 ANALYTICS & TRENDS -->
     <!-- ------------------------------------------------------- -->
     <div class="tab-pane fade" id="overview" role="tabpanel">
       <div class="row">
@@ -1152,74 +1298,6 @@
               <canvas id="taskPie" height="180"></canvas>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ------------------------------------------------------- -->
-    <!-- TAB 7: 👥 INSTRUCTORS & STAFF -->
-    <!-- ------------------------------------------------------- -->
-    <div class="tab-pane fade" id="staff" role="tabpanel">
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h3 class="section-title">
-              <i class="fas fa-chalkboard-teacher text-indigo" style="color: #6366f1;"></i> Academic Staff & Instructors
-            </h3>
-            <p class="text-muted small mb-0">Approve staff onboarding requests and manage instructor permissions.</p>
-          </div>
-          <div>
-            <a href="{% url 'create_staff' %}" class="btn btn-cc-primary">
-              <i class="fas fa-user-plus"></i> Add Staff / Instructor
-            </a>
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table table-modern">
-            <thead>
-              <tr>
-                <th>Name / User</th>
-                <th>Role</th>
-                <th>Email</th>
-                <th>Approval Status</th>
-                <th class="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for st in staff_members %}
-              <tr>
-                <td>
-                  <strong class="text-dark">{{ st.user.get_full_name|default:st.user.username }}</strong>
-                </td>
-                <td>
-                  <span class="badge badge-info font-weight-bold px-2 py-1 text-uppercase">{{ st.role }}</span>
-                </td>
-                <td>{{ st.user.email }}</td>
-                <td>
-                  {% if st.is_approved %}
-                    <span class="badge badge-pill badge-success font-weight-bold px-2 py-1">Approved</span>
-                  {% else %}
-                    <span class="badge badge-pill badge-warning text-dark font-weight-bold px-2 py-1">Pending Approval</span>
-                  {% endif %}
-                </td>
-                <td class="text-right">
-                  {% if not st.is_approved %}
-                    <a href="{% url 'approve_staff' st.user.id %}" class="btn btn-sm btn-success font-weight-bold">
-                      <i class="fas fa-check mr-1"></i> Approve Staff
-                    </a>
-                  {% else %}
-                    <span class="text-muted small font-weight-bold"><i class="fas fa-check-circle text-success"></i> Active</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="5" class="text-center py-4 text-muted">No instructors registered yet.</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
@@ -1300,7 +1378,85 @@
   </div>
 </div>
 
-<!-- 2. ADD COURSE MODAL -->
+<!-- 2. ONBOARD TEACHER / INSTRUCTOR MODAL -->
+<div class="modal fade" id="onboardTeacherModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #1e1b4b, #31104b);">
+        <h5 class="modal-title font-weight-bold text-white">
+          <i class="fas fa-chalkboard-teacher text-warning mr-2"></i> Onboard Teacher / Faculty Member
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'create_staff' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-light border mb-3">
+            <i class="fas fa-info-circle text-primary mr-1"></i>
+            Onboarded instructors receive access to the Instructor Hub to view class rosters, track student assignments, and monitor attendance.
+          </div>
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">First Name *</label>
+              <input type="text" name="first_name" class="form-control" placeholder="e.g. David" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Last Name *</label>
+              <input type="text" name="last_name" class="form-control" placeholder="e.g. Adeyemi" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Official Email Address *</label>
+              <input type="email" name="email" class="form-control" placeholder="instructor@codecamp.com.ng" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Username (Optional)</label>
+              <input type="text" name="username" class="form-control" placeholder="Leave empty to use email prefix">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Phone Number</label>
+              <input type="text" name="phone" class="form-control" placeholder="+234 800 000 0000">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Faculty Role *</label>
+              <select name="role" class="form-control font-weight-bold" required>
+                <option value="instructor" selected>Teacher / Course Instructor</option>
+                <option value="hod">Head of Department (HOD)</option>
+                <option value="support">Academic Support Staff</option>
+              </select>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Primary Programme / Track</label>
+              <select name="course_id" class="form-control">
+                <option value="">-- All Programmes / General --</option>
+                {% for c in all_courses %}
+                  <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Temporary Password</label>
+              <input type="text" name="password" class="form-control" value="CodeCamp2026!">
+            </div>
+          </div>
+          <div class="form-check mt-2">
+            <input type="checkbox" name="is_approved" class="form-check-input" id="autoApproveCheck" checked>
+            <label class="form-check-label font-weight-bold text-dark" for="autoApproveCheck">
+              Approve immediately & activate login access
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-cc-primary font-weight-bold px-4">
+            <i class="fas fa-check-circle mr-1"></i> Confirm & Onboard Faculty
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3. ADD COURSE MODAL -->
 <div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -1345,7 +1501,7 @@
   </div>
 </div>
 
-<!-- 3. CREATE BATCH / COHORT MODAL -->
+<!-- 4. CREATE BATCH / COHORT MODAL -->
 <div class="modal fade" id="createBatchModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -1423,7 +1579,7 @@
   </div>
 </div>
 
-<!-- 4. RECORD PAYMENT MODAL -->
+<!-- 5. RECORD PAYMENT MODAL -->
 <div class="modal fade" id="recordPaymentModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -1464,7 +1620,7 @@
   </div>
 </div>
 
-<!-- 5. MANUAL ATTENDANCE MODAL -->
+<!-- 6. MANUAL ATTENDANCE MODAL -->
 <div class="modal fade" id="manualAttendanceModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -1529,43 +1685,89 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  // 1. URL Hash routing for tabs
-  var hash = window.location.hash;
-  if (hash) {
-    var triggerEl = document.querySelector('#adminTabs a[href="' + hash + '"]');
-    if (triggerEl) {
-      $(triggerEl).tab('show');
+$(document).ready(function() {
+  // 1. Function to cleanly activate a tab by its hash identifier
+  function activateDashboardTab(hash) {
+    if (!hash) return;
+    if (hash.indexOf('#') !== 0) hash = '#' + hash;
+    var tabLink = $('#adminTabs a[href="' + hash + '"]');
+    if (tabLink.length) {
+      tabLink.tab('show');
+      // Sync sidebar active highlight
+      $('.main-sidebar .nav-link').removeClass('active');
+      $('.main-sidebar .nav-link[href*="' + hash + '"]').addClass('active');
     }
   }
 
-  // Update hash on tab click
+  // Activate on page load if hash exists
+  if (window.location.hash) {
+    activateDashboardTab(window.location.hash);
+  }
+
+  // React to browser back/forward or hash changes
+  $(window).on('hashchange', function() {
+    activateDashboardTab(window.location.hash);
+  });
+
+  // Keep sidebar highlighted and URL updated when user clicks tabs directly
   $('#adminTabs a').on('shown.bs.tab', function (e) {
+    var targetHash = e.target.hash;
     if (history.pushState) {
-      history.pushState(null, null, e.target.hash);
+      history.pushState(null, null, targetHash);
     } else {
-      window.location.hash = e.target.hash;
+      window.location.hash = targetHash;
+    }
+    $('.main-sidebar .nav-link').removeClass('active');
+    $('.main-sidebar .nav-link[href*="' + targetHash + '"]').addClass('active');
+  });
+
+  // 2. Intercept ANY sidebar clicks pointing to dashboard tabs
+  $(document).on('click', '.main-sidebar a[href*="#"]', function(e) {
+    var href = $(this).attr('href');
+    var hashIndex = href.indexOf('#');
+    if (hashIndex !== -1) {
+      var targetHash = href.substring(hashIndex);
+      var tabLink = $('#adminTabs a[href="' + targetHash + '"]');
+      if (tabLink.length) {
+        e.preventDefault();
+        activateDashboardTab(targetHash);
+        if (history.pushState) {
+          history.pushState(null, null, targetHash);
+        } else {
+          window.location.hash = targetHash;
+        }
+        $('html, body').animate({ scrollTop: $('#adminTabs').offset().top - 20 }, 250);
+      }
     }
   });
 
-  // 2. Client-side Real-time Search for Students
-  var searchInput = document.getElementById('studentSearchInput');
-  if (searchInput) {
-    searchInput.addEventListener('input', function() {
+  // 3. Client-side Real-time Search for Students
+  var studentSearch = document.getElementById('studentSearchInput');
+  if (studentSearch) {
+    studentSearch.addEventListener('input', function() {
       var query = this.value.toLowerCase().trim();
       var rows = document.querySelectorAll('#studentsTable tbody tr');
       rows.forEach(function(row) {
         var text = row.innerText.toLowerCase();
-        if (text.indexOf(query) > -1) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
+        row.style.display = (text.indexOf(query) > -1) ? '' : 'none';
       });
     });
   }
 
-  // 3. Render Modern Charts
+  // 4. Client-side Real-time Search for Teachers / Faculty
+  var teacherSearch = document.getElementById('teacherSearchInput');
+  if (teacherSearch) {
+    teacherSearch.addEventListener('input', function() {
+      var query = this.value.toLowerCase().trim();
+      var rows = document.querySelectorAll('#teachersTable tbody tr');
+      rows.forEach(function(row) {
+        var text = row.innerText.toLowerCase();
+        row.style.display = (text.indexOf(query) > -1) ? '' : 'none';
+      });
+    });
+  }
+
+  // 5. Render Modern Charts
   var userCtx = document.getElementById('userChart');
   if (userCtx) {
     new Chart(userCtx, {

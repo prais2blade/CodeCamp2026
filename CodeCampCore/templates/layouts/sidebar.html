@@ -2,55 +2,79 @@
 
     <!-- ADMIN SIDEBAR -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="{% url 'admin_dashboard' %}" class="brand-link">
-            <span class="brand-text font-weight-bold ml-2">CodeCamp Admin</span>
+        <a href="{% url 'admin_dashboard' %}" class="brand-link d-flex align-items-center">
+            <span class="brand-image img-circle elevation-2 text-warning d-flex align-items-center justify-content-center"
+                  style="width: 33px; height: 33px; background: rgba(255,255,255,0.15); font-size: 1.1rem;">
+                <i class="fas fa-terminal"></i>
+            </span>
+            <span class="brand-text font-weight-bold ml-2">CodeCamp Core</span>
         </a>
 
         <div class="sidebar">
-            <nav>
-                <ul class="nav nav-pills nav-sidebar flex-column">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
                     <li class="nav-header text-uppercase font-weight-bold text-muted small">Hub Command Center</li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#overview" class="nav-link">
+                        <a href="{% url 'admin_dashboard' %}#overview" class="nav-link sidebar-tab-link" data-tab-target="#overview">
                             <i class="nav-icon fas fa-chart-line text-warning"></i>
                             <p>Overview & Trends</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#students" class="nav-link">
+                        <a href="{% url 'admin_dashboard' %}#students" class="nav-link sidebar-tab-link" data-tab-target="#students">
                             <i class="nav-icon fas fa-user-graduate text-primary"></i>
                             <p>Students Directory</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#courses" class="nav-link">
+                        <a href="{% url 'admin_dashboard' %}#courses" class="nav-link sidebar-tab-link" data-tab-target="#courses">
                             <i class="nav-icon fas fa-book-open text-info"></i>
                             <p>Programmes & Courses</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#cohorts" class="nav-link">
+                        <a href="{% url 'admin_dashboard' %}#cohorts" class="nav-link sidebar-tab-link" data-tab-target="#cohorts">
                             <i class="nav-icon fas fa-calendar-alt text-success"></i>
                             <p>Cohorts & Batches</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#billing" class="nav-link">
+                        <a href="{% url 'admin_dashboard' %}#billing" class="nav-link sidebar-tab-link" data-tab-target="#billing">
                             <i class="nav-icon fas fa-file-invoice-dollar text-success"></i>
                             <p>Tuition & Billing</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#attendance" class="nav-link">
+                        <a href="{% url 'admin_dashboard' %}#attendance" class="nav-link sidebar-tab-link" data-tab-target="#attendance">
                             <i class="nav-icon fas fa-fingerprint text-cyan"></i>
                             <p>Live Kiosk Scans</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#staff" class="nav-link">
+                        <a href="{% url 'admin_dashboard' %}#staff" class="nav-link sidebar-tab-link" data-tab-target="#staff">
                             <i class="nav-icon fas fa-chalkboard-teacher text-indigo"></i>
-                            <p>Instructors & Staff</p>
+                            <p>Teachers & Faculty</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-3">Academic Management</li>
+                    <li class="nav-item">
+                        <a href="{% url 'manage_courses' %}" class="nav-link">
+                            <i class="nav-icon fas fa-book text-warning"></i>
+                            <p>Curriculum Subjects</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'manage_batches' %}" class="nav-link">
+                            <i class="nav-icon fas fa-calendar-week text-primary"></i>
+                            <p>Batch Timetables</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'revenue_dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-chart-pie text-success"></i>
+                            <p>Revenue Analytics</p>
                         </a>
                     </li>
 
@@ -59,6 +83,12 @@
                         <a href="{% url 'tenants:dashboard' %}" class="nav-link">
                             <i class="nav-icon fas fa-university text-primary"></i>
                             <p>Campus Console</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'tenants:attendance_live' %}" class="nav-link">
+                            <i class="nav-icon fas fa-stream text-success"></i>
+                            <p>Campus Attendance</p>
                         </a>
                     </li>
                     <li class="nav-item">
