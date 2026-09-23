@@ -46,6 +46,17 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{% url 'manage_payments' %}" class="nav-link">
+                            <i class="nav-icon fas fa-clipboard-check text-warning"></i>
+                            <p>
+                                Payment Approvals
+                                {% if pending_approvals_count %}
+                                    <span class="badge badge-warning right font-weight-bold text-dark">{{ pending_approvals_count }}</span>
+                                {% endif %}
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{% url 'admin_dashboard' %}#attendance" class="nav-link sidebar-tab-link" data-tab-target="#attendance">
                             <i class="nav-icon fas fa-fingerprint text-cyan"></i>
                             <p>Live Kiosk Scans</p>
@@ -152,6 +163,12 @@
                         <a href="{% url 'manage_courses' %}" class="nav-link">
                             <i class="nav-icon fas fa-book"></i>
                             <p>Courses</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'manage_payments' %}" class="nav-link">
+                            <i class="nav-icon fas fa-clipboard-check text-warning"></i>
+                            <p>Payment Approvals</p>
                         </a>
                     </li>
 

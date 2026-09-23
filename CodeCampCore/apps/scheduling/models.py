@@ -19,9 +19,12 @@ class Batch(models.Model):
         ('afternoon', 'Afternoon'),
     ]
     DAYS_CHOICES = [
-        ('mon_wed_fri', 'Mon/Wed/Fri'),
-        ('tue_thu_sat', 'Tue/Thu/Sat'),
-        ('fri_sat', 'Fri/Sat (Weekends)'),
+        ('mon_wed_fri', 'Mon / Wed / Fri'),
+        ('tue_thu_fri', 'Tue / Thu / Fri'),
+        ('tue_thu_sat', 'Tue / Thu / Sat'),
+        ('weekend', 'Weekend (Fri & Sat)'),
+        ('fri_sat', 'Fri (4-6pm) & Sat (9am-3pm)'),
+        ('saturday_only', 'Saturday Only'),
     ]
 
     name = models.CharField(max_length=100)
@@ -57,10 +60,18 @@ class Batch(models.Model):
     is_published = models.BooleanField(default=False)
     is_full = models.BooleanField(default=False)  # persistent flag for filled batches
 
+    @property
+    def schedule_display(self):
+        """Clean human-readable schedule description without repeating the course name."""
+        days = self.get_days_pattern_display() or self.days_pattern
+        time_slot = self.get_session_period_display() or self.session_period
+        mode = self.get_mode_display() or self.mode
+        return f"{days} • {time_slot.title()} ({mode.title()})"
+
     def __str__(self):
         status = "✅" if self.is_published else "❌"
         full_flag = " (Full)" if self.is_full else ""
-        return f"{self.course.name} / {self.mode} / {self.batch_type} / {self.session_period}{full_flag} {status}"
+        return f"{self.course.name} / {self.schedule_display}{full_flag} {status}"
 
     @property
     def current_students(self):

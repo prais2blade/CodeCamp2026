@@ -469,6 +469,14 @@
       </a>
     </li>
     <li class="nav-item">
+      <a class="nav-link" id="approvals-tab" data-toggle="pill" href="#approvals" role="tab">
+        <i class="fas fa-clipboard-check text-warning"></i> Payment Approvals
+        {% if pending_approvals_count %}
+          <span class="badge-counter text-dark" style="background: #fde047;">{{ pending_approvals_count }}</span>
+        {% endif %}
+      </a>
+    </li>
+    <li class="nav-item">
       <a class="nav-link" id="attendance-tab" data-toggle="pill" href="#attendance" role="tab">
         <i class="fas fa-stream"></i> Live Kiosk Attendance
       </a>
@@ -533,7 +541,10 @@
               <div class="text-muted small">Update start date, assign courses, or recalculate billing in bulk.</div>
             </div>
           </div>
-          <div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-warning font-weight-bold shadow-sm mr-2 text-dark" data-toggle="modal" data-target="#studentBulkDiscountModal">
+              <i class="fas fa-tags mr-1"></i> 🏷️ Apply Discount / Custom Fee
+            </button>
             <button type="button" class="btn btn-primary font-weight-bold shadow-sm" data-toggle="modal" data-target="#bulkUpdateModal">
               <i class="fas fa-calendar-alt mr-1"></i> 📅 Update Start Date & Billing
             </button>
@@ -1089,6 +1100,99 @@
     </div>
 
     <!-- ------------------------------------------------------- -->
+    <!-- TAB: 📋 PAYMENT APPROVALS & FINANCIAL CLEARING -->
+    <!-- ------------------------------------------------------- -->
+    <div class="tab-pane fade" id="approvals" role="tabpanel">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">
+              <i class="fas fa-clipboard-check text-warning"></i> Payment Approvals Queue
+            </h3>
+            <p class="text-muted small mb-0">Review reported student payments, adjust actual payments or discounts, and approve to issue official receipts.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button class="btn btn-warning font-weight-bold shadow-sm mr-2 text-dark" data-toggle="modal" data-target="#cohortDiscountModal">
+              <i class="fas fa-tags mr-1"></i> Apply Cohort Discount
+            </button>
+            <a href="{% url 'manage_payments' %}" class="btn btn-cc-primary font-weight-bold">
+              <i class="fas fa-external-link-alt mr-1"></i> Full Approvals Console
+            </a>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-modern">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Course & Schedule</th>
+                <th>Standard Fee</th>
+                <th>Discount</th>
+                <th>Expected Net Due</th>
+                <th>Reported / Paid</th>
+                <th>Agreed Balance</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in pending_approvals %}
+              <tr>
+                <td>
+                  <div class="font-weight-bold text-dark">{{ p.student.get_full_name|default:p.student.username }}</div>
+                  <div class="small text-muted">{{ p.student.email }}</div>
+                </td>
+                <td>
+                  <div class="font-weight-bold text-dark">{{ p.course.name|default:"General Track" }}</div>
+                  <div class="small text-muted font-weight-bold">
+                    {% if p.batch %}🗓️ {{ p.batch.schedule_display }}{% else %}<span class="badge badge-secondary">No cohort</span>{% endif %}
+                  </div>
+                </td>
+                <td class="font-weight-bold text-muted">₦{{ p.amount_due|floatformat:0 }}</td>
+                <td>
+                  {% if p.discount > 0 %}
+                    <span class="badge badge-success px-2 py-1">-₦{{ p.discount|floatformat:0 }}</span>
+                  {% else %}
+                    <span class="text-muted small">None</span>
+                  {% endif %}
+                </td>
+                <td class="font-weight-bold text-dark">₦{{ p.net_amount_due|floatformat:0 }}</td>
+                <td class="font-weight-bold text-success">₦{{ p.amount_paid|floatformat:0 }}</td>
+                <td>
+                  {% if p.remaining_balance > 0 %}
+                    <span class="font-weight-bold text-danger">₦{{ p.remaining_balance|floatformat:0 }}</span>
+                  {% else %}
+                    <span class="badge badge-success">Paid</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold shadow-2xs">
+                    <i class="fas fa-clock mr-1"></i> Pending
+                  </span>
+                </td>
+                <td class="text-right">
+                  <a href="{% url 'manage_payments' %}?q={{ p.student.username }}" class="btn btn-sm btn-primary font-weight-bold shadow-2xs">
+                    <i class="fas fa-check mr-1"></i> Review & Approve
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="9" class="text-center py-5 text-muted">
+                  <i class="fas fa-check-circle fa-3x text-success mb-2" style="opacity: 0.5;"></i>
+                  <div class="font-weight-bold">No payments currently pending approval.</div>
+                  <small>All reported student payments have been reviewed and approved.</small>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- -->
     <!-- TAB 5: ⏱️ LIVE KIOSK ATTENDANCE -->
     <!-- ------------------------------------------------------- -->
     <div class="tab-pane fade" id="attendance" role="tabpanel">
@@ -1391,7 +1495,7 @@
             </div>
             <div class="col-md-6 form-group">
               <label class="font-weight-bold">Programme / Course *</label>
-              <select name="course_id" class="form-control" required>
+              <select name="course_id" id="enrollCourseSelect" class="form-control font-weight-bold" required>
                 <option value="">-- Select Innovation Hub Course --</option>
                 {% for c in all_courses %}
                   <option value="{{ c.id }}">{{ c.name }} (₦{{ c.fee|floatformat:0 }})</option>
@@ -1399,13 +1503,16 @@
               </select>
             </div>
             <div class="col-md-6 form-group">
-              <label class="font-weight-bold">Assign Cohort / Batch</label>
-              <select name="batch_id" class="form-control">
-                <option value="">-- Choose Batch --</option>
+              <label class="font-weight-bold">Delivery Schedule / Batch</label>
+              <select name="batch_id" id="enrollBatchSelect" class="form-control font-weight-bold">
+                <option value="" data-course="">-- Select Course First --</option>
                 {% for b in all_batches %}
-                  <option value="{{ b.id }}">{{ b.course.name }} | {{ b.name }} ({{ b.get_mode_display }})</option>
+                  <option value="{{ b.id }}" data-course="{{ b.course.id }}" style="display: none;">
+                    🗓️ {{ b.schedule_display }}
+                  </option>
                 {% endfor %}
               </select>
+              <small class="form-text text-muted">Automatically filtered by the selected programme.</small>
             </div>
           </div>
         </div>
@@ -1804,6 +1911,127 @@
   </div>
 </div>
 
+<!-- ========================================================= -->
+<!-- 🏷️ MODAL: APPLY DISCOUNT TO MULTI-SELECTED STUDENTS -->
+<!-- ========================================================= -->
+<div class="modal fade" id="studentBulkDiscountModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title font-weight-bold">
+          <i class="fas fa-tags text-warning mr-2"></i> Apply Discount / Custom Fee to Selected Students
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'bulk_apply_discount' %}" method="POST" id="studentBulkDiscountForm">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="students">
+        <div id="studentBulkDiscountIdsContainer"></div>
+
+        <div class="modal-body p-4">
+          <div class="alert alert-info border-0 rounded-lg p-3 mb-4">
+            <i class="fas fa-users-cog mr-1"></i>
+            Applying pricing updates to <strong id="modalSelectedDiscountStudentCount">0</strong> selected student(s).
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">Pricing Rule *</label>
+              <select name="discount_type" class="form-control font-weight-bold">
+                <option value="agreed_fee">🎯 Set Final Agreed Tuition Price (e.g. ₦30,000)</option>
+                <option value="discount_amount">🏷️ Flat Discount off Standard Fee (e.g. ₦5,000)</option>
+              </select>
+              <small class="form-text text-muted">Choose "Set Final Agreed Tuition" if these students were promised a specific rate.</small>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">Amount (₦) *</label>
+              <input type="number" step="0.01" name="amount" class="form-control font-weight-bold form-control-lg" placeholder="e.g. 30000" required>
+              <small class="form-text text-muted">The agreed total fee or flat discount value.</small>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="font-weight-bold text-dark">Reason / Concession Note</label>
+            <input type="text" name="reason" class="form-control" placeholder="e.g. Early-bird discount, sibling concession, negotiated pricing">
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light px-4 py-3">
+          <button type="button" class="btn btn-secondary font-weight-bold px-4" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning font-weight-bold px-4 shadow-sm text-dark">
+            <i class="fas fa-check-circle mr-1"></i> Apply Pricing & Recalculate Balances
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- 🏷️ MODAL: APPLY DISCOUNT BY COHORT / BATCH -->
+<!-- ========================================================= -->
+<div class="modal fade" id="cohortDiscountModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title font-weight-bold">
+          <i class="fas fa-tags text-warning mr-2"></i> Apply Discount / Custom Fee to Entire Cohort
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'bulk_apply_discount' %}" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="cohort">
+
+        <div class="modal-body p-4">
+          <div class="alert alert-info border-0 rounded-lg p-3 mb-4">
+            <i class="fas fa-info-circle text-primary mr-1"></i>
+            This updates the expected tuition and recalculated balance for <strong>all enrolled students</strong> in the chosen cohort in 1 click.
+          </div>
+
+          <div class="form-group">
+            <label class="font-weight-bold text-dark">Select Target Cohort / Schedule *</label>
+            <select name="batch_id" class="form-control form-control-lg font-weight-bold" required>
+              <option value="">-- Choose Cohort / Schedule --</option>
+              {% for b in all_batches %}
+                <option value="{{ b.id }}">
+                  {{ b.course.name }} | {{ b.schedule_display }} ({{ b.current_students }} enrolled)
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">Pricing Rule *</label>
+              <select name="discount_type" class="form-control font-weight-bold">
+                <option value="agreed_fee">🎯 Set Final Agreed Tuition Price (e.g. ₦30,000)</option>
+                <option value="discount_amount">🏷️ Flat Discount Amount off Standard Fee (e.g. ₦5,000)</option>
+              </select>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">Amount (₦) *</label>
+              <input type="number" step="0.01" name="amount" class="form-control font-weight-bold form-control-lg" placeholder="e.g. 30000" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="font-weight-bold text-dark">Discount / Scholarship Reason</label>
+            <input type="text" name="reason" class="form-control" placeholder="e.g. Weekend Early-Bird Cohort Special">
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light px-4 py-3">
+          <button type="button" class="btn btn-secondary font-weight-bold px-4" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning font-weight-bold px-4 shadow-sm text-dark">
+            <i class="fas fa-check-double mr-1"></i> Apply Cohort Pricing & Sync Balances
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock content %}
 
 {% block extra_js %}
@@ -2003,11 +2231,14 @@ $(document).ready(function() {
     var badge = document.getElementById('selectedCountBadge');
     var selectAll = document.getElementById('selectAllStudentsCb');
     var modalCount = document.getElementById('modalSelectedCount');
+    var modalDiscountCount = document.getElementById('modalSelectedDiscountStudentCount');
     var modalPreview = document.getElementById('modalSelectedNamesPreview');
     var container = document.getElementById('bulkStudentIdsContainer');
+    var discountContainer = document.getElementById('studentBulkDiscountIdsContainer');
 
     if (badge) badge.innerText = count;
     if (modalCount) modalCount.innerText = count;
+    if (modalDiscountCount) modalDiscountCount.innerText = count;
 
     if (count > 0) {
       if (bulkBar) {
@@ -2021,6 +2252,7 @@ $(document).ready(function() {
         hiddenHtml += '<input type="hidden" name="student_ids" value="' + cb.value + '">';
       });
       if (container) container.innerHTML = hiddenHtml;
+      if (discountContainer) discountContainer.innerHTML = hiddenHtml;
       if (modalPreview) {
         if (names.length <= 4) {
           modalPreview.innerText = names.join(', ');
@@ -2034,6 +2266,7 @@ $(document).ready(function() {
         bulkBar.classList.remove('d-flex');
       }
       if (container) container.innerHTML = '';
+      if (discountContainer) discountContainer.innerHTML = '';
       if (modalPreview) modalPreview.innerText = 'No students selected yet.';
     }
 
@@ -2069,6 +2302,29 @@ $(document).ready(function() {
     var today = new Date().toISOString().split('T')[0];
     bulkDateInput.value = today;
   }
+
+  // 7. Cascading Course & Schedule Selection in Enrollment Modal
+  $('#enrollCourseSelect').on('change', function() {
+    var selectedCourseId = $(this).val();
+    var batchSelect = $('#enrollBatchSelect');
+    var visibleCount = 0;
+
+    batchSelect.find('option').each(function() {
+      var opt = $(this);
+      var optCourseId = opt.attr('data-course');
+      if (!optCourseId) {
+        // Default placeholder option
+        opt.show();
+      } else if (!selectedCourseId || optCourseId === selectedCourseId) {
+        opt.show();
+        visibleCount++;
+      } else {
+        opt.hide();
+      }
+    });
+
+    batchSelect.val('');
+  });
 });
 </script>
 {% endblock extra_js %}

@@ -18,13 +18,23 @@
     <p>Receipt Ref: <strong>{{ receipt.reference }}</strong></p>
   </div>
   <div class="details">
-    <p><strong>Student:</strong> {{ payment.student.username }}</p>
-    <p><strong>Course:</strong> {{ payment.course.name }}</p>
-    <p><strong>Batch:</strong> {{ payment.batch.name }}</p>
-    <p><strong>Amount Paid:</strong> ₦{{ receipt.amount }}</p>
-    <p><strong>Total Paid (to date):</strong> ₦{{ payment.amount_paid }}</p>
-    <p><strong>Outstanding Balance:</strong> ₦{{ payment.remaining_balance }}</p>
-    <p><strong>Issued Date:</strong> {{ receipt.issued_date|date:"M d, Y" }}</p>
+    <p><strong>Student:</strong> {{ payment.student.get_full_name|default:payment.student.username }} ({{ payment.student.email }})</p>
+    <p><strong>Course:</strong> {{ payment.course.name|default:"Innovation Hub Programme" }}</p>
+    {% if payment.batch %}
+      <p><strong>Schedule:</strong> {{ payment.batch.schedule_display }}</p>
+    {% endif %}
+    <p><strong>Standard Course Fee:</strong> ₦{{ payment.amount_due|floatformat:2 }}</p>
+    {% if payment.discount > 0 %}
+      <p><strong>Tuition Discount / Concession:</strong> -₦{{ payment.discount|floatformat:2 }}{% if payment.discount_reason %} ({{ payment.discount_reason }}){% endif %}</p>
+      <p><strong>Agreed Net Tuition:</strong> ₦{{ payment.net_amount_due|floatformat:2 }}</p>
+    {% endif %}
+    <p><strong>Amount Paid on Receipt:</strong> ₦{{ receipt.amount|floatformat:2 }}</p>
+    <p><strong>Total Paid to Date:</strong> ₦{{ payment.amount_paid|floatformat:2 }}</p>
+    <p><strong>True Outstanding Balance:</strong> ₦{{ payment.remaining_balance|floatformat:2 }}</p>
+    <p><strong>Issued Date:</strong> {{ receipt.issued_date|date:"M d, Y H:i" }}</p>
+    {% if payment.verified_by %}
+      <p><strong>Verified & Approved by:</strong> {{ payment.verified_by.get_full_name|default:payment.verified_by.username }}</p>
+    {% endif %}
   </div>
   <div class="footer">
     <p>Thank you for your payment. This receipt is system-generated.</p>

@@ -829,6 +829,10 @@ def admin_dashboard(request):
     if attendance_today == 0:
         alerts.append("No student attendance logged yet today")
 
+    # Approvals
+    pending_approvals_count = Payment.objects.filter(is_approved=False).count()
+    pending_approvals = Payment.objects.filter(is_approved=False).select_related('student', 'course', 'batch').order_by('-payment_date')[:25]
+
     context = {
         # KPIs
         "total_users": total_users,
@@ -856,6 +860,8 @@ def admin_dashboard(request):
         "recent_receipts": recent_receipts,
         "attendance_records": attendance_records,
         "staff_members": staff_members,
+        "pending_approvals_count": pending_approvals_count,
+        "pending_approvals": pending_approvals,
 
         # Modals Lookups
         "all_courses": all_courses,

@@ -9,8 +9,9 @@ class PaymentAdmin(admin.ModelAdmin):
         'course',
         'batch',
         'amount_due',
+        'discount',
         'amount_paid',
-        'monthly_payment',
+        'is_approved',
         'status',
         'billing_start_date',
         'next_due_date',
@@ -19,6 +20,7 @@ class PaymentAdmin(admin.ModelAdmin):
     list_filter = (
         ('course', admin.RelatedOnlyFieldListFilter),
         ('batch', admin.RelatedOnlyFieldListFilter),
+        'is_approved',
         'status',
         'billing_start_date',
         'next_due_date',
