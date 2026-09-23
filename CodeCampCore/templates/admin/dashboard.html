@@ -504,6 +504,14 @@
             <p class="text-muted small mb-0">Search, reassign cohorts, monitor tuition payments, and update student accounts.</p>
           </div>
           <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="mr-2">
+              <select id="studentCourseFilter" class="form-control shadow-sm font-weight-bold" style="height: 40px; border-radius: 0.65rem; border: 1px solid #cbd5e1; min-width: 220px; font-size: 0.88rem; color: #1e293b;">
+                <option value="">🎯 All Programmes / Courses</option>
+                {% for c in all_courses %}
+                  <option value="{{ c.name|lower }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
             <div class="search-input-wrap mr-2">
               <i class="fas fa-search"></i>
               <input type="text" id="studentSearchInput" class="form-control" placeholder="Search student name, email, cohort...">
@@ -528,7 +536,7 @@
             </thead>
             <tbody>
               {% for s in students %}
-              <tr>
+              <tr data-course="{{ s.course.name|lower|default:'' }}">
                 <td>
                   <div class="d-flex align-items-center">
                     <div class="mr-3 font-weight-bold text-white rounded-circle d-flex align-items-center justify-content-center"
@@ -1741,17 +1749,30 @@ $(document).ready(function() {
     }
   });
 
-  // 3. Client-side Real-time Search for Students
+  // 3. Client-side Real-time Search & Course Filtering for Students
+  function filterStudentsList() {
+    var searchInput = document.getElementById('studentSearchInput');
+    var courseSelect = document.getElementById('studentCourseFilter');
+    var query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+    var courseFilter = (courseSelect ? courseSelect.value : '').toLowerCase().trim();
+    var rows = document.querySelectorAll('#studentsTable tbody tr');
+    
+    rows.forEach(function(row) {
+      var text = row.innerText.toLowerCase();
+      var rowCourse = (row.getAttribute('data-course') || '').toLowerCase();
+      var matchesQuery = !query || text.indexOf(query) > -1;
+      var matchesCourse = !courseFilter || rowCourse.indexOf(courseFilter) > -1;
+      row.style.display = (matchesQuery && matchesCourse) ? '' : 'none';
+    });
+  }
+
   var studentSearch = document.getElementById('studentSearchInput');
   if (studentSearch) {
-    studentSearch.addEventListener('input', function() {
-      var query = this.value.toLowerCase().trim();
-      var rows = document.querySelectorAll('#studentsTable tbody tr');
-      rows.forEach(function(row) {
-        var text = row.innerText.toLowerCase();
-        row.style.display = (text.indexOf(query) > -1) ? '' : 'none';
-      });
-    });
+    studentSearch.addEventListener('input', filterStudentsList);
+  }
+  var studentCourseSelect = document.getElementById('studentCourseFilter');
+  if (studentCourseSelect) {
+    studentCourseSelect.addEventListener('change', filterStudentsList);
   }
 
   // 4. Client-side Real-time Search for Teachers / Faculty
