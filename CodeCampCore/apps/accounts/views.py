@@ -993,6 +993,90 @@ def admin_student_update_batch(request, profile_id):
 
 
 @login_required
+def admin_bulk_update_students(request):
+    """Bulk update start date, assign course, align batch, and recalculate billing for selected students."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        student_ids = request.POST.getlist('student_ids')
+        start_date_str = request.POST.get('start_date', '').strip()
+        reassign_course_id = request.POST.get('reassign_course_id')
+        align_batch = request.POST.get('align_batch') == 'on'
+        update_due_date = request.POST.get('update_due_date') == 'on'
+
+        if not student_ids:
+            messages.warning(request, "No students were selected.")
+            return redirect('/account/admin/dashboard/#students')
+
+        new_start_date = None
+        if start_date_str:
+            try:
+                import datetime
+                new_start_date = datetime.date.fromisoformat(start_date_str)
+            except Exception:
+                messages.error(request, "Invalid start date format.")
+                return redirect('/account/admin/dashboard/#students')
+
+        new_course = None
+        if reassign_course_id:
+            new_course = Course.objects.filter(id=reassign_course_id).first()
+
+        profiles = Profile.objects.filter(id__in=student_ids).select_related('user', 'course', 'batch')
+        count = 0
+
+        for profile in profiles:
+            if new_start_date:
+                profile.start_date = new_start_date
+
+            if new_course:
+                profile.course = new_course
+
+            if align_batch and profile.course:
+                matching_batch = Batch.objects.filter(course=profile.course, start_date=new_start_date).first() if new_start_date else None
+                if not matching_batch:
+                    matching_batch = Batch.objects.filter(course=profile.course, is_published=True).order_by('start_date').first()
+                if matching_batch:
+                    profile.batch = matching_batch
+
+            profile.save()
+
+            if new_start_date:
+                payment = Payment.objects.filter(student=profile.user, course=profile.course).first()
+                if not payment:
+                    payment = Payment.objects.filter(student=profile.user).first()
+                if not payment:
+                    amount_due = profile.course.fee if (profile.course and profile.course.fee and profile.course.fee > 0) else Decimal('35000.00')
+                    payment = Payment.objects.create(
+                        student=profile.user,
+                        course=profile.course,
+                        batch=profile.batch,
+                        amount_due=amount_due,
+                        amount_paid=profile.paid_amount or Decimal('0.00'),
+                        monthly_payment=Decimal('35000.00'),
+                        status='paid' if profile.has_paid else 'pending'
+                    )
+
+                payment.billing_start_date = new_start_date
+                if update_due_date:
+                    import datetime
+                    payment.next_due_date = new_start_date + datetime.timedelta(days=30)
+                if profile.batch:
+                    payment.batch = profile.batch
+                payment.save()
+
+            count += 1
+
+        date_msg = f" with start date {new_start_date}" if new_start_date else ""
+        course_msg = f" and moved to {new_course.name}" if new_course else ""
+        messages.success(request, f"🎉 Successfully updated {count} student(s){date_msg}{course_msg} and aligned their billing schedule!")
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+
+
+@login_required
 def admin_student_toggle_status(request, profile_id):
     """Toggles active/inactive status for a student account."""
     if not request.user.is_superuser:

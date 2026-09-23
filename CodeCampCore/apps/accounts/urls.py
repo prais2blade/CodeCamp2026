@@ -25,6 +25,7 @@ urlpatterns = [
 
     # Admin Management Command Center Endpoints
     path('admin/students/create/', views.admin_student_create, name='admin_student_create'),
+    path('admin/students/bulk-update/', views.admin_bulk_update_students, name='admin_bulk_update_students'),
     path('admin/students/<int:profile_id>/batch/', views.admin_student_update_batch, name='admin_student_update_batch'),
     path('admin/students/<int:profile_id>/toggle-status/', views.admin_student_toggle_status, name='admin_student_toggle_status'),
     path('admin/courses/create/', views.admin_course_create, name='admin_course_create'),
