@@ -40,20 +40,38 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'admin_dashboard' %}#billing" class="nav-link sidebar-tab-link" data-tab-target="#billing">
-                            <i class="nav-icon fas fa-file-invoice-dollar text-success"></i>
-                            <p>Tuition & Billing</p>
+                        <a href="{% url 'accountant_dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-wallet text-success"></i>
+                            <p>Finance Command</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'debtors_ledger' %}" class="nav-link">
+                            <i class="nav-icon fas fa-users-cog text-warning"></i>
+                            <p>Tuition & Debtors</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{% url 'manage_payments' %}" class="nav-link">
-                            <i class="nav-icon fas fa-clipboard-check text-warning"></i>
+                            <i class="nav-icon fas fa-clipboard-check text-info"></i>
                             <p>
                                 Payment Approvals
                                 {% if pending_approvals_count %}
                                     <span class="badge badge-warning right font-weight-bold text-dark">{{ pending_approvals_count }}</span>
                                 {% endif %}
                             </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'accountant_receipts' %}" class="nav-link">
+                            <i class="nav-icon fas fa-receipt text-primary"></i>
+                            <p>Official Receipts</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'export_reconciliation_excel' %}" class="nav-link">
+                            <i class="nav-icon fas fa-file-excel text-success"></i>
+                            <p>Reconciliation Excel</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -126,11 +144,83 @@
         </div>
     </aside>
 
+{% elif request.user.profile.role == 'accountant' %}
+
+    <!-- ACCOUNTANT SIDEBAR -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="{% url 'accountant_dashboard' %}" class="brand-link d-flex align-items-center">
+            <span class="brand-image img-circle elevation-2 text-success d-flex align-items-center justify-content-center"
+                  style="width: 33px; height: 33px; background: rgba(16, 185, 129, 0.2); font-size: 1.1rem; color: #10b981;">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </span>
+            <span class="brand-text font-weight-bold ml-2">Finance & Audit</span>
+        </a>
+
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small">Financial Command</li>
+                    <li class="nav-item">
+                        <a href="{% url 'accountant_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'accountant_dashboard' %}active{% endif %}">
+                            <i class="nav-icon fas fa-chart-line text-success"></i>
+                            <p>Finance Dashboard</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'debtors_ledger' %}" class="nav-link {% if request.resolver_match.url_name == 'debtors_ledger' %}active{% endif %}">
+                            <i class="nav-icon fas fa-users-cog text-warning"></i>
+                            <p>Tuition & Debtors</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'manage_payments' %}" class="nav-link {% if request.resolver_match.url_name == 'manage_payments' %}active{% endif %}">
+                            <i class="nav-icon fas fa-clipboard-check text-info"></i>
+                            <p>
+                                Payment Approvals
+                                {% if pending_approvals_count %}
+                                    <span class="badge badge-warning right font-weight-bold text-dark">{{ pending_approvals_count }}</span>
+                                {% endif %}
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'accountant_receipts' %}" class="nav-link {% if request.resolver_match.url_name == 'accountant_receipts' %}active{% endif %}">
+                            <i class="nav-icon fas fa-receipt text-primary"></i>
+                            <p>Official Receipts</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-3">Reconciliation & Reports</li>
+                    <li class="nav-item">
+                        <a href="{% url 'export_reconciliation_excel' %}" class="nav-link">
+                            <i class="nav-icon fas fa-file-excel text-success"></i>
+                            <p>Reconciliation Excel</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'revenue_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'revenue_dashboard' %}active{% endif %}">
+                            <i class="nav-icon fas fa-chart-pie text-secondary"></i>
+                            <p>Revenue Analytics</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'export_revenue_csv' %}" class="nav-link">
+                            <i class="nav-icon fas fa-download text-muted"></i>
+                            <p>Export Revenue CSV</p>
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
 {% elif request.user.profile.role == 'hod' %}
 
     <!-- HOD SIDEBAR -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="#" class="brand-link">
+        <a href="{% url 'hod_dashboard' %}" class="brand-link">
             <span class="brand-text font-weight-light">HOD Panel</span>
         </a>
 
@@ -142,6 +232,32 @@
                         <a href="{% url 'hod_dashboard' %}" class="nav-link">
                             <i class="nav-icon fas fa-tachometer-alt"></i>
                             <p>Dashboard</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase font-weight-bold text-muted small mt-2">Finance & Tuition</li>
+                    <li class="nav-item">
+                        <a href="{% url 'accountant_dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-chart-line text-success"></i>
+                            <p>Finance Command</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'debtors_ledger' %}" class="nav-link">
+                            <i class="nav-icon fas fa-users-cog text-warning"></i>
+                            <p>Tuition & Debtors</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'manage_payments' %}" class="nav-link">
+                            <i class="nav-icon fas fa-clipboard-check text-warning"></i>
+                            <p>Payment Approvals</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'export_reconciliation_excel' %}" class="nav-link">
+                            <i class="nav-icon fas fa-file-excel text-success"></i>
+                            <p>Reconciliation Excel</p>
                         </a>
                     </li>
 
@@ -165,24 +281,17 @@
                             <p>Courses</p>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="{% url 'manage_payments' %}" class="nav-link">
-                            <i class="nav-icon fas fa-clipboard-check text-warning"></i>
-                            <p>Payment Approvals</p>
-                        </a>
-                    </li>
 
                 </ul>
             </nav>
         </div>
     </aside>
 
-
-{% elif request.user.profile.role == 'hod' %}
+{% elif request.user.profile.role == 'instructor' %}
 
     <!-- Instructors SIDEBAR -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="#" class="brand-link">
+        <a href="{% url 'instructor_dashboard' %}" class="brand-link">
             <span class="brand-text font-weight-light">Instructor Panel</span>
         </a>
 
@@ -208,7 +317,6 @@
             </nav>
         </div>
     </aside>
-
 
 {% else %}
 

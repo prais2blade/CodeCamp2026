@@ -1,0 +1,524 @@
+{% extends "layouts/admin_base.html" %}
+{% load static %}
+
+{% block title %}Finance & Accounting Command Center | CodeCamp Core{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+  }
+  .accountant-hero {
+    background: linear-gradient(135deg, #091e3a 0%, #1e3a8a 50%, #065f46 100%);
+    border-radius: 1.25rem;
+    padding: 2.25rem 2.5rem;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 12px 30px -10px rgba(15, 23, 42, 0.4);
+    margin-bottom: 2rem;
+  }
+  .accountant-hero::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .kpi-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.1rem;
+    padding: 1.4rem 1.6rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    height: 100%;
+  }
+  .kpi-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px -8px rgba(0, 0, 0, 0.09);
+  }
+  .kpi-amount {
+    font-size: 1.95rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .kpi-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+  }
+  .kpi-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+  .table-clean thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.95rem 1.2rem;
+    border-top: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .table-clean td {
+    padding: 1.05rem 1.2rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+  }
+  .status-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.35rem 0.65rem;
+    border-radius: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .status-paid { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  .status-partial { background: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+  .status-pending { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+  .btn-action-emerald {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+    border-radius: 0.65rem;
+    padding: 0.6rem 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+    transition: all 0.2s ease;
+  }
+  .btn-action-emerald:hover {
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(5, 150, 105, 0.4);
+  }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="content-header p-0 mb-3">
+  <div class="container-fluid">
+    <div class="accountant-hero">
+      <div class="row align-items-center">
+        <div class="col-lg-7">
+          <div class="d-inline-flex align-items-center bg-white bg-opacity-10 px-3 py-1 rounded-pill mb-2 border border-white border-opacity-20 text-emerald-300">
+            <i class="fas fa-shield-alt mr-2 text-warning"></i>
+            <span class="small font-weight-bold tracking-wide">FINANCIAL GOVERNANCE & RECONCILIATION</span>
+          </div>
+          <h1 class="h2 font-weight-bold mb-2">Accounting & Tuition Control</h1>
+          <p class="text-white-50 mb-0" style="font-size: 1.05rem;">
+            Real-time reconciliation, verified revenue inflows, student debtor tracking, and audit-ready reporting.
+          </p>
+        </div>
+        <div class="col-lg-5 text-lg-right mt-4 mt-lg-0">
+          <div class="d-flex flex-wrap justify-content-lg-end gap-2" style="gap: 0.6rem;">
+            <button type="button" class="btn btn-action-emerald" data-toggle="modal" data-target="#recordPaymentModal">
+              <i class="fas fa-plus-circle"></i> Record Payment
+            </button>
+            <a href="{% url 'debtors_ledger' %}" class="btn btn-light font-weight-bold shadow-sm" style="border-radius: 0.65rem; padding: 0.6rem 1.15rem;">
+              <i class="fas fa-users-cog text-primary mr-1"></i> Tuition Ledger
+            </a>
+            <a href="{% url 'export_reconciliation_excel' %}" class="btn btn-success font-weight-bold shadow-sm" style="border-radius: 0.65rem; padding: 0.6rem 1.15rem;">
+              <i class="fas fa-file-excel mr-1"></i> Export .XLSX
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- KPI STATS CARDS -->
+    <div class="row mb-4">
+
+      <!-- Total Collected -->
+      <div class="col-xl-3 col-md-6 mb-3">
+        <div class="kpi-stat-card border-left" style="border-left: 5px solid #10b981 !important;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-title">Total Collected (Cash Inflow)</div>
+              <div class="kpi-amount text-success">₦{{ total_collected|floatformat:2 }}</div>
+              <div class="small text-muted mt-2">
+                <i class="fas fa-calendar-day text-success mr-1"></i> Today: <strong>₦{{ today_collection|floatformat:2 }}</strong>
+                <span class="mx-1">•</span>
+                <span>This Mo: <strong>₦{{ this_month_collection|floatformat:2 }}</strong></span>
+              </div>
+            </div>
+            <div class="kpi-icon-box" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+              <i class="fas fa-cash-register"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outstanding Debtors -->
+      <div class="col-xl-3 col-md-6 mb-3">
+        <div class="kpi-stat-card border-left" style="border-left: 5px solid #ef4444 !important;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-title">Outstanding Tuition (Debtors)</div>
+              <div class="kpi-amount text-danger">₦{{ total_outstanding|floatformat:2 }}</div>
+              <div class="small text-muted mt-2">
+                <i class="fas fa-user-clock text-danger mr-1"></i> <strong>{{ debtors_count }}</strong> students with balance
+              </div>
+            </div>
+            <div class="kpi-icon-box" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+              <i class="fas fa-hand-holding-usd"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Invoiced Expected -->
+      <div class="col-xl-3 col-md-6 mb-3">
+        <div class="kpi-stat-card border-left" style="border-left: 5px solid #3b82f6 !important;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-title">Net Expected Tuition</div>
+              <div class="kpi-amount text-primary">₦{{ net_expected|floatformat:2 }}</div>
+              <div class="small text-muted mt-2">
+                Gross: ₦{{ total_gross|floatformat:2 }} | Waivers: -₦{{ total_discounts|floatformat:2 }}
+              </div>
+            </div>
+            <div class="kpi-icon-box" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">
+              <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Verification Queue -->
+      <div class="col-xl-3 col-md-6 mb-3">
+        <div class="kpi-stat-card border-left" style="border-left: 5px solid #f59e0b !important;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-title">Pending Approvals</div>
+              <div class="kpi-amount text-warning">{{ pending_approvals_count }}</div>
+              <div class="small text-muted mt-2">
+                {% if pending_approvals_count > 0 %}
+                  <a href="{% url 'manage_payments' %}?status=pending" class="text-warning font-weight-bold">
+                    <i class="fas fa-arrow-circle-right mr-1"></i> Verify Submissions
+                  </a>
+                {% else %}
+                  <span class="text-success"><i class="fas fa-check-circle mr-1"></i> All queues clear</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="kpi-icon-box" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+              <i class="fas fa-clock"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MIDDLE ROW: PENDING APPROVAL QUEUE & COURSE PERFORMANCE -->
+    <div class="row">
+
+      <!-- Pending Verification Action Table -->
+      <div class="col-lg-7 mb-4">
+        <div class="card shadow-sm border-0" style="border-radius: 1rem; overflow: hidden;">
+          <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 font-weight-bold text-dark">
+              <i class="fas fa-hourglass-half text-warning mr-2"></i> Verification Queue (Requires Approval)
+            </h6>
+            <span class="badge badge-warning font-weight-bold px-2 py-1 text-dark">{{ pending_approvals_count }} Pending</span>
+          </div>
+          <div class="card-body p-0">
+            {% if pending_approvals %}
+              <div class="table-responsive">
+                <table class="table table-clean mb-0">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Course</th>
+                      <th>Amount Claimed</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for p in pending_approvals %}
+                    <tr>
+                      <td>
+                        <div class="font-weight-bold">{{ p.student.get_full_name|default:p.student.username }}</div>
+                        <div class="small text-muted">{{ p.student.email }}</div>
+                      </td>
+                      <td>
+                        <span class="badge badge-light border text-muted">{{ p.course.name|default:"General" }}</span>
+                      </td>
+                      <td>
+                        <span class="font-weight-bold text-dark">₦{{ p.amount_paid|floatformat:2 }}</span>
+                        <div class="small text-muted">Net: ₦{{ p.net_amount_due|floatformat:2 }}</div>
+                      </td>
+                      <td>
+                        <form method="POST" action="{% url 'approve_payment' p.id %}" class="d-inline">
+                          {% csrf_token %}
+                          <input type="hidden" name="issue_receipt" value="on">
+                          <button type="submit" class="btn btn-sm btn-success font-weight-bold px-3 py-1 shadow-xs" title="One-Click Approve and Issue Receipt">
+                            <i class="fas fa-check mr-1"></i> Approve
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="text-center py-5">
+                <i class="fas fa-check-double text-success fa-3x mb-3"></i>
+                <h6 class="font-weight-bold text-dark">Verification Queue is Empty</h6>
+                <p class="text-muted small">No pending student transactions currently waiting for accountant approval.</p>
+              </div>
+            {% endif %}
+          </div>
+          <div class="card-footer bg-white border-top text-center py-2">
+            <a href="{% url 'manage_payments' %}" class="small font-weight-bold text-primary">
+              Open Full Approvals Console <i class="fas fa-chevron-right ml-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Course Tuition Collection Breakdown -->
+      <div class="col-lg-5 mb-4">
+        <div class="card shadow-sm border-0" style="border-radius: 1rem; overflow: hidden; height: 100%;">
+          <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 font-weight-bold text-dark">
+              <i class="fas fa-chart-pie text-primary mr-2"></i> Collection Rate by Program
+            </h6>
+            <a href="{% url 'debtors_ledger' %}" class="small font-weight-bold text-primary">View Ledger</a>
+          </div>
+          <div class="card-body p-3">
+            {% if course_stats %}
+              <div class="d-flex flex-column gap-3" style="gap: 1.25rem;">
+                {% for cs in course_stats %}
+                  <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="font-weight-bold text-dark small">{{ cs.course }}</span>
+                      <span class="small font-weight-bold text-muted">{{ cs.collection_rate }}% Collected</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 4px; background: #f1f5f9;">
+                      <div class="progress-bar bg-success" role="progressbar" style="width: {{ cs.collection_rate }}%;" aria-valuenow="{{ cs.collection_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted mt-1" style="font-size: 0.78rem;">
+                      <span>Paid: <strong class="text-success">₦{{ cs.paid|floatformat:0 }}</strong></span>
+                      <span>Balance: <strong class="text-danger">₦{{ cs.balance|floatformat:0 }}</strong></span>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-center py-4 text-muted small">No course financial records found.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM ROW: RECENT TRANSACTIONS LEDGER -->
+    <div class="row">
+      <div class="col-12 mb-4">
+        <div class="card shadow-sm border-0" style="border-radius: 1rem; overflow: hidden;">
+          <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 font-weight-bold text-dark">
+              <i class="fas fa-history text-success mr-2"></i> Recent Payment Transactions & Ledger Entries
+            </h6>
+            <div class="d-flex gap-2">
+              <a href="{% url 'debtors_ledger' %}" class="btn btn-sm btn-outline-primary font-weight-bold mr-2">
+                <i class="fas fa-list mr-1"></i> Full Ledger
+              </a>
+              <a href="{% url 'export_reconciliation_excel' %}" class="btn btn-sm btn-outline-success font-weight-bold">
+                <i class="fas fa-file-excel mr-1"></i> Export Excel
+              </a>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-clean mb-0">
+                <thead>
+                  <tr>
+                    <th>Ref / Date</th>
+                    <th>Student</th>
+                    <th>Course & Batch</th>
+                    <th>Amount Paid</th>
+                    <th>Balance Owed</th>
+                    <th>Status</th>
+                    <th>Verifier</th>
+                    <th>Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in recent_transactions %}
+                  <tr>
+                    <td>
+                      <div class="font-weight-bold text-dark font-monospace" style="font-size: 0.85rem;">#{{ p.payment_ref|stringformat:"s"|slice:":8"|upper }}</div>
+                      <div class="small text-muted">{{ p.payment_date|date:"d M Y, H:i" }}</div>
+                    </td>
+                    <td>
+                      <div class="font-weight-bold text-dark">{{ p.student.get_full_name|default:p.student.username }}</div>
+                      <div class="small text-muted">{{ p.student.email }}</div>
+                    </td>
+                    <td>
+                      <div class="text-dark">{{ p.course.name|default:"General Tuition" }}</div>
+                      <div class="small text-muted">{{ p.batch.name|default:"Standard Batch" }}</div>
+                    </td>
+                    <td>
+                      <span class="font-weight-bold text-success" style="font-size: 1rem;">₦{{ p.amount_paid|floatformat:2 }}</span>
+                      {% if p.discount > 0 %}
+                        <div class="small text-muted">Disc: -₦{{ p.discount|floatformat:0 }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if p.remaining_balance > 0 %}
+                        <span class="font-weight-bold text-danger">₦{{ p.remaining_balance|floatformat:2 }}</span>
+                      {% else %}
+                        <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i> Cleared</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if p.status == 'paid' %}
+                        <span class="status-badge status-paid"><i class="fas fa-check-circle"></i> Paid</span>
+                      {% elif p.status == 'partial' %}
+                        <span class="status-badge status-partial"><i class="fas fa-adjust"></i> Partial</span>
+                      {% else %}
+                        <span class="status-badge status-pending"><i class="fas fa-clock"></i> Pending</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if p.verified_by %}
+                        <span class="small font-weight-bold text-dark">{{ p.verified_by.get_full_name|default:p.verified_by.username }}</span>
+                      {% else %}
+                        <span class="small text-muted font-italic">Unverified</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if p.receipts.all %}
+                        {% for r in p.receipts.all %}
+                          <a href="{% url 'view_receipt' r.id %}" target="_blank" class="btn btn-xs btn-outline-info font-weight-bold mr-1 mb-1" title="View Official Receipt">
+                            <i class="fas fa-receipt mr-1"></i> #{{ r.reference|stringformat:"s"|slice:":6"|upper }}
+                          </a>
+                        {% endfor %}
+                      {% else %}
+                        <span class="small text-muted font-italic">No receipt</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No transactions recorded yet.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- MODAL: RECORD PAYMENT -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" role="dialog" aria-labelledby="recordPaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+      <div class="modal-header bg-dark text-white border-0" style="border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <h5 class="modal-title font-weight-bold" id="recordPaymentModalLabel">
+          <i class="fas fa-cash-register text-success mr-2"></i> Record Direct Tuition Payment
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form method="POST" action="{% url 'record_payment' %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <p class="text-muted small mb-3">
+            Use this form to log bank transfers, physical bank deposits, cash payments, or POS installments. This automatically updates student balances and issues a receipt.
+          </p>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark small text-uppercase">Select Student Tuition Account <span class="text-danger">*</span></label>
+            <select name="payment_id" class="form-control select2" style="width: 100%;" required>
+              <option value="" disabled selected>-- Choose Student / Account --</option>
+              {% for p in recent_transactions %}
+                <option value="{{ p.id }}">{{ p.student.get_full_name|default:p.student.username }} ({{ p.course.name|default:"General" }}) - Balance: ₦{{ p.remaining_balance|floatformat:2 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Amount Paid (₦) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="1" name="amount" class="form-control font-weight-bold" placeholder="50000.00" required>
+            </div>
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Payment Method</label>
+              <select name="payment_method" class="form-control">
+                <option value="Bank Transfer">Bank Transfer (EFT/NIP)</option>
+                <option value="Bank Deposit Slip">Bank Deposit (Teller)</option>
+                <option value="POS Terminal">POS Card Payment</option>
+                <option value="Cash Deposit">Cash</option>
+                <option value="Online Gateway">Online Payment</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark small text-uppercase">Transaction / Slip Reference / Memo</label>
+            <input type="text" name="notes" class="form-control" placeholder="e.g. GTB/TRF/0928318 or Cash handed to reception">
+          </div>
+
+          <div class="custom-control custom-checkbox mt-2">
+            <input type="checkbox" class="custom-control-input" id="dashIssueReceipt" name="issue_receipt" checked>
+            <label class="custom-control-label font-weight-bold text-dark small" for="dashIssueReceipt">
+              Auto-generate official receipt upon submission
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0 py-3">
+          <button type="button" class="btn btn-secondary font-weight-bold" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success font-weight-bold px-4">
+            <i class="fas fa-check-circle mr-1"></i> Record & Issue Receipt
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -19,7 +19,8 @@ class Profile(models.Model):
         ('student', 'Student'),
         ('instructor', 'Instructor'),
         ('hod', 'Head of Department'),
-        ( 'support', 'Support Staff'),
+        ('support', 'Support Staff'),
+        ('accountant', 'Accountant'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)

@@ -1,0 +1,192 @@
+{% extends "layouts/admin_base.html" %}
+{% load static %}
+
+{% block title %}Official Receipts Repository | CodeCamp Core{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+  }
+  .receipts-header {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1.5rem;
+  }
+  .table-receipts thead th {
+    background: #0f172a;
+    color: #f8fafc;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.95rem 1rem;
+    border: none;
+    vertical-align: middle;
+  }
+  .table-receipts td {
+    padding: 1rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+  }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="content-header p-0 mb-3">
+  <div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+      <div>
+        <h1 class="h3 font-weight-bold text-dark mb-1">
+          <i class="fas fa-receipt text-primary mr-2"></i> Official Receipts Repository
+        </h1>
+        <p class="text-muted small mb-0">
+          Search, view, reprint, and download official PDF payment receipts issued across all courses.
+        </p>
+      </div>
+      <div class="mt-2 mt-sm-0">
+        <a href="{% url 'export_reconciliation_excel' %}" class="btn btn-success font-weight-bold shadow-sm">
+          <i class="fas fa-file-excel mr-1"></i> Reconciliation Excel
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- SEARCH & SUMMARY BAR -->
+    <div class="receipts-header">
+      <div class="row align-items-center">
+        <div class="col-lg-7 mb-3 mb-lg-0">
+          <form method="GET" action="{% url 'accountant_receipts' %}" class="d-flex gap-2">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+              </div>
+              <input type="text" name="q" value="{{ query }}" class="form-control border-left-0" placeholder="Search receipt ref (e.g. 5A92B), student name, email...">
+              <div class="input-group-append">
+                <button type="submit" class="btn btn-dark font-weight-bold">Search</button>
+                {% if query %}
+                  <a href="{% url 'accountant_receipts' %}" class="btn btn-outline-secondary" title="Clear Search">
+                    <i class="fas fa-times"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="d-flex justify-content-lg-end gap-3" style="gap: 1.5rem;">
+            <div>
+              <div class="small text-muted font-weight-bold text-uppercase">Receipts Issued</div>
+              <div class="h4 font-weight-bold text-dark mb-0">{{ receipts_count }}</div>
+            </div>
+            <div class="border-left pl-3">
+              <div class="small text-muted font-weight-bold text-uppercase">Total Inflow Documented</div>
+              <div class="h4 font-weight-bold text-success mb-0">₦{{ total_issued_amount|floatformat:2 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECEIPTS TABLE -->
+    <div class="card shadow-sm border-0" style="border-radius: 1rem; overflow: hidden;">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-receipts mb-0">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Receipt Reference</th>
+                <th>Issued Date & Time</th>
+                <th>Student</th>
+                <th>Course & Cohort</th>
+                <th>Amount on Receipt</th>
+                <th>Balance After Payment</th>
+                <th>Verified By</th>
+                <th style="min-width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in receipts %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  <span class="font-weight-bold text-primary font-monospace" style="font-size: 0.95rem;">
+                    #{{ r.reference|stringformat:"s"|slice:":8"|upper }}
+                  </span>
+                </td>
+                <td>
+                  <div>{{ r.issued_date|date:"d M Y" }}</div>
+                  <div class="small text-muted">{{ r.issued_date|date:"H:i" }}</div>
+                </td>
+                <td>
+                  <div class="font-weight-bold text-dark">{{ r.payment.student.get_full_name|default:r.payment.student.username }}</div>
+                  <div class="small text-muted">{{ r.payment.student.email }}</div>
+                </td>
+                <td>
+                  <div class="font-weight-bold text-dark">{{ r.payment.course.name|default:"General Tuition" }}</div>
+                  <div class="small text-muted">{{ r.payment.batch.name|default:"Regular Batch" }}</div>
+                </td>
+                <td>
+                  <span class="font-weight-bold text-success" style="font-size: 1rem;">
+                    ₦{{ r.amount|floatformat:2 }}
+                  </span>
+                </td>
+                <td>
+                  {% if r.payment.remaining_balance > 0 %}
+                    <span class="font-weight-bold text-danger">₦{{ r.payment.remaining_balance|floatformat:2 }}</span>
+                  {% else %}
+                    <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i> Paid in Full</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.payment.verified_by %}
+                    <span class="small font-weight-bold text-dark">{{ r.payment.verified_by.get_full_name|default:r.payment.verified_by.username }}</span>
+                  {% else %}
+                    <span class="small text-muted font-italic">Automated</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="d-flex gap-1" style="gap: 0.35rem;">
+                    <a href="{% url 'view_receipt' r.id %}" target="_blank" class="btn btn-xs btn-outline-primary font-weight-bold" title="View / Print HTML Receipt">
+                      <i class="fas fa-eye mr-1"></i> View
+                    </a>
+                    <a href="{% url 'view_receipt' r.id %}?download=1" class="btn btn-xs btn-outline-secondary font-weight-bold" title="Download Official PDF">
+                      <i class="fas fa-download mr-1"></i> PDF
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="9" class="text-center py-5 text-muted">
+                  <i class="fas fa-receipt fa-3x mb-3 text-secondary"></i>
+                  <h5>No receipts match your search.</h5>
+                  <p class="small">Try searching by a different student name or receipt reference number.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock content %}

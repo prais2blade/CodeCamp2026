@@ -1,0 +1,507 @@
+{% extends "layouts/admin_base.html" %}
+{% load static %}
+
+{% block title %}Tuition & Debtors Ledger | CodeCamp Core{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+  }
+  .ledger-header {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1.5rem;
+  }
+  .filter-pill {
+    padding: 0.45rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    background: #ffffff;
+    transition: all 0.2s ease;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .filter-pill:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+  .filter-pill.active {
+    background: #1e293b;
+    color: #ffffff;
+    border-color: #1e293b;
+  }
+  .summary-stat-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .summary-stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.05em;
+  }
+  .summary-stat-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+  }
+  .table-ledger thead th {
+    background: #0f172a;
+    color: #f8fafc;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.95rem 1rem;
+    border: none;
+    vertical-align: middle;
+  }
+  .table-ledger td {
+    padding: 1rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.88rem;
+  }
+  .badge-debtor {
+    background: #fee2e2;
+    color: #b91c1c;
+    font-weight: 700;
+    border: 1px solid #fecaca;
+  }
+  .badge-paid-full {
+    background: #dcfce7;
+    color: #15803d;
+    font-weight: 700;
+    border: 1px solid #bbf7d0;
+  }
+  .student-initials {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="content-header p-0 mb-3">
+  <div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+      <div>
+        <h1 class="h3 font-weight-bold text-dark mb-1">
+          <i class="fas fa-users-cog text-warning mr-2"></i> Student Tuition & Debtors Ledger
+        </h1>
+        <p class="text-muted small mb-0">
+          Track who has paid, monitor outstanding tuition balances, and log direct cash/transfer payments.
+        </p>
+      </div>
+      <div class="d-flex gap-2 mt-2 mt-sm-0" style="gap: 0.5rem;">
+        <button type="button" class="btn btn-primary font-weight-bold shadow-sm" data-toggle="modal" data-target="#recordPaymentModal">
+          <i class="fas fa-plus-circle mr-1"></i> Record Payment
+        </button>
+        <a href="{% url 'export_reconciliation_excel' %}?status={{ status_filter }}&course_id={{ course_filter|default:'' }}&batch_id={{ batch_filter|default:'' }}&q={{ query|default:'' }}"
+           class="btn btn-success font-weight-bold shadow-sm">
+          <i class="fas fa-file-excel mr-1"></i> Download Excel
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- SEARCH & FILTER TOOLBAR -->
+    <div class="ledger-header">
+      <form method="GET" action="{% url 'debtors_ledger' %}" class="row align-items-center">
+
+        <!-- Status Tabs / Pills -->
+        <div class="col-12 mb-3">
+          <div class="d-flex flex-wrap gap-2" style="gap: 0.4rem;">
+            <a href="?status=all{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+               class="filter-pill {% if status_filter == 'all' %}active{% endif %}">
+              All Tuition Accounts
+            </a>
+            <a href="?status=debtors{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+               class="filter-pill {% if status_filter == 'debtors' %}active{% endif %}">
+              <i class="fas fa-exclamation-circle text-danger"></i> Debtors (Owing Balance)
+            </a>
+            <a href="?status=partial{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+               class="filter-pill {% if status_filter == 'partial' %}active{% endif %}">
+              Partially Paid
+            </a>
+            <a href="?status=unpaid{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+               class="filter-pill {% if status_filter == 'unpaid' %}active{% endif %}">
+              Unpaid (₦0 Paid)
+            </a>
+            <a href="?status=paid{% if course_filter %}&course_id={{ course_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+               class="filter-pill {% if status_filter == 'paid' %}active{% endif %}">
+              <i class="fas fa-check-circle text-success"></i> Fully Cleared
+            </a>
+          </div>
+        </div>
+
+        <input type="hidden" name="status" value="{{ status_filter }}">
+
+        <!-- Search Input -->
+        <div class="col-lg-4 col-md-5 mb-2 mb-md-0">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+            </div>
+            <input type="text" name="q" value="{{ query }}" class="form-control border-left-0" placeholder="Search student name, email, phone, ref...">
+          </div>
+        </div>
+
+        <!-- Course Dropdown -->
+        <div class="col-lg-3 col-md-3 mb-2 mb-md-0">
+          <select name="course_id" class="form-control" onchange="this.form.submit()">
+            <option value="">-- All Programs / Courses --</option>
+            {% for c in all_courses %}
+              <option value="{{ c.id }}" {% if course_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Batch Dropdown -->
+        <div class="col-lg-3 col-md-3 mb-2 mb-md-0">
+          <select name="batch_id" class="form-control" onchange="this.form.submit()">
+            <option value="">-- All Cohorts / Batches --</option>
+            {% for b in all_batches %}
+              <option value="{{ b.id }}" {% if batch_filter == b.id|stringformat:"s" %}selected{% endif %}>{{ b.course.name }} - {{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Submit & Reset Buttons -->
+        <div class="col-lg-2 col-md-1 text-right">
+          <button type="submit" class="btn btn-dark font-weight-bold px-3">Filter</button>
+          {% if query or course_filter or batch_filter or status_filter != 'all' %}
+            <a href="{% url 'debtors_ledger' %}" class="btn btn-outline-secondary font-weight-bold ml-1" title="Clear Filters">
+              <i class="fas fa-times"></i>
+            </a>
+          {% endif %}
+        </div>
+
+      </form>
+
+      <!-- FILTERED AGGREGATION METRICS BAR -->
+      <div class="row mt-4 pt-3 border-top">
+        <div class="col-md-3 col-6 mb-2 mb-md-0">
+          <div class="summary-stat-box">
+            <span class="summary-stat-label">Active Records Count</span>
+            <span class="summary-stat-val text-dark">{{ filtered_count }} Students</span>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2 mb-md-0">
+          <div class="summary-stat-box">
+            <span class="summary-stat-label">Net Invoiced Tuition</span>
+            <span class="summary-stat-val text-primary">₦{{ filtered_net|floatformat:2 }}</span>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2 mb-md-0">
+          <div class="summary-stat-box">
+            <span class="summary-stat-label">Total Realized Collection</span>
+            <span class="summary-stat-val text-success">₦{{ filtered_collected|floatformat:2 }}</span>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2 mb-md-0">
+          <div class="summary-stat-box" style="background: #fff1f2; border-color: #fecdd3;">
+            <span class="summary-stat-label text-danger">Outstanding Balance (Owed)</span>
+            <span class="summary-stat-val text-danger">₦{{ filtered_outstanding|floatformat:2 }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LEDGER DATA TABLE -->
+    <div class="card shadow-sm border-0" style="border-radius: 1rem; overflow: hidden;">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-ledger mb-0">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Student Information</th>
+                <th>Course / Cohort</th>
+                <th>Gross & Discount</th>
+                <th>Net Due</th>
+                <th>Amount Paid</th>
+                <th>Outstanding Balance</th>
+                <th>Status</th>
+                <th>Approval</th>
+                <th style="min-width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+
+                <!-- Student Information -->
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="student-initials mr-2">
+                      {{ p.student.first_name|default:p.student.username|slice:":1"|upper }}
+                    </div>
+                    <div>
+                      <div class="font-weight-bold text-dark">{{ p.student.get_full_name|default:p.student.username }} <span class="text-muted font-weight-normal small">(@{{ p.student.username }})</span></div>
+                      <div class="small text-muted">{{ p.student.email }}</div>
+                      {% if p.student.profile.phone %}
+                        <div class="small text-secondary"><i class="fas fa-phone-alt fa-xs mr-1"></i>{{ p.student.profile.phone }}</div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Course & Batch -->
+                <td>
+                  <div class="font-weight-bold text-dark">{{ p.course.name|default:"General Tuition" }}</div>
+                  <div class="small text-muted">{{ p.batch.name|default:"Regular Batch" }}</div>
+                </td>
+
+                <!-- Gross Fee & Discount -->
+                <td>
+                  <div>₦{{ p.amount_due|floatformat:2 }}</div>
+                  {% if p.discount > 0 %}
+                    <div class="small text-success font-weight-bold">
+                      -₦{{ p.discount|floatformat:2 }}
+                      {% if p.discount_reason %}
+                        <span class="text-muted font-italic" title="{{ p.discount_reason }}">({{ p.discount_reason|truncatechars:15 }})</span>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </td>
+
+                <!-- Net Due -->
+                <td>
+                  <span class="font-weight-bold text-dark">₦{{ p.net_amount_due|floatformat:2 }}</span>
+                </td>
+
+                <!-- Amount Paid -->
+                <td>
+                  <span class="font-weight-bold text-success">₦{{ p.amount_paid|floatformat:2 }}</span>
+                </td>
+
+                <!-- Balance Owed -->
+                <td>
+                  {% if p.remaining_balance > 0 %}
+                    <span class="font-weight-bold text-danger" style="font-size: 0.95rem;">
+                      ₦{{ p.remaining_balance|floatformat:2 }}
+                    </span>
+                  {% else %}
+                    <span class="badge badge-paid-full px-2 py-1">
+                      <i class="fas fa-check mr-1"></i> Cleared (₦0.00)
+                    </span>
+                  {% endif %}
+                </td>
+
+                <!-- Status Badge -->
+                <td>
+                  {% if p.status == 'paid' %}
+                    <span class="badge badge-paid-full px-2 py-1">PAID</span>
+                  {% elif p.status == 'partial' %}
+                    <span class="badge badge-warning px-2 py-1 text-dark">PARTIAL</span>
+                  {% else %}
+                    <span class="badge badge-danger px-2 py-1">UNPAID</span>
+                  {% endif %}
+                </td>
+
+                <!-- Approval Status -->
+                <td>
+                  {% if p.is_approved %}
+                    <span class="badge badge-success px-2 py-1"><i class="fas fa-check-double mr-1"></i> Approved</span>
+                  {% else %}
+                    <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-clock mr-1"></i> Pending</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td>
+                  <div class="d-flex flex-wrap gap-1" style="gap: 0.35rem;">
+                    <!-- Record Payment Button (Triggers modal with context) -->
+                    <button type="button"
+                            class="btn btn-xs btn-primary font-weight-bold"
+                            data-toggle="modal"
+                            data-target="#recordPaymentModal"
+                            data-payment-id="{{ p.id }}"
+                            data-student-name="{{ p.student.get_full_name|default:p.student.username }}"
+                            data-balance="{{ p.remaining_balance|floatformat:2 }}"
+                            onclick="populatePaymentModal(this)">
+                      <i class="fas fa-credit-card mr-1"></i> Add Pay
+                    </button>
+
+                    <!-- Receipt View / Print -->
+                    {% if p.receipts.all %}
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-xs btn-outline-info dropdown-toggle font-weight-bold" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <i class="fas fa-receipt mr-1"></i> Receipts
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right shadow border-0" style="border-radius: 0.5rem;">
+                          <h6 class="dropdown-header text-uppercase font-weight-bold small">Issued Receipts</h6>
+                          {% for r in p.receipts.all %}
+                            <a class="dropdown-item small" href="{% url 'view_receipt' r.id %}" target="_blank">
+                              <i class="fas fa-file-invoice text-primary mr-2"></i>
+                              #{{ r.reference|stringformat:"s"|slice:":8"|upper }} (₦{{ r.amount|floatformat:2 }})
+                            </a>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="10" class="text-center py-5 text-muted">
+                  <i class="fas fa-inbox fa-3x mb-3 text-secondary"></i>
+                  <h5>No tuition records match your active filters.</h5>
+                  <p class="small">Try resetting your search query or selecting a different status filter above.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- RECORD PAYMENT MODAL -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" role="dialog" aria-labelledby="recordModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+      <div class="modal-header bg-dark text-white border-0" style="border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
+        <h5 class="modal-title font-weight-bold" id="recordModalLabel">
+          <i class="fas fa-money-check-alt text-success mr-2"></i> Record Direct Tuition Payment
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form method="POST" action="{% url 'record_payment' %}">
+        {% csrf_token %}
+        <input type="hidden" name="payment_id" id="modalPaymentId" value="">
+        <div class="modal-body p-4">
+
+          <div class="alert alert-secondary py-2 px-3 small border-0 mb-3" style="border-radius: 0.5rem;">
+            Student: <strong id="modalStudentName" class="text-dark">Select Student</strong> | Current Balance: <strong id="modalBalance" class="text-danger">₦0.00</strong>
+          </div>
+
+          <div class="form-group mb-3" id="studentSelectWrapper">
+            <label class="font-weight-bold text-dark small text-uppercase">Or Select Account <span class="text-danger">*</span></label>
+            <select id="modalPaymentSelect" class="form-control" onchange="document.getElementById('modalPaymentId').value = this.value">
+              <option value="" disabled selected>-- Select Student Account --</option>
+              {% for p in payments %}
+                <option value="{{ p.id }}">{{ p.student.get_full_name|default:p.student.username }} ({{ p.course.name|default:"General" }}) - Balance: ₦{{ p.remaining_balance|floatformat:2 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Payment Amount (₦) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="1" name="amount" class="form-control font-weight-bold" placeholder="50000.00" required>
+            </div>
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Payment Channel</label>
+              <select name="payment_method" class="form-control">
+                <option value="Bank Transfer">Bank Transfer (EFT/NIP)</option>
+                <option value="Bank Deposit Slip">Bank Deposit (Teller)</option>
+                <option value="POS Terminal">POS Terminal</option>
+                <option value="Cash">Cash</option>
+                <option value="Online">Online Payment Gateway</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Adjust Discount (₦)</label>
+              <input type="number" step="0.01" min="0" name="discount" class="form-control" placeholder="Optional discount">
+            </div>
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Discount Reason</label>
+              <input type="text" name="discount_reason" class="form-control" placeholder="e.g. Sibling, Early Bird">
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark small text-uppercase">Audit Notes / Bank Reference</label>
+            <input type="text" name="notes" class="form-control" placeholder="e.g. Stanbic/NIP/9283719 or Cash received at finance desk">
+          </div>
+
+          <div class="custom-control custom-checkbox mt-2">
+            <input type="checkbox" class="custom-control-input" id="issueReceiptCheck" name="issue_receipt" checked>
+            <label class="custom-control-label font-weight-bold text-dark small" for="issueReceiptCheck">
+              Generate official receipt automatically upon confirmation
+            </label>
+          </div>
+
+        </div>
+        <div class="modal-footer bg-light border-0 py-3">
+          <button type="button" class="btn btn-secondary font-weight-bold" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success font-weight-bold px-4">
+            <i class="fas fa-check-circle mr-1"></i> Record & Update Balance
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function populatePaymentModal(btn) {
+  var paymentId = btn.getAttribute('data-payment-id');
+  var studentName = btn.getAttribute('data-student-name');
+  var balance = btn.getAttribute('data-balance');
+
+  document.getElementById('modalPaymentId').value = paymentId;
+  document.getElementById('modalStudentName').textContent = studentName;
+  document.getElementById('modalBalance').textContent = '₦' + balance;
+
+  var selectWrapper = document.getElementById('studentSelectWrapper');
+  if (selectWrapper) {
+    selectWrapper.style.display = 'none';
+  }
+}
+
+$('#recordPaymentModal').on('hidden.bs.modal', function () {
+  document.getElementById('modalPaymentId').value = '';
+  document.getElementById('modalStudentName').textContent = 'Select Student';
+  document.getElementById('modalBalance').textContent = '₦0.00';
+  var selectWrapper = document.getElementById('studentSelectWrapper');
+  if (selectWrapper) {
+    selectWrapper.style.display = 'block';
+  }
+});
+</script>
+{% endblock content %}

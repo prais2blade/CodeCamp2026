@@ -2,6 +2,7 @@ ROLE_DASHBOARD_URLS = {
     "student": "student_dashboard",
     "instructor": "instructor_dashboard",
     "hod": "hod_dashboard",
+    "accountant": "accountant_dashboard",
 }
 
 

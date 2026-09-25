@@ -1,13 +1,18 @@
 from django.shortcuts import redirect
-from django.shortcuts import redirect
 from django.contrib import messages
 
-def role_required(role):
+def role_required(roles):
+    """Restricts access to users having one of the specified roles or superusers."""
+    if isinstance(roles, str):
+        allowed_roles = {roles}
+    else:
+        allowed_roles = set(roles)
+
     def decorator(view_func):
         def wrapper(request, *args, **kwargs):
             if request.user.is_superuser:
                 return view_func(request, *args, **kwargs)
-            if not hasattr(request.user, 'profile') or request.user.profile.role != role:
+            if not hasattr(request.user, 'profile') or request.user.profile.role not in allowed_roles:
                 return redirect('login')
             return view_func(request, *args, **kwargs)
         return wrapper
