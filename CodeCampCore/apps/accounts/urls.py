@@ -52,4 +52,11 @@ urlpatterns = [
     path('onboarding/', views_onboarding.onboarding_steps, name='onboarding_steps'),
     path('complete-profile/', views_onboarding.complete_profile, name='complete_profile'),
     path('onboarding-complete/', views_onboarding.onboarding_complete, name='onboarding_complete'),
+
+    # Summer Alumni & Continuation Hub
+    path('student/summer-hub/', views.student_summer_hub, name='student_summer_hub'),
+    path('student/continue/', views.student_continue_registration, name='student_continue_registration'),
+    path('student/certificate/', views.view_summer_certificate, name='view_summer_certificate'),
+    path('student/certificate/<int:cert_id>/', views.view_summer_certificate, name='view_summer_certificate_by_id'),
+    path('admin/certificates/upload/', views.admin_upload_certificate, name='admin_upload_certificate'),
 ]

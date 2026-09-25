@@ -18,6 +18,14 @@
           </a>
         </li>
 
+        <!-- Summer Hub & Certificate -->
+        <li class="nav-item">
+          <a href="{% url 'student_summer_hub' %}" class="nav-link {% if request.resolver_match.url_name in 'student_summer_hub,view_summer_certificate,student_continue_registration' %}active{% endif %}">
+            <i class="nav-icon fas fa-award text-warning"></i>
+            <p>Summer Hub & Cert</p>
+          </a>
+        </li>
+
         <!-- Choose Course -->
         <li class="nav-item">
           <a href="{% url 'choose_course' %}" class="nav-link {% if request.resolver_match.url_name == 'choose_course' %}active{% endif %}">

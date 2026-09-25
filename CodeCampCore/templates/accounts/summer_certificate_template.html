@@ -1,0 +1,333 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificate of Completion - {{ student.get_full_name|default:student.username }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #f3f4f6;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #1f2937;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 15px;
+    }
+    .action-bar {
+      width: 100%;
+      max-width: 1050px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      border: none;
+    }
+    .btn-primary {
+      background: #4338ca;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #3730a3;
+    }
+    .btn-success {
+      background: #059669;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #047857;
+    }
+    .btn-secondary {
+      background: #4b5563;
+      color: white;
+    }
+
+    /* Certificate Canvas */
+    .certificate-container {
+      width: 1050px;
+      height: 740px;
+      background: #ffffff;
+      padding: 35px;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .border-outer {
+      width: 100%;
+      height: 100%;
+      border: 4px solid #1e1b4b;
+      padding: 10px;
+      position: relative;
+    }
+    .border-inner {
+      width: 100%;
+      height: 100%;
+      border: 2px solid #d97706;
+      padding: 30px 50px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      position: relative;
+      background: radial-gradient(circle at center, #ffffff 60%, #fafafa 100%);
+    }
+
+    /* Corner embellishments */
+    .corner {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-color: #d97706;
+      border-style: solid;
+    }
+    .corner-tl { top: 6px; left: 6px; border-width: 3px 0 0 3px; }
+    .corner-tr { top: 6px; right: 6px; border-width: 3px 3px 0 0; }
+    .corner-bl { bottom: 6px; left: 6px; border-width: 0 0 3px 3px; }
+    .corner-br { bottom: 6px; right: 6px; border-width: 0 3px 3px 0; }
+
+    .brand-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      letter-spacing: 5px;
+      color: #1e1b4b;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .brand-sub {
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      color: #b45309;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .cert-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.7rem;
+      color: #1e1b4b;
+      letter-spacing: 1px;
+      margin-top: 10px;
+      font-weight: 800;
+    }
+    .cert-sub {
+      font-size: 1rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 6px;
+    }
+    .recipient-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      font-style: italic;
+      color: #111827;
+      font-weight: 700;
+      border-bottom: 2px solid #d97706;
+      padding-bottom: 8px;
+      display: inline-block;
+      min-width: 450px;
+      margin: 10px 0;
+    }
+    .cert-body-text {
+      max-width: 760px;
+      font-size: 1.05rem;
+      color: #374151;
+      line-height: 1.6;
+    }
+    .cert-course-highlight {
+      font-weight: 700;
+      color: #1e1b4b;
+    }
+
+    .footer-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 20px;
+      padding: 0 20px;
+    }
+    .sign-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 200px;
+    }
+    .sign-line {
+      width: 100%;
+      height: 1px;
+      background: #4b5563;
+      margin-bottom: 8px;
+    }
+    .sign-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .sign-dept {
+      font-size: 0.72rem;
+      color: #6b7280;
+    }
+
+    /* Gold Seal Badge */
+    .seal-badge {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fde68a 0%, #d97706 100%);
+      border: 3px dashed #b45309;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+      color: #78350f;
+    }
+    .seal-icon {
+      font-size: 1.6rem;
+    }
+    .seal-text {
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .meta-footer {
+      font-size: 0.72rem;
+      color: #9ca3af;
+      margin-top: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .certificate-container {
+        box-shadow: none;
+        width: 100vw;
+        height: 100vh;
+        padding: 20px;
+        page-break-after: always;
+      }
+      @page {
+        size: landscape;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Action Bar -->
+  <div class="action-bar no-print">
+    <a href="{% url 'student_summer_hub' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Return to Summer Hub
+    </a>
+    <div style="display: flex; gap: 10px;">
+      {% if certificate.certificate_file %}
+      <a href="{% url 'view_summer_certificate' certificate.id %}?download=file" class="btn btn-success">
+        <i class="fas fa-download"></i> Download Uploaded PDF
+      </a>
+      {% endif %}
+      <button onclick="window.print()" class="btn btn-primary">
+        <i class="fas fa-print"></i> Print / Save as PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Official Certificate Document -->
+  <div class="certificate-container">
+    <div class="border-outer">
+      <div class="border-inner">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Top Header -->
+        <div>
+          <div class="brand-title">CodeCamp Academy</div>
+          <div class="brand-sub">Center for Technology, Innovation & Coding Excellence</div>
+          <h1 class="cert-heading">Certificate of Completion</h1>
+          <div class="cert-sub">This is proudly presented to</div>
+        </div>
+
+        <!-- Recipient -->
+        <div>
+          <div class="recipient-name">
+            {{ student.get_full_name|default:student.username }}
+          </div>
+        </div>
+
+        <!-- Body statement -->
+        <div class="cert-body-text">
+          for successfully undertaking and demonstrating outstanding proficiency in the
+          <span class="cert-course-highlight">{{ certificate.title|default:"Summer CodeCamp Boot Camp" }}</span>,
+          having fulfilled all course modules, practical engineering lab assignments, and project benchmarks
+          with a grade designation of <strong>{{ certificate.grade_or_score|default:"Distinction" }}</strong>.
+        </div>
+
+        <!-- Signatures and Gold Seal -->
+        <div class="footer-row">
+          <div class="sign-block">
+            <div class="sign-line"></div>
+            <div class="sign-title">Academic Director</div>
+            <div class="sign-dept">CodeCamp Faculty</div>
+          </div>
+
+          <div class="seal-badge">
+            <i class="fas fa-medal seal-icon"></i>
+            <span class="seal-text">Official Seal</span>
+          </div>
+
+          <div class="sign-block">
+            <div class="sign-line"></div>
+            <div class="sign-title">Date of Issue</div>
+            <div class="sign-dept">{{ certificate.issue_date|date:"F d, Y" }}</div>
+          </div>
+        </div>
+
+        <!-- Metadata & Verification ID -->
+        <div class="meta-footer">
+          Verification ID: <strong>{{ certificate.reference_id }}</strong> &bull; Authenticity verified by CodeCamp Core ERP
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import FileResponse, Http404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -16,7 +17,7 @@ import json
 from datetime import timedelta
 from decimal import Decimal
 
-from .models import Attendance, Profile
+from .models import Attendance, Profile, SummerCertificate
 from .decorators import role_required
 from apps.accounts.utils import get_dashboard_url_name, get_next_onboarding_url
 from apps.courses.models import Subject, Course
@@ -407,6 +408,10 @@ def student_dashboard(request):
     user = request.user
     profile = user.profile
 
+    # Gating: if student is in summer alumni (inactive) status, route to their Summer Hub
+    if profile.student_status == 'summer_alumni':
+        return redirect('student_summer_hub')
+
     # Payment summary
     payment = Payment.objects.filter(student=user).select_related('course').first()
     summary = None
@@ -416,7 +421,7 @@ def student_dashboard(request):
             completion = (payment.amount_paid / payment.amount_due) * 100
 
         summary = {
-            'course_name': payment.course.name,
+            'course_name': payment.course.name if payment.course else 'General Tuition',
             'amount_due': payment.amount_due,
             'amount_paid': payment.amount_paid,
             'balance': payment.remaining_balance(),
@@ -453,6 +458,212 @@ def student_dashboard(request):
     }
 
     return render(request, "accounts/student_dashboard.html", context)
+
+
+# ==============================================================================
+# SUMMER ALUMNI HUB & CONTINUATION PIPELINE
+# ==============================================================================
+
+@login_required
+@role_required('student')
+def student_summer_hub(request):
+    """
+    Restricted completion portal for Summer Students.
+    Allows viewing summer performance, downloading certificates, and continuing to the main term.
+    """
+    user = request.user
+    profile = user.profile
+
+    # Certificate
+    certificate = SummerCertificate.objects.filter(student=user).first()
+    if not certificate:
+        certificate = SummerCertificate.objects.create(
+            student=user,
+            course=profile.course,
+            title=f"Certificate of Completion - {profile.course.name if profile.course else 'Summer Boot Camp'}",
+            remarks="Successfully completed the intensive 2026 Summer Coding & Technology Camp."
+        )
+
+    # Attendance & Performance metrics
+    attendance_records = Attendance.objects.filter(student=user).select_related('subject', 'batch')
+    total_sessions = attendance_records.count()
+    present_count = attendance_records.filter(status='Present').count()
+    attendance_rate = round((present_count / total_sessions * 100), 1) if total_sessions > 0 else 100.0
+
+    # Summer payment record
+    summer_payment = Payment.objects.filter(student=user).order_by('-payment_date').first()
+
+    # Available continuing courses
+    continuing_courses = Course.objects.all().order_by('name')
+
+    context = {
+        'profile': profile,
+        'certificate': certificate,
+        'total_sessions': total_sessions,
+        'present_count': present_count,
+        'attendance_rate': attendance_rate,
+        'attendance_records': attendance_records[:10],
+        'summer_payment': summer_payment,
+        'continuing_courses': continuing_courses,
+    }
+    return render(request, 'accounts/student_summer_hub.html', context)
+
+
+@login_required
+@role_required('student')
+def student_continue_registration(request):
+    """
+    Continuation & Re-enrollment workflow:
+    Student chooses their continuing track, an invoice is generated, and they are routed to payment.
+    """
+    user = request.user
+    profile = user.profile
+
+    if request.method == 'POST':
+        course_id = request.POST.get('course_id')
+        batch_id = request.POST.get('batch_id')
+
+        course = get_object_or_404(Course, id=course_id)
+        batch = None
+        if batch_id:
+            batch = get_object_or_404(Batch, id=batch_id)
+        else:
+            batch = Batch.objects.filter(course=course).first()
+
+        # Update student profile target program
+        profile.course = course
+        if batch:
+            profile.batch = batch
+        profile.save(update_fields=['course', 'batch'])
+
+        # Create new term Payment invoice
+        payment, created = Payment.objects.get_or_create(
+            student=user,
+            course=course,
+            status='pending',
+            defaults={
+                'batch': batch,
+                'amount_due': course.fee if hasattr(course, 'fee') and course.fee else Decimal('50000.00'),
+                'amount_paid': Decimal('0.00'),
+                'notes': f"Continuation Registration from Summer Camp for {course.name}"
+            }
+        )
+        if not created:
+            payment.batch = batch
+            payment.amount_due = course.fee if hasattr(course, 'fee') and course.fee else Decimal('50000.00')
+            payment.save(update_fields=['batch', 'amount_due'])
+
+        messages.success(
+            request,
+            f"You have registered to continue with '{course.name}'! Please complete your term payment below to activate your account."
+        )
+        return redirect('student_payments')
+
+    courses = Course.objects.all().order_by('name')
+    batches = Batch.objects.all().select_related('course').order_by('course__name', 'name')
+    return render(request, 'accounts/student_continue_registration.html', {
+        'profile': profile,
+        'courses': courses,
+        'batches': batches,
+    })
+
+
+@login_required
+def view_summer_certificate(request, cert_id=None):
+    """
+    Renders or downloads the student's summer certificate.
+    Supports uploaded PDF files or dynamically generated branded certificate template.
+    """
+    if cert_id:
+        certificate = get_object_or_404(SummerCertificate, id=cert_id)
+        user_role = getattr(getattr(request.user, 'profile', None), 'role', '')
+        if not (request.user.is_superuser or certificate.student == request.user or user_role in ['accountant', 'hod', 'instructor']):
+            messages.error(request, "Permission denied.")
+            return redirect('home')
+    else:
+        certificate = SummerCertificate.objects.filter(student=request.user).first()
+        if not certificate:
+            certificate = SummerCertificate.objects.create(
+                student=request.user,
+                course=getattr(request.user.profile, 'course', None),
+                title=f"Certificate of Completion - {request.user.profile.course.name if request.user.profile.course else 'Summer CodeCamp'}",
+                remarks="Successfully completed the intensive 2026 Summer Coding & Technology Camp."
+            )
+
+    # If an uploaded file exists and user requested download
+    if certificate.certificate_file:
+        if 'download' in request.GET:
+            from django.http import FileResponse
+            return FileResponse(
+                certificate.certificate_file.open('rb'),
+                as_attachment=True,
+                filename=f"Certificate_{certificate.reference_id}.pdf"
+            )
+        return redirect(certificate.certificate_file.url)
+
+    # Render branded certificate HTML
+    context = {
+        'certificate': certificate,
+        'student': certificate.student,
+        'course': certificate.course,
+    }
+    html_string = render_to_string('accounts/summer_certificate_template.html', context)
+
+    if 'download' in request.GET:
+        try:
+            from weasyprint import HTML
+            import tempfile
+            from django.http import HttpResponse
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Certificate_{certificate.reference_id}.pdf"'
+            html = HTML(string=html_string)
+            with tempfile.NamedTemporaryFile(delete=True) as tmp:
+                html.write_pdf(target=tmp.name)
+                tmp.seek(0)
+                response.write(tmp.read())
+            return response
+        except Exception:
+            from django.http import HttpResponse
+            return HttpResponse(html_string)
+
+    from django.http import HttpResponse
+    return HttpResponse(html_string)
+
+
+@login_required
+@role_required(['hod', 'accountant', 'instructor'])
+def admin_upload_certificate(request):
+    """
+    Admin & Faculty endpoint to attach or update certificate documents for students.
+    """
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        title = request.POST.get('title', 'Certificate of Completion - Summer CodeCamp')
+        grade_or_score = request.POST.get('grade_or_score', 'Distinction')
+        remarks = request.POST.get('remarks', '')
+        cert_file = request.FILES.get('certificate_file')
+
+        student = get_object_or_404(User, id=student_id)
+        certificate, created = SummerCertificate.objects.get_or_create(
+            student=student,
+            defaults={'course': getattr(student.profile, 'course', None)}
+        )
+        if title:
+            certificate.title = title
+        if grade_or_score:
+            certificate.grade_or_score = grade_or_score
+        if remarks:
+            certificate.remarks = remarks
+        if cert_file:
+            certificate.certificate_file = cert_file
+        certificate.uploaded_by = request.user
+        certificate.save()
+
+        messages.success(request, f"Certificate successfully uploaded for {student.get_full_name() or student.username}!")
+        return redirect(request.META.get('HTTP_REFERER', 'admin_dashboard'))
+
+    return redirect('admin_dashboard')
+
 
 
 @login_required
@@ -1308,4 +1519,195 @@ def admin_attendance_mark(request):
         messages.success(request, f"Attendance {action_word}: {student.username} marked '{status}' for {subject.name}.")
         return redirect('/account/admin/dashboard/#attendance')
 
-    return redirect('admin_dashboard')
+    return redirect('admin_dashboard')
+
+
+# ---------------------------------------------------------
+# SUMMER STUDENT HUB & CONTINUATION
+# ---------------------------------------------------------
+
+@login_required
+@role_required('student')
+def student_summer_hub(request):
+    """
+    Landing hub for summer alumni students.
+    Displays completion certificate, summer attendance analytics, and continuation registration options.
+    """
+    user = request.user
+    profile = user.profile
+
+    certificates = SummerCertificate.objects.filter(student=user).order_by('-created_at')
+    if not certificates.exists():
+        cert = SummerCertificate.objects.create(
+            student=user,
+            course=profile.course,
+            title=f"Certificate of Completion - {profile.course.name if profile.course else 'Summer CodeCamp'}",
+            remarks="Successfully completed the intensive 2026 Summer Coding & Technology Camp."
+        )
+        certificates = [cert]
+
+    total_classes = Attendance.objects.filter(student=user).count()
+    attended_classes = Attendance.objects.filter(student=user, status='Present').count()
+    attendance_pct = round((attended_classes / total_classes * 100), 1) if total_classes > 0 else 100.0
+
+    summer_payments = Payment.objects.filter(student=user).order_by('-payment_date')
+    available_courses = Course.objects.filter(is_published=True).order_by('name')
+    available_batches = Batch.objects.filter(is_published=True).order_by('name')
+
+    context = {
+        'profile': profile,
+        'certificates': certificates,
+        'primary_cert': certificates[0] if len(certificates) > 0 else None,
+        'total_classes': total_classes,
+        'attended_classes': attended_classes,
+        'attendance_pct': attendance_pct,
+        'summer_payments': summer_payments,
+        'available_courses': available_courses,
+        'available_batches': available_batches,
+    }
+    return render(request, 'accounts/student_summer_hub.html', context)
+
+
+@login_required
+@role_required('student')
+def student_continue_registration(request):
+    """
+    Allows summer alumni to choose a course and batch for the new academic term,
+    generates their next-term tuition invoice, and redirects them to payment.
+    """
+    user = request.user
+    profile = user.profile
+
+    available_courses = Course.objects.filter(is_published=True).order_by('name')
+    available_batches = Batch.objects.filter(is_published=True).order_by('name')
+
+    if request.method == 'POST':
+        course_id = request.POST.get('course_id')
+        batch_id = request.POST.get('batch_id')
+
+        course = get_object_or_404(Course, id=course_id)
+        batch = Batch.objects.filter(id=batch_id).first() if batch_id else None
+
+        profile.course = course
+        if batch:
+            profile.batch = batch
+        profile.save(update_fields=['course', 'batch'])
+
+        # Generate or update continuation term invoice
+        fee = getattr(course, 'fee', Decimal('35000.00')) or Decimal('35000.00')
+        payment = Payment.objects.filter(student=user, status='pending').first()
+        if not payment:
+            payment = Payment.objects.create(
+                student=user,
+                course=course,
+                batch=batch,
+                amount_due=fee,
+                amount_paid=Decimal('0.00'),
+                monthly_payment=fee,
+                notes=f"Continuation enrollment from Summer Camp to regular term: {course.name}",
+            )
+        else:
+            payment.course = course
+            payment.batch = batch
+            payment.amount_due = fee
+            payment.save(update_fields=['course', 'batch', 'amount_due'])
+
+        messages.success(
+            request,
+            f"You have registered for {course.name}! Please complete payment to reactivate your active student portal."
+        )
+        return redirect('student_payments')
+
+    context = {
+        'profile': profile,
+        'available_courses': available_courses,
+        'available_batches': available_batches,
+        'current_course': profile.course,
+        'current_batch': profile.batch,
+    }
+    return render(request, 'accounts/student_continue_registration.html', context)
+
+
+@login_required
+def view_summer_certificate(request, cert_id=None):
+    """
+    Views or downloads a summer certificate of completion.
+    Serves custom uploaded file or renders an official printable certificate template.
+    """
+    if cert_id:
+        cert = get_object_or_404(SummerCertificate, id=cert_id)
+    else:
+        cert = SummerCertificate.objects.filter(student=request.user).first()
+        if not cert:
+            profile = getattr(request.user, 'profile', None)
+            course = getattr(profile, 'course', None) if profile else None
+            cert = SummerCertificate.objects.create(
+                student=request.user,
+                course=course,
+                title=f"Certificate of Completion - {course.name if course else 'Summer CodeCamp'}",
+                remarks="Successfully completed the intensive 2026 Summer Coding & Technology Camp."
+            )
+
+    user_role = getattr(request.user.profile, 'role', '') if hasattr(request.user, 'profile') else ''
+    if not (request.user == cert.student or request.user.is_staff or request.user.is_superuser or user_role in ['accountant', 'hod']):
+        messages.error(request, "You are not authorized to view this certificate.")
+        return redirect('home')
+
+    if request.GET.get('download') == 'file' and cert.certificate_file:
+        return FileResponse(cert.certificate_file.open('rb'), as_attachment=True, filename=cert.certificate_file.name.split('/')[-1])
+
+    context = {
+        'certificate': cert,
+        'student': cert.student,
+        'profile': getattr(cert.student, 'profile', None),
+        'course': cert.course,
+    }
+    return render(request, 'accounts/summer_certificate_template.html', context)
+
+
+@login_required
+def admin_upload_certificate(request):
+    """
+    Administrative endpoint to upload custom PDF certificates or update scores for students.
+    """
+    user_role = getattr(request.user.profile, 'role', '') if hasattr(request.user, 'profile') else ''
+    if not (request.user.is_superuser or request.user.is_staff or user_role in ['accountant', 'hod']):
+        messages.error(request, "Access restricted to administrators and staff.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        title = request.POST.get('title', 'Certificate of Completion - Summer CodeCamp').strip()
+        grade = request.POST.get('grade_or_score', 'Distinction').strip()
+        remarks = request.POST.get('remarks', 'Outstanding participation in Summer Boot Camp').strip()
+        cert_file = request.FILES.get('certificate_file')
+
+        student = get_object_or_404(User, id=student_id)
+        profile = getattr(student, 'profile', None)
+
+        cert, created = SummerCertificate.objects.get_or_create(
+            student=student,
+            defaults={
+                'course': getattr(profile, 'course', None),
+                'title': title,
+                'grade_or_score': grade,
+                'remarks': remarks,
+                'uploaded_by': request.user,
+            }
+        )
+        if not created:
+            cert.title = title
+            cert.grade_or_score = grade
+            cert.remarks = remarks
+            cert.uploaded_by = request.user
+            if getattr(profile, 'course', None):
+                cert.course = profile.course
+        if cert_file:
+            cert.certificate_file = cert_file
+        cert.save()
+
+        messages.success(request, f"Certificate successfully saved for {student.get_full_name() or student.username}!")
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+

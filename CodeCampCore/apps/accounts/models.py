@@ -23,8 +23,20 @@ class Profile(models.Model):
         ('accountant', 'Accountant'),
     ]
 
+    STUDENT_STATUS_CHOICES = [
+        ('active', 'Active Student'),
+        ('summer_alumni', 'Summer Alumni (Inactive)'),
+        ('withdrawn', 'Withdrawn'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
+    student_status = models.CharField(
+        max_length=20,
+        choices=STUDENT_STATUS_CHOICES,
+        default='active',
+        help_text="Active vs Summer Alumni (Restricted to certificate/report until re-enrolled)."
+    )
     phone = models.CharField(max_length=20, blank=True)
     external_attendance_id = models.CharField(
         max_length=100,
@@ -84,7 +96,7 @@ class Profile(models.Model):
         verbose_name_plural = 'Profiles'
 
     def __str__(self):
-        return f"{self.user.username} ({self.role})"
+        return f"{self.user.username} ({self.role} - {self.student_status})"
 
 
 class Attendance(models.Model):
@@ -114,7 +126,7 @@ class Attendance(models.Model):
         related_name='attendance_records'
     )
     batch = models.ForeignKey(
-        'scheduling.Batch',  # ✅ safely reference Batch via string
+        'scheduling.Batch',
         on_delete=models.CASCADE,
         related_name='attendance_records',
         null=True,
@@ -140,7 +152,43 @@ class Attendance(models.Model):
         verbose_name = 'Attendance'
         verbose_name_plural = 'Attendance Records'
         ordering = ['-date']
-        unique_together = ('student', 'subject', 'date')  # prevents duplicates
+        unique_together = ('student', 'subject', 'date')
 
     def __str__(self):
         return f"{self.student.username} - {self.subject.name} - {self.status}"
+
+
+class SummerCertificate(models.Model):
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='summer_certificates'
+    )
+    course = models.ForeignKey(
+        'courses.Course',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    title = models.CharField(max_length=255, default='Certificate of Completion - Summer CodeCamp')
+    certificate_file = models.FileField(upload_to='certificates/summer/', null=True, blank=True)
+    issue_date = models.DateField(default=timezone.localdate)
+    reference_id = models.CharField(max_length=60, unique=True, default=uuid.uuid4)
+    remarks = models.CharField(max_length=255, blank=True, default='Outstanding participation in Summer Boot Camp')
+    grade_or_score = models.CharField(max_length=50, blank=True, default='Distinction')
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='uploaded_certificates'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Summer Certificate'
+        verbose_name_plural = 'Summer Certificates'
+        ordering = ['-issue_date']
+
+    def __str__(self):
+        return f"{self.student.username} - {self.title}"

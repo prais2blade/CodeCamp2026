@@ -57,7 +57,11 @@ class Payment(models.Model):
             profile.has_paid = self.status in ['partial', 'paid']
             profile.paid_amount = self.amount_paid
             profile.tuition_paid = (self.status == 'paid')
-            profile.save(update_fields=['has_paid', 'paid_amount', 'tuition_paid'])
+            update_fields = ['has_paid', 'paid_amount', 'tuition_paid']
+            if profile.has_paid and profile.student_status == 'summer_alumni':
+                profile.student_status = 'active'
+                update_fields.append('student_status')
+            profile.save(update_fields=update_fields)
         except Profile.DoesNotExist:
             pass
 
