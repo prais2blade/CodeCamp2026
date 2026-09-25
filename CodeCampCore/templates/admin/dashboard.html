@@ -375,8 +375,9 @@
           <div>
             <div class="kpi-label">Enrolled Students</div>
             <div class="kpi-value text-primary">{{ total_students }}</div>
-            <div class="small text-muted mt-1 font-weight-bold">
-              <i class="fas fa-check-circle text-success mr-1"></i> Active in 2026 Cohorts
+            <div class="small mt-1 font-weight-bold">
+              <span class="text-success"><i class="fas fa-check-circle mr-1"></i>{{ total_active_students }} Active</span> &bull; 
+              <span class="text-warning"><i class="fas fa-sun mr-1"></i>{{ total_summer_alumni }} Summer Alumni</span>
             </div>
           </div>
           <div class="kpi-icon-wrap" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">
@@ -513,17 +514,26 @@
           </div>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <div class="mr-2">
-              <select id="studentCourseFilter" class="form-control shadow-sm font-weight-bold" style="height: 40px; border-radius: 0.65rem; border: 1px solid #cbd5e1; min-width: 220px; font-size: 0.88rem; color: #1e293b;">
-                <option value="">🎯 All Programmes / Courses</option>
-                {% for c in all_courses %}
-                  <option value="{{ c.name|lower }}">{{ c.name }}</option>
-                {% endfor %}
+              <select id="studentCourseFilter" class="form-control shadow-sm font-weight-bold" style="height: 40px; border-radius: 0.65rem; border: 1px solid #cbd5e1; min-width: 240px; font-size: 0.88rem; color: #1e293b;">
+                <option value="">🎯 All Programmes / Cohorts</option>
+                <optgroup label="Academic Status">
+                  <option value="status:summer_alumni">🏖️ Summer Alumni Only ({{ total_summer_alumni }})</option>
+                  <option value="status:active">✅ Active Students Only ({{ total_active_students }})</option>
+                </optgroup>
+                <optgroup label="Programmes">
+                  {% for c in all_courses %}
+                    <option value="{{ c.name|lower }}">{{ c.name }}</option>
+                  {% endfor %}
+                </optgroup>
               </select>
             </div>
             <div class="search-input-wrap mr-2">
               <i class="fas fa-search"></i>
               <input type="text" id="studentSearchInput" class="form-control" placeholder="Search student name, email, cohort...">
             </div>
+            <button class="btn btn-warning font-weight-bold shadow-sm text-dark mr-2" data-toggle="modal" data-target="#summerBulkDeactivateModal" style="border-radius: 0.65rem; height: 40px; display: inline-flex; align-items: center;">
+              <i class="fas fa-sun mr-1"></i> 🏖️ Deactivate Summer Students
+            </button>
             <button class="btn btn-cc-primary" data-toggle="modal" data-target="#enrollStudentModal">
               <i class="fas fa-user-plus"></i> Enroll Student
             </button>
@@ -538,15 +548,21 @@
               <span class="font-weight-bold text-dark" style="font-size: 0.95rem;">
                 <span id="selectedCountBadge">0</span> student(s) selected
               </span>
-              <div class="text-muted small">Update start date, assign courses, or recalculate billing in bulk.</div>
+              <div class="text-muted small">Update status, discount, start date, or billing for selected students.</div>
             </div>
           </div>
-          <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-warning font-weight-bold shadow-sm mr-2 text-dark" data-toggle="modal" data-target="#studentBulkDiscountModal">
-              <i class="fas fa-tags mr-1"></i> 🏷️ Apply Discount / Custom Fee
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-warning font-weight-bold shadow-sm mr-2 text-dark" onclick="submitBulkSummerAction('deactivate')">
+              <i class="fas fa-sun mr-1"></i> 🏖️ Deactivate Selected
+            </button>
+            <button type="button" class="btn btn-success font-weight-bold shadow-sm mr-2" onclick="submitBulkSummerAction('activate')">
+              <i class="fas fa-check-circle mr-1"></i> ✅ Activate Selected
+            </button>
+            <button type="button" class="btn btn-secondary font-weight-bold shadow-sm mr-2" data-toggle="modal" data-target="#studentBulkDiscountModal">
+              <i class="fas fa-tags mr-1"></i> 🏷️ Discount / Fee
             </button>
             <button type="button" class="btn btn-primary font-weight-bold shadow-sm" data-toggle="modal" data-target="#bulkUpdateModal">
-              <i class="fas fa-calendar-alt mr-1"></i> 📅 Update Start Date & Billing
+              <i class="fas fa-calendar-alt mr-1"></i> 📅 Start Date & Billing
             </button>
           </div>
         </div>
@@ -569,7 +585,7 @@
             </thead>
             <tbody>
               {% for s in students %}
-              <tr data-course="{{ s.course.name|lower|default:'' }}" id="student-row-{{ s.id }}">
+              <tr data-course="{{ s.course.name|lower|default:'' }}" data-status="{{ s.student_status }}" id="student-row-{{ s.id }}">
                 <td class="text-center">
                   <input type="checkbox" class="student-select-cb" value="{{ s.id }}" data-name="{{ s.user.get_full_name|default:s.user.username }}" style="transform: scale(1.15); cursor: pointer;">
                 </td>
@@ -643,13 +659,18 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if s.user.is_active %}
-                    <span class="badge badge-pill badge-success px-2 py-1">
-                      <i class="fas fa-check-circle mr-1"></i> Active
+                  {% if s.student_status == 'summer_alumni' %}
+                    <span class="badge badge-pill badge-warning font-weight-bold px-2 py-1 shadow-2xs" title="Summer Alumni (Restricted until re-enrolled & paid)">
+                      <i class="fas fa-sun mr-1"></i> Summer Alumni
                     </span>
                   {% else %}
-                    <span class="badge badge-pill badge-danger px-2 py-1">
-                      <i class="fas fa-ban mr-1"></i> Deactivated
+                    <span class="badge badge-pill badge-success font-weight-bold px-2 py-1 shadow-2xs">
+                      <i class="fas fa-check-circle mr-1"></i> Active Student
+                    </span>
+                  {% endif %}
+                  {% if not s.user.is_active %}
+                    <span class="badge badge-pill badge-danger font-weight-bold px-2 py-1 ml-1" title="Login Disabled">
+                      <i class="fas fa-ban mr-1"></i> Disabled
                     </span>
                   {% endif %}
                 </td>
@@ -658,7 +679,28 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle font-weight-bold" data-toggle="dropdown">
                       Manage
                     </button>
-                    <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0" style="border-radius: 12px; min-width: 210px;">
+                      <!-- Quick Toggle Summer / Main Term Status -->
+                      <form action="{% url 'admin_student_toggle_summer_status' s.id %}" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        {% if s.student_status == 'summer_alumni' %}
+                          <button type="submit" class="dropdown-item text-success font-weight-bold">
+                            <i class="fas fa-check-circle mr-2 text-success"></i> ✅ Activate for Main Term
+                          </button>
+                        {% else %}
+                          <button type="submit" class="dropdown-item text-warning font-weight-bold">
+                            <i class="fas fa-sun mr-2 text-warning"></i> 🏖️ Move to Summer Alumni
+                          </button>
+                        {% endif %}
+                      </form>
+
+                      <!-- Summer Certificate Modal Trigger -->
+                      <a class="dropdown-item font-weight-bold text-dark" href="#" data-toggle="modal" data-target="#certModal{{ s.id }}">
+                        <i class="fas fa-award mr-2 text-warning"></i> 🎓 Certificate & Score
+                      </a>
+
+                      <div class="dropdown-divider"></div>
+
                       <!-- Reassign Batch -->
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#batchModal{{ s.id }}">
                         <i class="fas fa-exchange-alt mr-2 text-primary"></i> Change Cohort / Batch
@@ -673,12 +715,75 @@
                         {% csrf_token %}
                         <button type="submit" class="dropdown-item text-danger">
                           {% if s.user.is_active %}
-                            <i class="fas fa-user-slash mr-2"></i> Deactivate Student
+                            <i class="fas fa-user-slash mr-2"></i> Disable Login
                           {% else %}
-                            <i class="fas fa-user-check mr-2 text-success"></i> Reactivate Student
+                            <i class="fas fa-user-check mr-2 text-success"></i> Enable Login
                           {% endif %}
                         </button>
                       </form>
+                    </div>
+                  </div>
+
+                  <!-- Quick Modal for Summer Certificate & Score -->
+                  <div class="modal fade text-left" id="certModal{{ s.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content" style="border-radius: 16px;">
+                        <div class="modal-header bg-warning text-dark" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                          <h5 class="modal-title font-weight-bold">
+                            <i class="fas fa-award mr-2"></i> Certificate: {{ s.user.get_full_name|default:s.user.username }}
+                          </h5>
+                          <button type="button" class="close text-dark" data-dismiss="modal">&times;</button>
+                        </div>
+                        <form action="{% url 'admin_upload_certificate' %}" method="POST" enctype="multipart/form-data">
+                          {% csrf_token %}
+                          <input type="hidden" name="student_id" value="{{ s.user_id }}">
+                          <div class="modal-body p-4">
+                            {% if s.summer_cert %}
+                              <div class="alert alert-light border d-flex justify-content-between align-items-center p-3 mb-3" style="border-radius: 10px;">
+                                <div>
+                                  <div class="font-weight-bold text-dark">{{ s.summer_cert.title }}</div>
+                                  <small class="text-muted">Ref: {{ s.summer_cert.reference_id|stringformat:".8s"|upper }} • Grade: {{ s.summer_cert.grade_or_score }}</small>
+                                </div>
+                                <a href="{% url 'view_summer_certificate_by_id' s.summer_cert.id %}" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold">
+                                  <i class="fas fa-external-link-alt mr-1"></i> Preview
+                                </a>
+                              </div>
+                            {% endif %}
+
+                            <div class="form-group mb-3">
+                              <label class="font-weight-bold text-dark">Certificate Title</label>
+                              <input type="text" name="title" class="form-control font-weight-bold" value="{{ s.summer_cert.title|default:'Certificate of Completion - Summer CodeCamp' }}" required>
+                            </div>
+
+                            <div class="form-group mb-3">
+                              <label class="font-weight-bold text-dark">Performance Grade / Score</label>
+                              <select name="grade_or_score" class="form-control font-weight-bold">
+                                <option value="Distinction" {% if s.summer_cert.grade_or_score == 'Distinction' %}selected{% endif %}>⭐ Distinction</option>
+                                <option value="Merit" {% if s.summer_cert.grade_or_score == 'Merit' %}selected{% endif %}>✨ Merit</option>
+                                <option value="Pass" {% if s.summer_cert.grade_or_score == 'Pass' %}selected{% endif %}>👍 Pass</option>
+                                <option value="Participation" {% if s.summer_cert.grade_or_score == 'Participation' %}selected{% endif %}>🎖️ Certificate of Participation</option>
+                              </select>
+                            </div>
+
+                            <div class="form-group mb-3">
+                              <label class="font-weight-bold text-dark">Commendation / Remarks</label>
+                              <input type="text" name="remarks" class="form-control" value="{{ s.summer_cert.remarks|default:'Outstanding participation in Summer Boot Camp' }}">
+                            </div>
+
+                            <div class="form-group mb-0">
+                              <label class="font-weight-bold text-dark">Upload Official PDF Certificate (Optional)</label>
+                              <input type="file" name="certificate_file" class="form-control-file border p-2 rounded" accept=".pdf,image/*">
+                              <small class="form-text text-muted">If uploaded, student downloads this exact PDF file. Otherwise, system renders printable certificate template.</small>
+                            </div>
+                          </div>
+                          <div class="modal-footer bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-warning font-weight-bold">
+                              <i class="fas fa-save mr-1"></i> Save Certificate
+                            </button>
+                          </div>
+                        </form>
+                      </div>
                     </div>
                   </div>
 
@@ -1829,6 +1934,77 @@
 </div>
 
 <!-- ========================================================= -->
+<!-- 🏖️ MODAL: BULK TRANSITION STUDENTS TO SUMMER ALUMNI -->
+<!-- ========================================================= -->
+<div class="modal fade" id="summerBulkDeactivateModal" tabindex="-1" role="dialog" aria-labelledby="summerBulkDeactivateModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header bg-warning text-dark" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+        <h5 class="modal-title font-weight-bold" id="summerBulkDeactivateModalLabel">
+          <i class="fas fa-sun mr-2"></i> Transition Students to Summer Alumni
+        </h5>
+        <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form action="{% url 'admin_summer_bulk_deactivate' %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="alert alert-warning mb-3" style="border-radius: 10px; border-left: 4px solid #d97706;">
+            <strong><i class="fas fa-info-circle mr-1"></i> Summer Completion Policy:</strong>
+            <ul class="mb-0 pl-3 mt-1 small">
+              <li>Students' logins remain active so they can log in to view their performance and download their certificate of completion.</li>
+              <li>Their student portal redirects to the <strong>Summer Hub</strong> until they register for the new academic term and make payment.</li>
+              <li>As students come and pay, you can activate them one by one right from this dashboard (or they auto-reactivate upon payment).</li>
+            </ul>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark">Select Scope to Transition</label>
+            <div class="custom-control custom-radio mb-2">
+              <input type="radio" id="scopeAllActive" name="scope" value="all" class="custom-control-input" checked onchange="toggleScopeInputs()">
+              <label class="custom-control-label font-weight-bold text-dark" for="scopeAllActive">All Currently Active Students ({{ total_active_students }})</label>
+            </div>
+            <div class="custom-control custom-radio mb-2">
+              <input type="radio" id="scopeByBatch" name="scope" value="batch" class="custom-control-input" onchange="toggleScopeInputs()">
+              <label class="custom-control-label font-weight-bold text-dark" for="scopeByBatch">Target Specific Cohort / Batch</label>
+            </div>
+            <div class="custom-control custom-radio mb-2">
+              <input type="radio" id="scopeByCourse" name="scope" value="course" class="custom-control-input" onchange="toggleScopeInputs()">
+              <label class="custom-control-label font-weight-bold text-dark" for="scopeByCourse">Target Specific Programme / Course</label>
+            </div>
+          </div>
+
+          <div class="form-group d-none" id="batchSelectGroup">
+            <label class="font-weight-bold text-dark">Select Cohort</label>
+            <select name="batch_id" class="form-control font-weight-bold">
+              {% for b in all_batches %}
+                <option value="{{ b.id }}">{{ b.course.name }} - {{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group d-none" id="courseSelectGroup">
+            <label class="font-weight-bold text-dark">Select Programme / Course</label>
+            <select name="course_id" class="form-control font-weight-bold">
+              {% for c in all_courses %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning font-weight-bold shadow-sm">
+            <i class="fas fa-check mr-1"></i> Confirm & Transition Students
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
 <!-- 📅 MODAL: BULK UPDATE STUDENTS START DATE & BILLING -->
 <!-- ========================================================= -->
 <div class="modal fade" id="bulkUpdateModal" tabindex="-1" role="dialog" aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
@@ -2094,7 +2270,7 @@ $(document).ready(function() {
     }
   });
 
-  // 3. Client-side Real-time Search & Course Filtering for Students
+  // 3. Client-side Real-time Search & Course/Status Filtering for Students
   function filterStudentsList() {
     var searchInput = document.getElementById('studentSearchInput');
     var courseSelect = document.getElementById('studentCourseFilter');
@@ -2105,13 +2281,61 @@ $(document).ready(function() {
     rows.forEach(function(row) {
       var text = row.innerText.toLowerCase();
       var rowCourse = (row.getAttribute('data-course') || '').toLowerCase();
+      var rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
       var matchesQuery = !query || text.indexOf(query) > -1;
-      var matchesCourse = !courseFilter || rowCourse.indexOf(courseFilter) > -1;
-      row.style.display = (matchesQuery && matchesCourse) ? '' : 'none';
+      var matchesFilter = true;
+      if (courseFilter.indexOf('status:') === 0) {
+        var targetStatus = courseFilter.replace('status:', '').trim();
+        matchesFilter = (rowStatus === targetStatus);
+      } else if (courseFilter) {
+        matchesFilter = (rowCourse.indexOf(courseFilter) > -1);
+      }
+      row.style.display = (matchesQuery && matchesFilter) ? '' : 'none';
     });
     if (typeof updateBulkSelection === 'function') {
       updateBulkSelection();
     }
+  }
+
+  function submitBulkSummerAction(action) {
+    var selected = document.querySelectorAll('.student-select-cb:checked');
+    if (selected.length === 0) {
+      alert('Please select at least one student.');
+      return;
+    }
+    var actionText = (action === 'deactivate') ? 'transition the selected student(s) to Summer Alumni (Inactive)' : 'activate the selected student(s) for the active academic term';
+    if (!confirm('Are you sure you want to ' + actionText + '?')) {
+      return;
+    }
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = (action === 'deactivate') ? "{% url 'admin_summer_bulk_deactivate' %}" : "{% url 'admin_summer_bulk_activate' %}";
+    
+    var csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = '{{ csrf_token }}';
+    form.appendChild(csrf);
+
+    selected.forEach(function(cb) {
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'student_ids';
+      input.value = cb.value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  function toggleScopeInputs() {
+    var checkedRadio = document.querySelector('input[name="scope"]:checked');
+    var scope = checkedRadio ? checkedRadio.value : 'all';
+    var batchGroup = document.getElementById('batchSelectGroup');
+    var courseGroup = document.getElementById('courseSelectGroup');
+    if (batchGroup) batchGroup.classList.toggle('d-none', scope !== 'batch');
+    if (courseGroup) courseGroup.classList.toggle('d-none', scope !== 'course');
   }
 
   var studentSearch = document.getElementById('studentSearchInput');

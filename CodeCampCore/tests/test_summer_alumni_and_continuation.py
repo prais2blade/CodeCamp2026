@@ -205,3 +205,63 @@ class SummerAlumniTransitionTests(TestCase):
         response = self.client.get(reverse('student_dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Welcome, Summer Graduate")
+
+    def test_admin_dashboard_toggle_and_bulk_summer_controls(self):
+        """Admin can toggle individual student status and run bulk deactivation/activation from admin dashboard."""
+        admin_user = User.objects.create_superuser(
+            username="admin_user",
+            email="admin@example.com",
+            password="AdminPassword123!"
+        )
+        self.client.login(username="admin_user", password="AdminPassword123!")
+
+        # 1. Toggle to summer_alumni
+        toggle_resp = self.client.post(reverse('admin_student_toggle_summer_status', args=[self.profile.id]))
+        self.assertRedirects(toggle_resp, '/account/admin/dashboard/#students')
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.student_status, 'summer_alumni')
+        self.assertFalse(self.profile.has_paid)
+
+        # 2. Toggle back to active
+        toggle_resp2 = self.client.post(reverse('admin_student_toggle_summer_status', args=[self.profile.id]))
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.student_status, 'active')
+        self.assertTrue(self.profile.has_paid)
+
+        # 3. Bulk deactivate from dashboard
+        bulk_deact_resp = self.client.post(reverse('admin_summer_bulk_deactivate'), {
+            'all_students': 'true',
+        })
+        self.assertRedirects(bulk_deact_resp, '/account/admin/dashboard/#students')
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.student_status, 'summer_alumni')
+
+        # 4. Bulk activate from dashboard
+        bulk_act_resp = self.client.post(reverse('admin_summer_bulk_activate'), {
+            'student_ids': [self.profile.id],
+        })
+        self.assertRedirects(bulk_act_resp, '/account/admin/dashboard/#students')
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.student_status, 'active')
+
+    def test_admin_upload_certificate(self):
+        """Admin can upload/update certificate title, grade, and remarks from dashboard modal."""
+        admin_user = User.objects.create_superuser(
+            username="cert_admin",
+            email="cert_admin@example.com",
+            password="AdminPassword123!"
+        )
+        self.client.login(username="cert_admin", password="AdminPassword123!")
+
+        resp = self.client.post(reverse('admin_upload_certificate'), {
+            'student_id': self.student_user.id,
+            'title': 'Certified Python Junior Developer',
+            'grade_or_score': 'Distinction',
+            'remarks': 'Exceptional algorithmic performance during summer bootcamp.',
+        })
+        self.assertRedirects(resp, '/account/admin/dashboard/#students')
+
+        cert = SummerCertificate.objects.filter(student=self.student_user).first()
+        self.assertIsNotNone(cert)
+        self.assertEqual(cert.title, 'Certified Python Junior Developer')
+        self.assertEqual(cert.grade_or_score, 'Distinction')

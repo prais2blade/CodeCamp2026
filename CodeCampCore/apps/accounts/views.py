@@ -954,12 +954,20 @@ def admin_dashboard(request):
         p.student_id: p
         for p in Payment.objects.filter(student_id__in=student_user_ids).select_related('course', 'batch')
     }
+    certs_map = {
+        c.student_id: c
+        for c in SummerCertificate.objects.filter(student_id__in=student_user_ids)
+    }
     for s in students:
         s.payment_record = payments_map.get(s.user_id)
+        s.summer_cert = certs_map.get(s.user_id)
         if s.payment_record and s.payment_record.amount_due > 0:
             s.payment_pct = min(100, round((float(s.payment_record.amount_paid) / float(s.payment_record.amount_due)) * 100, 1))
         else:
             s.payment_pct = 0
+
+    total_summer_alumni = Profile.objects.filter(role='student', student_status='summer_alumni').count()
+    total_active_students = Profile.objects.filter(role='student', student_status='active').count()
 
     # Courses
     courses = Course.objects.all().prefetch_related('subjects', 'batches').order_by('name')
@@ -1049,6 +1057,8 @@ def admin_dashboard(request):
         "total_users": total_users,
         "active_users": active_users,
         "total_students": total_students,
+        "total_summer_alumni": total_summer_alumni,
+        "total_active_students": total_active_students,
         "total_instructors": total_instructors,
         "total_staff": total_staff,
         "total_courses": total_courses,
@@ -1307,6 +1317,110 @@ def admin_student_toggle_status(request, profile_id):
 
         status_label = "activated" if profile.user.is_active else "deactivated"
         messages.success(request, f"Student {profile.user.username} account has been {status_label}.")
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+
+
+@login_required
+def admin_student_toggle_summer_status(request, profile_id):
+    """Toggles student status between 'active' and 'summer_alumni' directly from the Admin Dashboard."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        profile = get_object_or_404(Profile, id=profile_id)
+        if profile.student_status == 'summer_alumni':
+            profile.student_status = 'active'
+            profile.has_paid = True
+            profile.save(update_fields=['student_status', 'has_paid'])
+            messages.success(request, f"✅ Student {profile.user.get_full_name() or profile.user.username} is now ACTIVE for the main academic term!")
+        else:
+            profile.student_status = 'summer_alumni'
+            profile.has_paid = False
+            profile.save(update_fields=['student_status', 'has_paid'])
+            # Ensure certificate record exists so student can view/download
+            SummerCertificate.objects.get_or_create(
+                student=profile.user,
+                defaults={
+                    'course': profile.course,
+                    'title': f"Certificate of Completion - {profile.course.name if profile.course else 'Summer CodeCamp'}",
+                    'remarks': 'Successfully completed the intensive 2026 Summer Coding & Technology Camp.'
+                }
+            )
+            messages.success(request, f"🏖️ Student {profile.user.get_full_name() or profile.user.username} transitioned to Summer Alumni (Inactive).")
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+
+
+@login_required
+def admin_summer_bulk_deactivate(request):
+    """Bulk transitions students to 'summer_alumni' from the Admin Dashboard."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        target_batch_id = request.POST.get('batch_id')
+        target_course_id = request.POST.get('course_id')
+        all_students = request.POST.get('all_students') == 'true'
+
+        qs = Profile.objects.filter(role='student')
+        if target_batch_id:
+            qs = qs.filter(batch_id=target_batch_id)
+        elif target_course_id:
+            qs = qs.filter(course_id=target_course_id)
+        elif not all_students:
+            qs = qs.filter(student_status='active')
+
+        count = 0
+        for p in qs:
+            p.student_status = 'summer_alumni'
+            p.has_paid = False
+            p.save(update_fields=['student_status', 'has_paid'])
+            SummerCertificate.objects.get_or_create(
+                student=p.user,
+                defaults={
+                    'course': p.course,
+                    'title': f"Certificate of Completion - {p.course.name if p.course else 'Summer CodeCamp'}",
+                    'remarks': 'Successfully completed the intensive 2026 Summer Coding & Technology Camp.'
+                }
+            )
+            count += 1
+
+        messages.success(
+            request,
+            f"🏖️ Successfully transitioned {count} student(s) to Summer Alumni! Their portal is gated to certificates and reports until they register and pay for the main term."
+        )
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+
+
+@login_required
+def admin_summer_bulk_activate(request):
+    """Bulk activates selected students for the active academic term."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        student_ids = request.POST.getlist('student_ids')
+        if not student_ids:
+            messages.warning(request, "No students selected for activation.")
+            return redirect('/account/admin/dashboard/#students')
+
+        profiles = Profile.objects.filter(id__in=student_ids, role='student')
+        count = 0
+        for p in profiles:
+            p.student_status = 'active'
+            p.has_paid = True
+            p.save(update_fields=['student_status', 'has_paid'])
+            count += 1
+
+        messages.success(request, f"✅ Successfully activated {count} student(s) for the active academic term!")
         return redirect('/account/admin/dashboard/#students')
 
     return redirect('admin_dashboard')
