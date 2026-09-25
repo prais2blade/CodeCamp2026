@@ -814,7 +814,27 @@ def view_receipt(request, receipt_id):
         messages.error(request, "You do not have permission to view this receipt.")
         return redirect('login')
 
-    html_string = render_to_string('payments/receipt_template.html', {'receipt': receipt, 'payment': payment})
+    import base64
+    import os
+    from django.conf import settings
+
+    logo_data_uri = None
+    try:
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'codecamp-logo.png')
+        if os.path.exists(logo_path):
+            with open(logo_path, 'rb') as f:
+                b64 = base64.b64encode(f.read()).decode('utf-8')
+                logo_data_uri = f"data:image/png;base64,{b64}"
+    except Exception:
+        pass
+
+    context = {
+        'receipt': receipt,
+        'payment': payment,
+        'logo_data_uri': logo_data_uri,
+        'request': request,
+    }
+    html_string = render_to_string('payments/receipt_template.html', context)
 
     if 'download' in request.GET:
         response = HttpResponse(content_type='application/pdf')

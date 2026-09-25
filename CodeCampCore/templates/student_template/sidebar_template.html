@@ -1,8 +1,10 @@
+{% load static %}
 <!-- Sidebar -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
   <!-- Brand Logo -->
-  <a href="{% url 'student_dashboard' %}" class="brand-link text-center">
-    <span class="brand-text font-weight-light">CodeCamp Student</span>
+  <a href="{% url 'student_dashboard' %}" class="brand-link d-flex align-items-center">
+    <img src="{% static 'images/codecamp-logo.png' %}" alt="CodeCamp Logo" class="brand-image img-circle elevation-2" style="max-height: 34px; width: 34px; object-fit: contain; background: white; padding: 2px;">
+    <span class="brand-text font-weight-bold ml-2">CodeCamp Hub</span>
   </a>
 
   <!-- Sidebar Menu -->
