@@ -1,0 +1,246 @@
+{% extends "layouts/admin_base.html" %}
+{% load static humanize %}
+
+{% block title %}Faculty & Tutor Subject Assignments | CodeCamp Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-2">
+
+  <!-- Header Banner -->
+  <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #090d16 0%, #1e1b4b 60%, #312e81 100%); border-radius: 16px;">
+    <div class="card-body p-4 p-md-5">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1 mb-2 text-uppercase">
+            <i class="fas fa-chalkboard-teacher mr-1"></i> Academic Curriculum & Faculty Allocation
+          </span>
+          <h2 class="font-weight-extrabold text-white mb-1">Faculty & Tutor Subject Assignment Hub</h2>
+          <p class="text-white-50 mb-0" style="max-width: 720px;">
+            Assign instructors to curriculum subjects. Assign a single tutor to handle all subjects under a course in one click, or designate specialized tutors for individual subjects and cohorts.
+          </p>
+        </div>
+        <div class="mt-3 mt-md-0 d-flex gap-2">
+          <a href="{% url 'instructor_assignments' %}" class="btn btn-outline-light font-weight-bold mr-2">
+            <i class="fas fa-tasks mr-1"></i> Assignments Hub
+          </a>
+          <a href="{% url 'manage_courses' %}" class="btn btn-warning font-weight-bold shadow-sm">
+            <i class="fas fa-book mr-1"></i> Manage Courses
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Course & Cohort Navigation Filter -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-body p-4">
+      <form method="GET" action="{% url 'faculty_subject_assignments' %}" id="scopeFilterForm">
+        <div class="row align-items-end">
+          
+          <div class="col-md-5 mb-3 mb-md-0">
+            <label class="font-weight-bold text-dark text-xs text-uppercase mb-1">
+              <i class="fas fa-graduation-cap mr-1 text-primary"></i> Select Course Track
+            </label>
+            <select name="course_id" class="form-control font-weight-bold" onchange="document.getElementById('scopeFilterForm').submit();" style="border-radius: 8px;">
+              {% for c in courses %}
+                <option value="{{ c.id }}" {% if selected_course.id == c.id %}selected{% endif %}>
+                  {{ c.name }} ({{ c.subjects.count }} Subjects)
+                </option>
+              {% empty %}
+                <option value="">No courses published</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-5 mb-3 mb-md-0">
+            <label class="font-weight-bold text-dark text-xs text-uppercase mb-1">
+              <i class="fas fa-layer-group mr-1 text-info"></i> Target Scope / Cohort (Optional)
+            </label>
+            <select name="batch_id" class="form-control" onchange="document.getElementById('scopeFilterForm').submit();" style="border-radius: 8px;">
+              <option value="">All Cohorts (Course-Wide Default)</option>
+              {% for b in batches %}
+                <option value="{{ b.id }}" {% if selected_batch.id == b.id %}selected{% endif %}>
+                  Cohort: {{ b.name }} ({{ b.schedule_display }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-dark btn-block font-weight-bold" style="border-radius: 8px;">
+              <i class="fas fa-filter mr-1"></i> Apply
+            </button>
+          </div>
+
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if selected_course %}
+
+  <!-- 1-CLICK BULK ASSIGNMENT HERO CARD -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%); border-left: 5px solid #4f46e5 !important;">
+    <div class="card-body p-4">
+      <div class="row align-items-center">
+        
+        <div class="col-lg-6 mb-3 mb-lg-0">
+          <div class="d-flex align-items-center">
+            <div class="p-3 bg-primary text-white rounded-circle mr-3 shadow-sm">
+              <i class="fas fa-user-check fa-lg"></i>
+            </div>
+            <div>
+              <h5 class="font-weight-extrabold text-dark mb-1">1-Click: Assign Tutor to ALL Subjects</h5>
+              <p class="text-muted small mb-0">
+                If one tutor will teach the entire curriculum of <strong>{{ selected_course.name }}</strong>{% if selected_batch %} for <strong>Cohort {{ selected_batch.name }}</strong>{% endif %}, select them below.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <form method="POST" action="{% url 'bulk_assign_course_tutor' %}" class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-lg-end gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="course_id" value="{{ selected_course.id }}">
+            {% if selected_batch %}
+              <input type="hidden" name="batch_id" value="{{ selected_batch.id }}">
+            {% endif %}
+
+            <select name="tutor_id" class="form-control font-weight-bold mr-sm-2 mb-2 mb-sm-0" required style="border-radius: 8px; min-width: 220px;">
+              <option value="">-- Choose Instructor --</option>
+              {% for t in tutors %}
+                <option value="{{ t.id }}">
+                  {{ t.get_full_name|default:t.username }} (@{{ t.username }})
+                </option>
+              {% endfor %}
+            </select>
+
+            <button type="submit" class="btn btn-primary font-weight-bold shadow-sm px-4" style="border-radius: 8px; white-space: nowrap;" onclick="return confirm('Are you sure you want to assign this tutor to ALL subjects under {{ selected_course.name }}?');">
+              <i class="fas fa-bolt mr-1 text-warning"></i> Assign to All ({{ selected_course.subjects.count }})
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- INDIVIDUAL SUBJECT TUTOR ASSIGNMENT MATRIX -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="font-weight-extrabold text-dark mb-0">
+          Curriculum Subject Matrix for {{ selected_course.name }}
+        </h5>
+        <p class="text-muted small mb-0">
+          Designate specialist tutors for individual subjects (e.g., Python vs C++ vs Electronics & Sensors).
+          {% if selected_batch %}
+            <span class="badge badge-info ml-1">Scoping to Cohort: {{ selected_batch.name }}</span>
+          {% else %}
+            <span class="badge badge-secondary ml-1">Course-Wide Default</span>
+          {% endif %}
+        </p>
+      </div>
+
+      <div>
+        <a href="{% url 'create_subject' selected_course.id %}" class="btn btn-outline-primary btn-sm font-weight-bold" style="border-radius: 8px;">
+          <i class="fas fa-plus-circle mr-1"></i> Add Subject to {{ selected_course.name }}
+        </a>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <form method="POST" action="{% url 'faculty_subject_assignments' %}?course_id={{ selected_course.id }}{% if selected_batch %}&batch_id={{ selected_batch.id }}{% endif %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_matrix">
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th class="px-4 py-3 text-xs text-uppercase font-weight-bold text-muted">Subject / Module</th>
+                <th class="py-3 text-xs text-uppercase font-weight-bold text-muted">Description / Scope</th>
+                <th class="py-3 text-xs text-uppercase font-weight-bold text-muted text-center">Current Tutor</th>
+                <th class="py-3 text-xs text-uppercase font-weight-bold text-muted" style="min-width: 250px;">Assign / Change Tutor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in subject_rows %}
+              <tr>
+                <!-- Subject Name -->
+                <td class="px-4 py-3">
+                  <div class="font-weight-bold text-dark h6 mb-0">{{ row.subject.name }}</div>
+                  <div class="text-xs text-muted">{{ selected_course.name }}</div>
+                </td>
+
+                <!-- Description -->
+                <td class="py-3">
+                  <div class="text-muted small" style="max-width: 320px;">
+                    {{ row.subject.description|default:"Standard curriculum module"|truncatewords:16 }}
+                  </div>
+                </td>
+
+                <!-- Current Tutor Badge -->
+                <td class="py-3 text-center">
+                  {% if row.current_tutor %}
+                    <span class="badge badge-light-success text-success font-weight-bold px-2.5 py-1.5" style="border-radius: 6px;">
+                      <i class="fas fa-user-tie mr-1"></i> {{ row.current_tutor.get_full_name|default:row.current_tutor.username }}
+                    </span>
+                    {% if row.is_batch_override %}
+                      <div class="text-xs text-info font-weight-bold mt-1">Cohort Specific</div>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge badge-light text-muted px-2 py-1">
+                      <i class="fas fa-exclamation-circle mr-1"></i> Unassigned
+                    </span>
+                  {% endif %}
+                </td>
+
+                <!-- Tutor Dropdown -->
+                <td class="py-3">
+                  <select name="tutor_subj_{{ row.subject.id }}" class="form-control form-control-sm font-weight-bold" style="border-radius: 8px;">
+                    <option value="">-- No Tutor / Unassign --</option>
+                    {% for t in tutors %}
+                      <option value="{{ t.id }}" {% if row.current_tutor.id == t.id %}selected{% endif %}>
+                        {{ t.get_full_name|default:t.username }} (@{{ t.username }})
+                      </option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-5 text-muted">
+                  <i class="fas fa-book-open fa-3x text-muted mb-3 d-block"></i>
+                  No subjects created yet for <strong>{{ selected_course.name }}</strong>.
+                  <div class="mt-2">
+                    <a href="{% url 'create_subject' selected_course.id %}" class="btn btn-primary btn-sm font-weight-bold">
+                      <i class="fas fa-plus-circle mr-1"></i> Add First Subject
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if subject_rows %}
+        <div class="p-4 border-top bg-light d-flex justify-content-between align-items-center">
+          <span class="text-xs text-muted">
+            <i class="fas fa-info-circle mr-1"></i> Changes will immediately update instructor access and assignment dispatch scoping.
+          </span>
+          <button type="submit" class="btn btn-success font-weight-bold px-4 shadow-sm" style="border-radius: 8px;">
+            <i class="fas fa-save mr-1"></i> Save Subject Assignments
+          </button>
+        </div>
+        {% endif %}
+
+      </form>
+    </div>
+  </div>
+
+  {% endif %}
+
+</div>
+{% endblock content %}

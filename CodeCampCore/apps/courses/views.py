@@ -1,7 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Course, Subject, Assignment, Submission
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+from .models import Course, Subject, Assignment, Submission, BatchSubjectTutor
 from .forms import CourseForm, SubjectForm
 from apps.accounts.decorators import role_required, payment_required
 from apps.accounts.models import Profile, Attendance
@@ -17,11 +20,14 @@ def choose_course(request):
     if request.method == 'POST':
         course_id = request.POST.get('course_id')
         if course_id:
-            request.user.profile.course_id = course_id
-            request.user.profile.save()
-            messages.success(request, "Course selected.")
+            profile = request.user.profile
+            profile.course_id = course_id
+            profile.save()
+            selected_subjs = request.POST.getlist('subject_ids')
+            profile.enroll_in_course_subjects(selected_subjs if selected_subjs else None)
+            messages.success(request, "Course and curriculum subjects enrolled.")
             return redirect('choose_batch')
-    courses = Course.objects.filter(is_published=True)   # ✅ only published
+    courses = Course.objects.filter(is_published=True).prefetch_related('subjects')
     return render(request, 'courses/choose_course.html', {'courses': courses})
 
 
@@ -241,10 +247,13 @@ def instructor_assignments(request):
         assignments_qs = Assignment.objects.all().select_related('subject__course', 'batch', 'created_by')
         subjects_qs = Subject.objects.all().select_related('course').order_by('course__name', 'name')
     else:
+        batch_subj_ids = BatchSubjectTutor.objects.filter(tutor=request.user).values_list('subject_id', flat=True)
         assignments_qs = Assignment.objects.filter(
-            Q(subject__instructor=request.user) | Q(created_by=request.user)
-        ).select_related('subject__course', 'batch', 'created_by')
-        subjects_qs = Subject.objects.filter(instructor=request.user).select_related('course').order_by('course__name', 'name')
+            Q(subject__instructor=request.user) | Q(subject_id__in=batch_subj_ids) | Q(created_by=request.user)
+        ).select_related('subject__course', 'batch', 'created_by').distinct()
+        subjects_qs = Subject.objects.filter(
+            Q(instructor=request.user) | Q(id__in=batch_subj_ids)
+        ).select_related('course').order_by('course__name', 'name').distinct()
 
     subject_filter = request.GET.get('subject_id')
     batch_filter = request.GET.get('batch_id')
@@ -432,6 +441,8 @@ def student_weekly_gradebook(request):
     assignments = Assignment.objects.filter(subject__course=course).select_related('subject', 'batch').order_by('week_number', 'due_date')
     if profile.batch:
         assignments = assignments.filter(Q(batch=profile.batch) | Q(batch__isnull=True))
+    if profile.enrolled_subjects.exists():
+        assignments = assignments.filter(subject__in=profile.enrolled_subjects.all())
 
     submissions_map = {
         s.assignment_id: s
@@ -556,5 +567,198 @@ def submit_assignment(request, assignment_id):
 @login_required
 def student_assignments(request):
     return redirect('student_weekly_gradebook')
+
+
+# ============================================================================
+# FACULTY & TUTOR SUBJECT ASSIGNMENT HUB (ADMIN & HOD)
+# ============================================================================
+
+@login_required
+def faculty_subject_assignments(request):
+    """
+    Unified Command Center for assigning Tutors to Subjects:
+    - 1-Click: Assign a single tutor to ALL subjects under a course.
+    - Specialist: Assign different tutors to individual subjects.
+    - Cohort Scoping: Optionally assign different tutors per batch/cohort.
+    """
+    user_role = getattr(getattr(request.user, 'profile', None), 'role', '')
+    if not (request.user.is_superuser or user_role in ['hod', 'admin']):
+        messages.error(request, "Access restricted to Academy Administration and HODs.")
+        return redirect('admin_dashboard')
+
+    courses = Course.objects.all().prefetch_related('subjects').order_by('name')
+    selected_course_id = request.GET.get('course_id')
+    selected_course = Course.objects.filter(id=selected_course_id).first() if selected_course_id else courses.first()
+
+    batches = selected_course.batches.all().order_by('-start_date') if selected_course else Batch.objects.none()
+    selected_batch_id = request.GET.get('batch_id')
+    selected_batch = Batch.objects.filter(id=selected_batch_id).first() if selected_batch_id else None
+
+    # Instructors / Faculty list
+    tutors = User.objects.filter(
+        Q(profile__role__in=['instructor', 'hod']) | Q(is_staff=True),
+        is_active=True
+    ).distinct().order_by('first_name', 'last_name', 'username')
+
+    # Handle saving individual subject assignments
+    if request.method == "POST":
+        action = request.POST.get('action', 'save_matrix')
+        
+        if action == 'save_matrix' and selected_course:
+            updated_count = 0
+            for subj in selected_course.subjects.all():
+                tutor_key = f"tutor_subj_{subj.id}"
+                tutor_id = request.POST.get(tutor_key)
+                tutor_user = User.objects.filter(id=tutor_id).first() if tutor_id else None
+
+                if selected_batch:
+                    # Cohort-specific tutor assignment
+                    if tutor_user:
+                        BatchSubjectTutor.objects.update_or_create(
+                            batch=selected_batch,
+                            subject=subj,
+                            defaults={'tutor': tutor_user, 'assigned_by': request.user}
+                        )
+                    else:
+                        BatchSubjectTutor.objects.filter(batch=selected_batch, subject=subj).delete()
+                    updated_count += 1
+                else:
+                    # Course-wide default subject instructor
+                    subj.instructor = tutor_user
+                    subj.save()
+                    updated_count += 1
+
+            target_scope = f"Cohort '{selected_batch.name}'" if selected_batch else f"Course '{selected_course.name}'"
+            messages.success(request, f"🎉 Updated tutor assignments for {updated_count} subjects in {target_scope}!")
+            
+            redirect_url = f"{reverse('faculty_subject_assignments')}?course_id={selected_course.id}"
+            if selected_batch:
+                redirect_url += f"&batch_id={selected_batch.id}"
+            return redirect(redirect_url)
+
+    # Build subjects matrix with current tutor resolution
+    subject_rows = []
+    if selected_course:
+        for subj in selected_course.subjects.all():
+            current_tutor = subj.get_tutor_for_batch(selected_batch)
+            is_batch_override = selected_batch and BatchSubjectTutor.objects.filter(batch=selected_batch, subject=subj).exists()
+            subject_rows.append({
+                'subject': subj,
+                'current_tutor': current_tutor,
+                'is_batch_override': is_batch_override,
+                'course_default_tutor': subj.instructor,
+            })
+
+    context = {
+        'courses': courses,
+        'selected_course': selected_course,
+        'batches': batches,
+        'selected_batch': selected_batch,
+        'tutors': tutors,
+        'subject_rows': subject_rows,
+    }
+    return render(request, 'courses/faculty_subject_assignments.html', context)
+
+
+@login_required
+def bulk_assign_course_tutor(request):
+    """
+    1-Click Bulk Action: Assigns a single tutor to ALL subjects under a course.
+    Optionally scopes to a specific batch/cohort.
+    """
+    user_role = getattr(getattr(request.user, 'profile', None), 'role', '')
+    if not (request.user.is_superuser or user_role in ['hod', 'admin']):
+        messages.error(request, "Permission denied.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        course_id = request.POST.get('course_id')
+        batch_id = request.POST.get('batch_id')
+        tutor_id = request.POST.get('tutor_id')
+
+        course = get_object_or_404(Course, id=course_id)
+        tutor = get_object_or_404(User, id=tutor_id)
+        batch = Batch.objects.filter(id=batch_id).first() if batch_id else None
+
+        subjects = course.subjects.all()
+        count = subjects.count()
+
+        if count == 0:
+            messages.warning(request, f"Course '{course.name}' does not have any curriculum subjects yet.")
+            return redirect(f"{reverse('faculty_subject_assignments')}?course_id={course.id}")
+
+        if batch:
+            for subj in subjects:
+                BatchSubjectTutor.objects.update_or_create(
+                    batch=batch,
+                    subject=subj,
+                    defaults={'tutor': tutor, 'assigned_by': request.user}
+                )
+            messages.success(request, f"✅ Tutor {tutor.get_full_name() or tutor.username} assigned to ALL {count} subjects for Cohort '{batch.name}'!")
+            return redirect(f"{reverse('faculty_subject_assignments')}?course_id={course.id}&batch_id={batch.id}")
+        else:
+            subjects.update(instructor=tutor)
+            messages.success(request, f"✅ Tutor {tutor.get_full_name() or tutor.username} assigned to ALL {count} subjects across '{course.name}'!")
+            return redirect(f"{reverse('faculty_subject_assignments')}?course_id={course.id}")
+
+    return redirect('faculty_subject_assignments')
+
+
+@login_required
+def api_course_subjects(request, course_id):
+    """
+    Dynamic API endpoint returning subjects for a given course.
+    Used for chained dropdowns in assignment creation and student registration.
+    """
+    course = get_object_or_404(Course, id=course_id)
+    batch_id = request.GET.get('batch_id')
+    batch = Batch.objects.filter(id=batch_id).first() if batch_id else None
+
+    subjects = course.subjects.all().order_by('name')
+    data = []
+    for s in subjects:
+        tutor = s.get_tutor_for_batch(batch)
+        data.append({
+            'id': s.id,
+            'name': s.name,
+            'description': s.description,
+            'tutor_id': tutor.id if tutor else None,
+            'tutor_name': (tutor.get_full_name() or tutor.username) if tutor else 'Unassigned'
+        })
+
+    return JsonResponse({'course_id': course.id, 'course_name': course.name, 'subjects': data})
+
+
+@login_required
+def student_enroll_subjects(request):
+    """
+    Student interface to review and update enrolled subjects within their chosen course.
+    """
+    profile = request.user.profile
+    course = profile.course
+    if not course:
+        messages.info(request, "Please choose a course first.")
+        return redirect('choose_course')
+
+    if request.method == "POST":
+        selected_ids = request.POST.getlist('subject_ids')
+        if not selected_ids:
+            messages.warning(request, "Please select at least one curriculum subject.")
+        else:
+            profile.enrolled_subjects.set(selected_ids)
+            messages.success(request, "🎉 Your enrolled curriculum subjects have been updated!")
+            return redirect('student_weekly_gradebook')
+
+    enrolled_ids = set(profile.enrolled_subjects.values_list('id', flat=True))
+    all_subjects = course.subjects.all().order_by('name')
+
+    context = {
+        'course': course,
+        'profile': profile,
+        'all_subjects': all_subjects,
+        'enrolled_ids': enrolled_ids,
+    }
+    return render(request, 'courses/student_enroll_subjects.html', context)
+
 
 

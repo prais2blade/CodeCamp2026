@@ -19,7 +19,12 @@
             Publish curriculum assignments organized by week, evaluate student work using standard marking rubrics, and provide structured academic feedback.
           </p>
         </div>
-        <div class="mt-3 mt-md-0">
+        <div class="mt-3 mt-md-0 d-flex gap-2">
+          {% if user.is_superuser or user.profile.role == 'hod' %}
+          <a href="{% url 'faculty_subject_assignments' %}" class="btn btn-outline-light font-weight-bold mr-2">
+            <i class="fas fa-chalkboard-teacher mr-1"></i> Tutor Subject Matrix
+          </a>
+          {% endif %}
           <button class="btn btn-warning font-weight-bold shadow-sm" data-toggle="modal" data-target="#createAssignmentModal">
             <i class="fas fa-plus-circle mr-1"></i> Create Assignment
           </button>
@@ -190,22 +195,25 @@
 
           <div class="row">
             <div class="col-md-6 form-group mb-3">
-              <label class="font-weight-bold text-dark">Subject / Module</label>
-              <select name="subject_id" class="form-control font-weight-bold" required>
-                {% for subj in subjects %}
-                  <option value="{{ subj.id }}">{{ subj.course.name }} &bull; {{ subj.name }}</option>
+              <label class="font-weight-bold text-dark">Target Cohort / Batch *</label>
+              <select name="batch_id" id="modalBatchSelect" class="form-control font-weight-bold" onchange="filterModalSubjects();">
+                <option value="" data-course-id="">All Cohorts / Batches</option>
+                {% for b in batches %}
+                  <option value="{{ b.id }}" data-course-id="{{ b.course.id }}" data-course-name="{{ b.course.name }}">{{ b.name }} ({{ b.course.name }})</option>
                 {% endfor %}
               </select>
+              <small class="text-muted">Assignments are delivered directly to students in this cohort.</small>
             </div>
 
             <div class="col-md-6 form-group mb-3">
-              <label class="font-weight-bold text-dark">Target Cohort (Optional)</label>
-              <select name="batch_id" class="form-control">
-                <option value="">All Cohorts / Batches</option>
-                {% for b in batches %}
-                  <option value="{{ b.id }}">{{ b.name }} ({{ b.course.name }})</option>
+              <label class="font-weight-bold text-dark">Subject / Curriculum Module *</label>
+              <select name="subject_id" id="modalSubjectSelect" class="form-control font-weight-bold" required>
+                <option value="">-- Choose Subject --</option>
+                {% for subj in subjects %}
+                  <option value="{{ subj.id }}" data-course-id="{{ subj.course.id }}">{{ subj.course.name }} &bull; {{ subj.name }}</option>
                 {% endfor %}
               </select>
+              <small class="text-muted">Only students enrolled in this subject receive the task.</small>
             </div>
           </div>
 
@@ -266,4 +274,29 @@
     </div>
   </div>
 </div>
+
+<script>
+  function filterModalSubjects() {
+    const batchSelect = document.getElementById('modalBatchSelect');
+    const subjectSelect = document.getElementById('modalSubjectSelect');
+    if (!batchSelect || !subjectSelect) return;
+
+    const selectedOption = batchSelect.options[batchSelect.selectedIndex];
+    const targetCourseId = selectedOption ? selectedOption.getAttribute('data-course-id') : null;
+
+    for (let i = 0; i < subjectSelect.options.length; i++) {
+      const opt = subjectSelect.options[i];
+      if (!opt.value) continue;
+      const subjCourseId = opt.getAttribute('data-course-id');
+      if (!targetCourseId || targetCourseId === subjCourseId) {
+        opt.style.display = '';
+      } else {
+        opt.style.display = 'none';
+        if (opt.selected) {
+          subjectSelect.value = '';
+        }
+      }
+    }
+  }
+</script>
 {% endblock %}

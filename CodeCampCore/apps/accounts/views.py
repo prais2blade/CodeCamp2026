@@ -124,6 +124,11 @@ def register_view(request):
             profile.batch = batch
             profile.save()
 
+        # Enroll in course curriculum subjects
+        if course:
+            selected_subjs = request.POST.getlist('subject_ids')
+            profile.enroll_in_course_subjects(selected_subjs if selected_subjs else None)
+
         # Initialize Payment Record
         if course:
             Payment.objects.create(

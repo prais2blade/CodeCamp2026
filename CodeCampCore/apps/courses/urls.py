@@ -34,4 +34,10 @@ urlpatterns = [
     path('student/assignments/submit/<int:assignment_id>/', views.submit_assignment, name='submit_assignment'),
     path('student/gradebook/', views.student_weekly_gradebook, name='student_weekly_gradebook'),
     path('student/assignments/', views.student_assignments, name='student_assignments'),
+    path('student/enroll-subjects/', views.student_enroll_subjects, name='student_enroll_subjects'),
+
+    # FACULTY & TUTOR SUBJECT ASSIGNMENT COMMAND CENTER
+    path('admin/faculty-assignments/', views.faculty_subject_assignments, name='faculty_subject_assignments'),
+    path('admin/faculty-assignments/bulk-assign/', views.bulk_assign_course_tutor, name='bulk_assign_course_tutor'),
+    path('api/course/<int:course_id>/subjects/', views.api_course_subjects, name='api_course_subjects'),
 ]

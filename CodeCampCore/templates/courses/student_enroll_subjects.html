@@ -1,0 +1,86 @@
+{% extends "layouts/student_base.html" %}
+{% load static humanize %}
+
+{% block title %}My Curriculum Subjects | CodeCamp Student Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Header Banner -->
+  <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4338ca 100%); border-radius: 16px;">
+    <div class="card-body p-4 p-md-5">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1 mb-2 text-uppercase">
+            <i class="fas fa-layer-group mr-1"></i> Track Curriculum
+          </span>
+          <h2 class="font-weight-extrabold text-white mb-1">{{ course.name }} — Enrolled Subjects</h2>
+          <p class="text-white-50 mb-0">
+            Review the modules and subjects you are currently enrolled in. Weekly lab assignments and grades are tailored to these subjects.
+          </p>
+        </div>
+        <div class="mt-3 mt-md-0">
+          <a href="{% url 'student_weekly_gradebook' %}" class="btn btn-warning font-weight-bold shadow-sm">
+            <i class="fas fa-tasks mr-1"></i> My Gradebook
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subjects Form Card -->
+  <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+    <div class="card-header bg-white border-0 pt-4 px-4">
+      <h5 class="font-weight-extrabold text-dark mb-1">Curriculum Subjects for {{ course.name }}</h5>
+      <p class="text-muted small mb-0">Check the subjects you are taking in your academic program track.</p>
+    </div>
+
+    <div class="card-body p-4">
+      <form method="POST" action="{% url 'student_enroll_subjects' %}">
+        {% csrf_token %}
+
+        <div class="row">
+          {% for subj in all_subjects %}
+          <div class="col-md-6 mb-3">
+            <div class="p-3 border rounded h-100 d-flex align-items-start transition-card" style="background: #ffffff; border-color: #e2e8f0 !important; border-radius: 12px;">
+              <div class="custom-control custom-checkbox mr-3 mt-1">
+                <input type="checkbox" name="subject_ids" value="{{ subj.id }}" class="custom-control-input" id="subjCheck{{ subj.id }}" {% if subj.id in enrolled_ids or not enrolled_ids %}checked{% endif %}>
+                <label class="custom-control-label" for="subjCheck{{ subj.id }}"></label>
+              </div>
+
+              <div class="flex-grow-1">
+                <label for="subjCheck{{ subj.id }}" class="h6 font-weight-bold text-dark mb-1 cursor-pointer">
+                  {{ subj.name }}
+                </label>
+                <p class="text-muted small mb-2">
+                  {{ subj.description|default:"Core curriculum module for this course track." }}
+                </p>
+                <div class="d-flex align-items-center">
+                  <span class="badge badge-light-primary text-primary font-weight-bold px-2 py-1 text-xs">
+                    <i class="fas fa-chalkboard-teacher mr-1"></i> Tutor: {{ subj.instructor.get_full_name|default:subj.instructor.username|default:"Department Faculty" }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12 text-center py-4 text-muted">
+            No subjects configured for this course yet.
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+          <span class="text-muted small">
+            <i class="fas fa-check-circle text-success mr-1"></i> Selecting all subjects ensures you receive all course assignments.
+          </span>
+          <button type="submit" class="btn btn-primary font-weight-bold px-4 shadow-sm" style="border-radius: 8px;">
+            <i class="fas fa-save mr-1"></i> Save Subject Enrollment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock content %}

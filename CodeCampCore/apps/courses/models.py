@@ -51,6 +51,54 @@ class Subject(models.Model):
     def __str__(self):
         return f"{self.name} ({self.course.name})"
 
+    def get_tutor_for_batch(self, batch=None):
+        """Returns the assigned tutor for a specific batch, falling back to course subject instructor."""
+        if batch:
+            assignment = self.batch_tutors.filter(batch=batch).select_related('tutor').first()
+            if assignment and assignment.tutor:
+                return assignment.tutor
+        return self.instructor
+
+
+class BatchSubjectTutor(models.Model):
+    """
+    Cohort/Batch-specific tutor assignment for a subject.
+    Enables assigning different tutors to the same subject across different cohorts/batches,
+    or overriding the default course-level subject tutor.
+    """
+    batch = models.ForeignKey(
+        'scheduling.Batch',
+        on_delete=models.CASCADE,
+        related_name='subject_tutors'
+    )
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        related_name='batch_tutors'
+    )
+    tutor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='assigned_batch_subjects',
+        limit_choices_to={'profile__role__in': ['instructor', 'hod']}
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_batch_tutor_assignments'
+    )
+
+    class Meta:
+        verbose_name = 'Batch Subject Tutor'
+        verbose_name_plural = 'Batch Subject Tutors'
+        unique_together = ('batch', 'subject')
+
+    def __str__(self):
+        return f"{self.subject.name} ({self.batch.name}) -> {self.tutor.get_full_name() or self.tutor.username}"
+
 
 
 DEFAULT_RUBRIC = [

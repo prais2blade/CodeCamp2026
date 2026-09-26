@@ -82,6 +82,19 @@ class Profile(models.Model):
         limit_choices_to={'profile__role__in': ['instructor', 'hod']},
         help_text="Assigned teacher or tutor for this student."
     )
+    enrolled_subjects = models.ManyToManyField(
+        'courses.Subject',
+        blank=True,
+        related_name='enrolled_students',
+        help_text="Curriculum subjects this student is enrolled in."
+    )
+
+    def enroll_in_course_subjects(self, subject_ids=None):
+        """Enrolls student in specified subjects or all core subjects of their course."""
+        if subject_ids is not None:
+            self.enrolled_subjects.set(subject_ids)
+        elif self.course:
+            self.enrolled_subjects.set(self.course.subjects.all())
 
     @property
     def tutor_display(self):

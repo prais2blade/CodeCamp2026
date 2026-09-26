@@ -36,6 +36,14 @@
           </a>
         </li>
 
+        <!-- My Curriculum Subjects -->
+        <li class="nav-item">
+          <a href="{% url 'student_enroll_subjects' %}" class="nav-link {% if request.resolver_match.url_name == 'student_enroll_subjects' %}active{% endif %}">
+            <i class="nav-icon fas fa-layer-group text-primary"></i>
+            <p>My Subjects</p>
+          </a>
+        </li>
+
         <!-- Practical Assessments & Code Defense -->
         <li class="nav-item">
           <a href="{% url 'assessments:student_hub' %}" class="nav-link {% if request.resolver_match.app_name == 'assessments' %}active{% endif %}">

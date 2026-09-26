@@ -111,6 +111,15 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{% url 'faculty_subject_assignments' %}" class="nav-link {% if request.resolver_match.url_name == 'faculty_subject_assignments' %}active{% endif %}">
+                            <i class="nav-icon fas fa-chalkboard-teacher text-indigo"></i>
+                            <p>
+                                Tutor Assignments
+                                <span class="badge badge-indigo right font-weight-bold text-white">Hub</span>
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{% url 'manage_batches' %}" class="nav-link">
                             <i class="nav-icon fas fa-calendar-week text-primary"></i>
                             <p>Batch Timetables</p>
