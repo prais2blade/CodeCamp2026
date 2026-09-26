@@ -146,16 +146,21 @@ def accountant_dashboard(request):
 def debtors_ledger(request):
     """
     Dedicated Tuition Ledger and Debtors Tracking.
-    Allows accountants to monitor outstanding balances, payment completions, and log payments.
+    Allows accountants to monitor outstanding balances, payment completions, and log payments per month.
     """
     status_filter = request.GET.get('status', 'all')  # all, debtors, partial, unpaid, paid
     course_filter = request.GET.get('course_id')
     batch_filter = request.GET.get('batch_id')
+    month_filter = request.GET.get('month', '')
     query = request.GET.get('q', '').strip()
 
     payments_qs = Payment.objects.select_related(
         'student', 'student__profile', 'course', 'batch', 'verified_by'
     ).prefetch_related('receipts').order_by('-payment_date')
+
+    # Month filter
+    if month_filter:
+        payments_qs = payments_qs.filter(billing_month=month_filter)
 
     # Apply Filters
     if status_filter == 'debtors':
@@ -180,8 +185,15 @@ def debtors_ledger(request):
             Q(student__last_name__icontains=query) |
             Q(student__email__icontains=query) |
             Q(student__profile__phone__icontains=query) |
-            Q(payment_ref__icontains=query)
+            Q(payment_ref__icontains=query) |
+            Q(billing_month__icontains=query) |
+            Q(notes__icontains=query)
         )
+
+    # Distinct billing months
+    available_months = list(Payment.objects.values_list('billing_month', flat=True).distinct().order_by('-billing_month'))
+    if 'September 2026' not in available_months:
+        available_months.insert(0, 'September 2026')
 
     # Filtered aggregation summary
     filtered_gross = payments_qs.aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
@@ -195,6 +207,8 @@ def debtors_ledger(request):
         'status_filter': status_filter,
         'course_filter': course_filter,
         'batch_filter': batch_filter,
+        'month_filter': month_filter,
+        'available_months': available_months,
         'query': query,
         'filtered_count': payments_qs.count(),
         'filtered_gross': filtered_gross,
@@ -229,6 +243,10 @@ def record_payment(request):
         notes = request.POST.get('notes', '').strip()
         issue_receipt = request.POST.get('issue_receipt', 'on') in ['on', 'true', 'True', '1']
 
+        billing_month = request.POST.get('billing_month', 'September 2026').strip() or 'September 2026'
+        bank_date_raw = request.POST.get('bank_payment_date', '').strip()
+        payment_proof_file = request.FILES.get('payment_proof')
+
         try:
             amount = Decimal(amount_raw)
             if amount <= Decimal('0.00'):
@@ -237,14 +255,21 @@ def record_payment(request):
             messages.error(request, f"Invalid payment amount: {e}")
             return redirect(request.META.get('HTTP_REFERER') or 'debtors_ledger')
 
+        bank_payment_date = timezone.localdate()
+        if bank_date_raw:
+            try:
+                bank_payment_date = datetime.datetime.strptime(bank_date_raw, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
         payment = None
         if payment_id:
             payment = get_object_or_404(Payment, id=payment_id)
         elif student_id:
             student = get_object_or_404(User, id=student_id)
-            payment = Payment.objects.filter(student=student).first()
+            payment = Payment.objects.filter(student=student, billing_month=billing_month).first()
             if not payment:
-                # If no payment record exists yet, create one using student's course fee
+                # If no payment record exists for this month yet, create one using student's course fee
                 course = getattr(student.profile, 'course', None)
                 course_fee = course.fee if course and hasattr(course, 'fee') else Decimal('50000.00')
                 payment = Payment.objects.create(
@@ -252,7 +277,8 @@ def record_payment(request):
                     course=course,
                     batch=getattr(student.profile, 'batch', None),
                     amount_due=course_fee,
-                    amount_paid=Decimal('0.00')
+                    amount_paid=Decimal('0.00'),
+                    billing_month=billing_month,
                 )
 
         if not payment:
@@ -271,6 +297,10 @@ def record_payment(request):
 
         # Credit the account
         payment.amount_paid += amount
+        payment.billing_month = billing_month
+        payment.bank_payment_date = bank_payment_date
+        if payment_proof_file:
+            payment.payment_proof = payment_proof_file
         payment.payment_date = timezone.now()
         payment.is_approved = True
         payment.approved_at = timezone.now()
@@ -278,7 +308,8 @@ def record_payment(request):
 
         # Audit notes
         timestamp_str = timezone.now().strftime('%d-%b-%Y %H:%M')
-        audit_entry = f"[{timestamp_str}] Received ₦{amount:,.2f} via {payment_method} by {request.user.username}."
+        bank_date_str = bank_payment_date.strftime('%d-%b-%Y')
+        audit_entry = f"[{timestamp_str}] Received ₦{amount:,.2f} for {billing_month} (Bank Date: {bank_date_str}) via {payment_method} by {request.user.username}."
         if notes:
             audit_entry += f" Memo/Ref: {notes}"
         payment.notes = f"{payment.notes}\n{audit_entry}".strip() if payment.notes else audit_entry
@@ -289,10 +320,16 @@ def record_payment(request):
         # Issue Receipt
         receipt_ref = None
         if issue_receipt:
-            receipt = Receipt.objects.create(payment=payment, amount=amount)
+            receipt = Receipt.objects.create(
+                payment=payment,
+                amount=amount,
+                billing_month=payment.billing_month,
+                bank_payment_date=payment.bank_payment_date,
+                payment_proof=payment.payment_proof
+            )
             receipt_ref = str(receipt.reference)[:8].upper()
 
-        success_msg = f"Recorded payment of ₦{amount:,.2f} for {payment.student.get_full_name() or payment.student.username}. New Balance: ₦{payment.remaining_balance():,.2f}."
+        success_msg = f"Recorded payment of ₦{amount:,.2f} for {payment.student.get_full_name() or payment.student.username} ({billing_month}). New Balance: ₦{payment.remaining_balance():,.2f}."
         if receipt_ref:
             success_msg += f" Official Receipt #{receipt_ref} generated."
         messages.success(request, success_msg)
@@ -317,6 +354,7 @@ def export_reconciliation_excel(request):
     status_filter = request.GET.get('status', 'all')
     course_filter = request.GET.get('course_id')
     batch_filter = request.GET.get('batch_id')
+    month_filter = request.GET.get('month')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     query = request.GET.get('q', '').strip()
@@ -324,6 +362,9 @@ def export_reconciliation_excel(request):
     payments_qs = Payment.objects.select_related(
         'student', 'student__profile', 'course', 'batch', 'verified_by'
     ).prefetch_related('receipts').order_by('-payment_date')
+
+    if month_filter:
+        payments_qs = payments_qs.filter(billing_month=month_filter)
 
     if status_filter == 'debtors':
         payments_qs = payments_qs.filter(Q(status='partial') | (Q(status='pending') & Q(amount_due__gt=0)))
@@ -359,7 +400,8 @@ def export_reconciliation_excel(request):
             Q(student__first_name__icontains=query) |
             Q(student__last_name__icontains=query) |
             Q(student__email__icontains=query) |
-            Q(payment_ref__icontains=query)
+            Q(payment_ref__icontains=query) |
+            Q(billing_month__icontains=query)
         )
 
     # Create Workbook
@@ -388,7 +430,7 @@ def export_reconciliation_excel(request):
     )
 
     # 1. Title Banner
-    ws.merge_cells("A1:R1")
+    ws.merge_cells("A1:U1")
     ws["A1"] = "CODECAMP CORE ACADEMY - FINANCIAL & TUITION RECONCILIATION"
     ws["A1"].font = title_font
     ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
@@ -397,7 +439,7 @@ def export_reconciliation_excel(request):
     # 2. Metadata Banner
     gen_time = timezone.now().strftime('%d-%b-%Y %I:%M %p')
     gen_by = request.user.get_full_name() or request.user.username
-    ws.merge_cells("A2:R2")
+    ws.merge_cells("A2:U2")
     ws["A2"] = f"Report Date: {gen_time}  |  Generated By: {gen_by}  |  Total Records: {payments_qs.count()}"
     ws["A2"].font = meta_font
     ws.row_dimensions[2].height = 18
@@ -410,14 +452,14 @@ def export_reconciliation_excel(request):
         "S/N", "Payment Ref", "Date", "Student Name", "Username", "Email", "Phone",
         "Course", "Batch/Cohort", "Gross Fee (₦)", "Discount (₦)", "Discount Reason",
         "Net Due (₦)", "Amount Paid (₦)", "Balance Owed (₦)", "Payment Status",
-        "Approval", "Verified By", "Receipts", "Audit Remarks / Notes"
+        "Approval", "Verified By", "Receipts", "Billing Month", "Bank Payment Date", "Audit Remarks / Notes"
     ]
     ws.append([])  # Spacer for row 3
     for col_idx, header in enumerate(headers, 1):
         cell = ws.cell(row=4, column=col_idx, value=header)
         cell.font = header_font
         cell.fill = header_fill
-        cell.alignment = Alignment(horizontal="center" if col_idx in [1, 3, 16, 17] else "left", vertical="center")
+        cell.alignment = Alignment(horizontal="center" if col_idx in [1, 2, 3, 16, 17, 20, 21] else "left", vertical="center")
     ws.row_dimensions[4].height = 25
 
     # 4. Data Rows
@@ -478,10 +520,12 @@ def export_reconciliation_excel(request):
 
         ws.cell(row=row_num, column=18, value=verifier_name)
         ws.cell(row=row_num, column=19, value=receipt_refs)
-        ws.cell(row=row_num, column=20, value=p.notes or '')
+        ws.cell(row=row_num, column=20, value=p.billing_month)
+        ws.cell(row=row_num, column=21, value=p.bank_payment_date.strftime('%Y-%m-%d') if p.bank_payment_date else 'N/A')
+        ws.cell(row=row_num, column=22, value=p.notes or '')
 
         # Apply borders to row
-        for c in range(1, 21):
+        for c in range(1, 23):
             ws.cell(row=row_num, column=c).border = thin_border
 
         ws.row_dimensions[row_num].height = 20
@@ -519,7 +563,7 @@ def export_reconciliation_excel(request):
         bal_sum.number_format = '#,##0.00'
         bal_sum.font = total_font
 
-        for c in range(1, 21):
+        for c in range(1, 23):
             cell = ws.cell(row=total_row, column=c)
             cell.fill = total_fill
             cell.border = total_border
@@ -607,6 +651,7 @@ def manage_payments(request):
     """Payment Approvals and Tuition Management Console."""
     status_filter = request.GET.get('status', 'all')
     course_filter = request.GET.get('course_id')
+    month_filter = request.GET.get('month', '')
     query = request.GET.get('q', '').strip()
 
     payments_qs = Payment.objects.select_related('student', 'course', 'batch', 'verified_by').prefetch_related('receipts').order_by('-payment_date')
@@ -619,22 +664,34 @@ def manage_payments(request):
     if course_filter:
         payments_qs = payments_qs.filter(course_id=course_filter)
 
+    if month_filter:
+        payments_qs = payments_qs.filter(billing_month=month_filter)
+
     if query:
         payments_qs = payments_qs.filter(
             Q(student__username__icontains=query) |
             Q(student__first_name__icontains=query) |
             Q(student__last_name__icontains=query) |
             Q(student__email__icontains=query) |
-            Q(payment_ref__icontains=query)
+            Q(payment_ref__icontains=query) |
+            Q(billing_month__icontains=query) |
+            Q(notes__icontains=query)
         )
+
+    # Available distinct billing months
+    available_months = list(Payment.objects.values_list('billing_month', flat=True).distinct().order_by('-billing_month'))
+    if 'September 2026' not in available_months:
+        available_months.insert(0, 'September 2026')
 
     # Metrics
     all_p = Payment.objects.all()
-    pending_count = all_p.filter(is_approved=False).count()
-    approved_count = all_p.filter(is_approved=True).count()
-    total_collected = all_p.filter(is_approved=True).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
-    total_discounts = all_p.aggregate(Sum('discount'))['discount__sum'] or Decimal('0.00')
-    total_expected = all_p.aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
+    metrics_qs = all_p.filter(billing_month=month_filter) if month_filter else all_p
+
+    pending_count = metrics_qs.filter(is_approved=False).count()
+    approved_count = metrics_qs.filter(is_approved=True).count()
+    total_collected = metrics_qs.filter(is_approved=True).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
+    total_discounts = metrics_qs.aggregate(Sum('discount'))['discount__sum'] or Decimal('0.00')
+    total_expected = metrics_qs.aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
     net_expected = max(Decimal('0.00'), total_expected - total_discounts)
     outstanding_balance = max(Decimal('0.00'), net_expected - total_collected)
 
@@ -645,6 +702,8 @@ def manage_payments(request):
         'payments': payments_qs,
         'status_filter': status_filter,
         'course_filter': course_filter,
+        'month_filter': month_filter,
+        'available_months': available_months,
         'query': query,
         'pending_count': pending_count,
         'approved_count': approved_count,
@@ -661,14 +720,17 @@ def manage_payments(request):
 @login_required
 @role_required(['hod', 'accountant'])
 def approve_payment(request, payment_id):
-    """Approves a payment, verifies/corrects amount, applies discount, and generates official receipt."""
+    """Approves a payment, verifies/corrects amount, payment date, billing month, and generates official receipt."""
     payment = get_object_or_404(Payment, id=payment_id)
     if request.method == 'POST':
         amount_paid_raw = request.POST.get('amount_paid')
         discount_raw = request.POST.get('discount', '0')
         discount_reason = request.POST.get('discount_reason', '').strip()
+        billing_month = request.POST.get('billing_month', '').strip()
+        bank_date_raw = request.POST.get('bank_payment_date', '').strip()
         notes = request.POST.get('notes', '').strip()
         issue_receipt = request.POST.get('issue_receipt') == 'on'
+        payment_proof_file = request.FILES.get('payment_proof')
 
         try:
             if amount_paid_raw is not None and amount_paid_raw != '':
@@ -678,6 +740,20 @@ def approve_payment(request, payment_id):
         except Exception as e:
             messages.error(request, f"Invalid monetary values provided: {e}")
             return redirect('manage_payments')
+
+        if billing_month:
+            payment.billing_month = billing_month
+
+        if bank_date_raw:
+            try:
+                payment.bank_payment_date = datetime.datetime.strptime(bank_date_raw, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        elif not payment.bank_payment_date:
+            payment.bank_payment_date = timezone.localdate()
+
+        if payment_proof_file:
+            payment.payment_proof = payment_proof_file
 
         if discount_reason:
             payment.discount_reason = discount_reason
@@ -691,10 +767,33 @@ def approve_payment(request, payment_id):
 
         receipt_ref = None
         if issue_receipt and payment.amount_paid > 0:
-            receipt = Receipt.objects.create(payment=payment, amount=payment.amount_paid)
+            receipt = Receipt.objects.create(
+                payment=payment,
+                amount=payment.amount_paid,
+                billing_month=payment.billing_month,
+                bank_payment_date=payment.bank_payment_date,
+                payment_proof=payment.payment_proof
+            )
             receipt_ref = str(receipt.reference)[:8].upper()
 
-        success_msg = f"Payment for {payment.student.get_full_name() or payment.student.username} approved!"
+        # Send notification log to student
+        from apps.notifications.models import NotificationLog
+        try:
+            NotificationLog.objects.create(
+                notification_type='receipt',
+                subject=f"CodeCamp Tuition Payment Approved - {payment.billing_month}",
+                body=f"Dear {payment.student.get_full_name() or payment.student.username}, your tuition payment of ₦{payment.amount_paid:,.2f} for {payment.billing_month} has been verified and approved. Bank payment date: {payment.bank_payment_date}. Outstanding balance: ₦{payment.remaining_balance():,.2f}.",
+                recipient=payment.student.email,
+                related_user=payment.student,
+                related_course=payment.course,
+                related_batch=payment.batch,
+                status='sent',
+                sent_at=timezone.now()
+            )
+        except Exception:
+            pass
+
+        success_msg = f"Payment of ₦{payment.amount_paid:,.2f} for {payment.student.get_full_name() or payment.student.username} ({payment.billing_month}) approved!"
         if receipt_ref:
             success_msg += f" Official Receipt #{receipt_ref} issued."
         messages.success(request, success_msg)
@@ -703,6 +802,96 @@ def approve_payment(request, payment_id):
         return redirect(next_url)
 
     return redirect('manage_payments')
+
+
+@login_required
+@role_required('student')
+def submit_payment_proof(request):
+    """
+    Allows a student to upload their bank deposit/transfer proof and specify
+    the billing month (e.g. September 2026), amount, and payment date.
+    Triggers notification to accountant/admin and enters the approval queue.
+    """
+    if request.method == 'POST':
+        billing_month = request.POST.get('billing_month', 'September 2026').strip() or 'September 2026'
+        amount_raw = request.POST.get('amount', '0').strip()
+        bank_date_raw = request.POST.get('bank_payment_date', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        proof_file = request.FILES.get('payment_proof')
+
+        try:
+            amount = Decimal(amount_raw)
+            if amount <= Decimal('0.00'):
+                raise ValueError("Amount must be greater than zero.")
+        except Exception as e:
+            messages.error(request, f"Invalid payment amount: {e}")
+            return redirect('student_payments')
+
+        bank_date = timezone.localdate()
+        if bank_date_raw:
+            try:
+                bank_date = datetime.datetime.strptime(bank_date_raw, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
+        profile = getattr(request.user, 'profile', None)
+        course = getattr(profile, 'course', None)
+        batch = getattr(profile, 'batch', None)
+        course_fee = getattr(course, 'fee', Decimal('35000.00')) if course else Decimal('35000.00')
+
+        # Find or create Payment record for this billing month
+        payment = Payment.objects.filter(student=request.user, billing_month=billing_month).first()
+        if not payment:
+            payment = Payment.objects.create(
+                student=request.user,
+                course=course,
+                batch=batch,
+                amount_due=course_fee,
+                amount_paid=amount,
+                billing_month=billing_month,
+                bank_payment_date=bank_date,
+                payment_proof=proof_file,
+                is_approved=False,
+                status='pending',
+                notes=f"[Student Submitted Bank Proof]: {notes}" if notes else "[Student Submitted Bank Proof]"
+            )
+        else:
+            payment.amount_paid = amount
+            payment.bank_payment_date = bank_date
+            if proof_file:
+                payment.payment_proof = proof_file
+            payment.is_approved = False
+            payment.status = 'pending'
+            audit_note = f"[Student Uploaded Proof on {timezone.now().strftime('%d-%b-%Y %H:%M')}]: ₦{amount:,.2f} for {billing_month}"
+            if notes:
+                audit_note += f" - Ref: {notes}"
+            payment.notes = f"{payment.notes}\n{audit_note}".strip() if payment.notes else audit_note
+            payment.save()
+
+        # Log system notification for Admin / Accountant
+        from apps.notifications.models import NotificationLog
+        try:
+            student_display = request.user.get_full_name() or request.user.username
+            NotificationLog.objects.create(
+                notification_type='system',
+                subject=f"Bank Receipt Uploaded: {student_display} ({billing_month})",
+                body=f"Student {student_display} has uploaded bank payment proof of ₦{amount:,.2f} for {billing_month} (Bank Date: {bank_date}). Please review and approve in Payment Approvals.",
+                recipient='bursary@codecamp.com.ng',
+                related_user=request.user,
+                related_course=course,
+                related_batch=batch,
+                status='queued'
+            )
+        except Exception:
+            pass
+
+        messages.success(
+            request,
+            f"🎉 Your bank payment proof of ₦{amount:,.2f} for {billing_month} has been submitted! The CodeCamp accounts desk will verify your bank slip and issue your official receipt."
+        )
+        return redirect('student_payments')
+
+    return redirect('student_payments')
 
 
 @login_required
@@ -796,10 +985,40 @@ def update_payment_status(request, payment_id):
 @role_required('student')
 def student_payments(request):
     payments = Payment.objects.filter(student=request.user).order_by('-payment_date')
-    due_payment = payments.first().monthly_payment if payments.exists() else None
+    september_payment = payments.filter(billing_month='September 2026').first()
+
+    # If student has no September payment record yet, create a baseline pending record
+    if not september_payment:
+        profile = getattr(request.user, 'profile', None)
+        course = getattr(profile, 'course', None)
+        batch = getattr(profile, 'batch', None)
+        course_fee = getattr(course, 'fee', Decimal('35000.00')) if course else Decimal('35000.00')
+        september_payment = Payment.objects.create(
+            student=request.user,
+            course=course,
+            batch=batch,
+            amount_due=course_fee,
+            amount_paid=Decimal('0.00'),
+            billing_month='September 2026',
+            status='pending',
+            is_approved=False,
+            notes="September 2026 Term Billing - Awaiting payment",
+        )
+        payments = Payment.objects.filter(student=request.user).order_by('-payment_date')
+
+    total_due = payments.aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
+    total_paid = payments.filter(is_approved=True).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
+    total_balance = max(Decimal('0.00'), total_due - total_paid)
+
+    available_months = ['September 2026', 'October 2026', 'November 2026', 'December 2026']
+
     return render(request, 'payments/student_payments.html', {
         'payments': payments,
-        'due_payment': due_payment
+        'september_payment': september_payment,
+        'total_due': total_due,
+        'total_paid': total_paid,
+        'total_balance': total_balance,
+        'available_months': available_months,
     })
 
 

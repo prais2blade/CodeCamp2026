@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     # Student Views
     path('my-payments/', views.student_payments, name='student_payments'),
+    path('submit-proof/', views.submit_payment_proof, name='submit_payment_proof'),
     path('receipts/', views.receipt_center, name='receipt_center'),
     path('receipt/<int:receipt_id>/', views.view_receipt, name='view_receipt'),
 

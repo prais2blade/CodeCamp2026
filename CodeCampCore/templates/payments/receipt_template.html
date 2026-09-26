@@ -417,8 +417,16 @@
       <div class="doc-meta">
         <div class="receipt-badge">Official Receipt</div>
         <div class="receipt-no">#REC-{{ receipt.reference|stringformat:".8s"|upper }}</div>
+        <div class="receipt-date font-weight-bold" style="color: var(--cc-purple-primary); font-size: 0.88rem; margin-top: 3px;">
+          <i class="fas fa-calendar-alt mr-1"></i> <strong>Month:</strong> {{ receipt.billing_month|default:payment.billing_month|default:"September 2026" }}
+        </div>
+        {% if receipt.bank_payment_date or payment.bank_payment_date %}
         <div class="receipt-date">
-          <i class="far fa-calendar-alt mr-1"></i> {{ receipt.issued_date|date:"M d, Y &bull; h:i A" }}
+          <i class="far fa-check-circle text-success mr-1"></i> Bank Paid: {{ receipt.bank_payment_date|default:payment.bank_payment_date|date:"M d, Y" }}
+        </div>
+        {% endif %}
+        <div class="receipt-date">
+          <i class="far fa-clock mr-1"></i> Issued: {{ receipt.issued_date|date:"M d, Y &bull; h:i A" }}
         </div>
       </div>
     </div>
@@ -450,8 +458,8 @@
         {% else %}
           <div class="detail text-muted">Standard Academy Term</div>
         {% endif %}
-        <div class="detail" style="font-size: 0.78rem; color: #64748b; margin-top: 4px;">
-          Payment Method: <strong>Online / Bank Confirmation</strong>
+        <div class="detail" style="font-size: 0.82rem; color: var(--cc-purple-deep); margin-top: 4px;">
+          Billing Cycle: <strong>{{ receipt.billing_month|default:payment.billing_month|default:"September 2026" }}</strong>
         </div>
       </div>
     </div>
@@ -461,7 +469,7 @@
       <thead>
         <tr>
           <th>Description</th>
-          <th style="width: 140px; text-align: center;">Term / Cohort</th>
+          <th style="width: 160px; text-align: center;">Billing Month</th>
           <th style="width: 160px;">Standard Amount</th>
         </tr>
       </thead>
@@ -473,8 +481,8 @@
               Comprehensive curriculum, lab access, live mentoring & verified accreditation.
             </div>
           </td>
-          <td style="text-align: center;">
-            {{ payment.batch.name|default:"2026 Term" }}
+          <td style="text-align: center; font-weight: 700; color: var(--cc-purple-primary);">
+            {{ receipt.billing_month|default:payment.billing_month|default:"September 2026" }}
           </td>
           <td>₦{{ payment.amount_due|floatformat:2 }}</td>
         </tr>

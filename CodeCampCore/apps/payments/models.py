@@ -29,10 +29,16 @@ class Payment(models.Model):
     notes = models.TextField(blank=True, default='', help_text="Audit remarks or payment verification notes.")
     payment_ref = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     payment_date = models.DateTimeField(auto_now_add=True)
+    billing_month = models.CharField(max_length=50, default='September 2026', db_index=True, help_text="Academic billing month e.g. September 2026")
+    bank_payment_date = models.DateField(null=True, blank=True, help_text="Date money was transferred/deposited in bank")
+    payment_proof = models.FileField(upload_to='proofs/payments/', null=True, blank=True, help_text="Attached bank payment receipt / teller / screenshot")
     verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_payments')
 
+    class Meta:
+        ordering = ['-payment_date']
+
     def __str__(self):
-        return f"{self.student.username} - {self.course.name if self.course else 'No Course'} ({self.status})"
+        return f"{self.student.username} - {self.course.name if self.course else 'No Course'} [{self.billing_month}] ({self.status})"
 
     @property
     def net_amount_due(self):
@@ -75,8 +81,14 @@ class Payment(models.Model):
 class Receipt(models.Model):
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='receipts')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    billing_month = models.CharField(max_length=50, default='September 2026', help_text="Billing month covered by this receipt")
+    bank_payment_date = models.DateField(null=True, blank=True, help_text="Date money was paid into the bank")
+    payment_proof = models.FileField(upload_to='proofs/receipts/', null=True, blank=True, help_text="Archived bank proof attachment")
     issued_date = models.DateTimeField(auto_now_add=True)
     reference = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
+    class Meta:
+        ordering = ['-issued_date']
+
     def __str__(self):
-        return f"Receipt {self.reference} - ₦{self.amount}"
+        return f"Receipt {self.reference} - ₦{self.amount} ({self.billing_month})"

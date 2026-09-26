@@ -239,20 +239,31 @@
       <div class="d-flex align-items-center gap-2 flex-wrap">
         <form method="GET" class="d-flex align-items-center flex-wrap gap-2">
           <input type="hidden" name="status" value="{{ status_filter }}">
-          <select name="course_id" class="form-control form-control-sm font-weight-bold mr-2" style="height: 38px; border-radius: 0.5rem; min-width: 200px;" onchange="this.form.submit()">
+          <select name="month" class="form-control form-control-sm font-weight-bold mr-2" style="height: 38px; border-radius: 0.5rem; min-width: 170px;" onchange="this.form.submit()">
+            <option value="">📅 All Months</option>
+            {% for m in available_months %}
+              <option value="{{ m }}" {% if month_filter == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+          <select name="course_id" class="form-control form-control-sm font-weight-bold mr-2" style="height: 38px; border-radius: 0.5rem; min-width: 190px;" onchange="this.form.submit()">
             <option value="">🎯 All Programmes</option>
             {% for c in all_courses %}
               <option value="{{ c.id }}" {% if course_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
             {% endfor %}
           </select>
-          <div class="input-group input-group-sm" style="width: 240px;">
-            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search student or ref..." style="height: 38px; border-radius: 0.5rem 0 0 0.5rem;">
+          <div class="input-group input-group-sm" style="width: 250px;">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search student, month (e.g. September)..." style="height: 38px; border-radius: 0.5rem 0 0 0.5rem;">
             <div class="input-group-append">
               <button class="btn btn-dark" type="submit" style="height: 38px; border-radius: 0 0.5rem 0.5rem 0;">
                 <i class="fas fa-search"></i>
               </button>
             </div>
           </div>
+          {% if query or course_filter or month_filter or status_filter != 'all' %}
+            <a href="{% url 'manage_payments' %}" class="btn btn-sm btn-outline-secondary font-weight-bold ml-1" style="height: 38px; display: inline-flex; align-items: center;" title="Reset Filters">
+              <i class="fas fa-times"></i>
+            </a>
+          {% endif %}
         </form>
       </div>
     </div>
@@ -284,7 +295,10 @@
               <input type="checkbox" id="selectAllPaymentsCb" style="transform: scale(1.2); cursor: pointer;" title="Select All Visible">
             </th>
             <th>Student</th>
-            <th>Programme & Delivery Schedule</th>
+            <th>Billing Month</th>
+            <th>Bank Payment Date</th>
+            <th>Bank Receipt Proof</th>
+            <th>Programme & Schedule</th>
             <th>Standard Fee</th>
             <th>Discount</th>
             <th>Expected Net Due</th>
@@ -315,6 +329,29 @@
                   </div>
                 </div>
               </div>
+            </td>
+            <td>
+              <span class="badge badge-info px-2 py-1 font-weight-bold" style="font-size: 0.82rem;">
+                <i class="fas fa-calendar-alt mr-1"></i> {{ p.billing_month }}
+              </span>
+            </td>
+            <td>
+              {% if p.bank_payment_date %}
+                <div class="font-weight-bold text-dark" style="font-size: 0.88rem;">
+                  <i class="far fa-calendar-check text-success mr-1"></i> {{ p.bank_payment_date|date:"d-M-Y" }}
+                </div>
+              {% else %}
+                <span class="text-muted small">Not set</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.payment_proof %}
+                <a href="{{ p.payment_proof.url }}" target="_blank" class="btn btn-xs btn-outline-info font-weight-bold py-1 px-2" title="Inspect Bank Slip">
+                  <i class="fas fa-file-invoice text-info mr-1"></i> View Bank Slip
+                </a>
+              {% else %}
+                <span class="text-muted small"><i class="fas fa-minus-circle mr-1"></i> None</span>
+              {% endif %}
             </td>
             <td>
               <div class="font-weight-bold text-dark">
@@ -400,11 +437,11 @@
               <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
                 <div class="modal-header bg-dark text-white">
                   <h5 class="modal-title font-weight-bold">
-                    <i class="fas fa-clipboard-check text-warning mr-2"></i> Review, Discount & Approve Payment
+                    <i class="fas fa-clipboard-check text-warning mr-2"></i> Review, Check Receipt & Approve Payment
                   </h5>
                   <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                 </div>
-                <form action="{% url 'approve_payment' p.id %}" method="POST">
+                <form action="{% url 'approve_payment' p.id %}" method="POST" enctype="multipart/form-data">
                   {% csrf_token %}
                   <div class="modal-body p-4">
                     <!-- Student Summary Card -->
@@ -428,6 +465,51 @@
                       </div>
                     </div>
 
+                    <!-- ATTACHED BANK RECEIPT SLIP INSPECTION -->
+                    {% if p.payment_proof %}
+                    <div class="alert alert-info border-0 rounded-lg p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: #eff6ff; border-left: 5px solid #2563eb !important;">
+                      <div>
+                        <div class="font-weight-bold text-dark" style="font-size: 0.95rem;">
+                          <i class="fas fa-file-invoice text-primary mr-2"></i> Attached Bank Payment Proof
+                        </div>
+                        <div class="text-muted small mt-1">
+                          Bank receipt/teller submitted for this payment. Click to inspect before approving.
+                        </div>
+                      </div>
+                      <div>
+                        <a href="{{ p.payment_proof.url }}" target="_blank" class="btn btn-primary font-weight-bold shadow-sm">
+                          <i class="fas fa-external-link-alt mr-1"></i> Inspect Bank Receipt
+                        </a>
+                      </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary border-0 rounded-lg p-3 mb-4 small text-muted">
+                      <i class="fas fa-info-circle mr-1"></i> No bank slip was uploaded by the student. You may attach one below if you received teller via bank alert or deposit slip.
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                      <!-- Billing Month -->
+                      <div class="col-md-6 form-group">
+                        <label class="font-weight-bold text-dark">
+                          <i class="fas fa-calendar-alt text-primary mr-1"></i> Billing Month *
+                        </label>
+                        <input type="text" name="billing_month" class="form-control font-weight-bold"
+                               value="{{ p.billing_month|default:'September 2026' }}" required>
+                        <small class="form-text text-muted">e.g. September 2026, October 2026</small>
+                      </div>
+
+                      <!-- Bank Payment Date -->
+                      <div class="col-md-6 form-group">
+                        <label class="font-weight-bold text-dark">
+                          <i class="far fa-calendar-check text-success mr-1"></i> Bank Payment Date *
+                        </label>
+                        <input type="date" name="bank_payment_date" class="form-control font-weight-bold text-dark"
+                               value="{{ p.bank_payment_date|date:'Y-m-d'|default:'' }}">
+                        <small class="form-text text-muted">Actual date deposit or bank transfer was executed.</small>
+                      </div>
+                    </div>
+
                     <div class="row">
                       <!-- Correct Amount Paid -->
                       <div class="col-md-6 form-group">
@@ -436,7 +518,7 @@
                         </label>
                         <input type="number" step="0.01" name="amount_paid" class="form-control form-control-lg font-weight-bold text-success"
                                value="{{ p.amount_paid|stringformat:'.2f' }}" required>
-                        <small class="form-text text-muted">Update this if the student made a partial, lower, or higher actual payment.</small>
+                        <small class="form-text text-muted">Amount reflected in the CodeCamp bank account.</small>
                       </div>
 
                       <!-- Tuition Discount / Waiver -->
@@ -446,7 +528,7 @@
                         </label>
                         <input type="number" step="0.01" name="discount" class="form-control form-control-lg font-weight-bold text-primary"
                                value="{{ p.discount|stringformat:'.2f' }}">
-                        <small class="form-text text-muted">Amount deducted from standard fee (reflects their agreed rate).</small>
+                        <small class="form-text text-muted">Amount deducted from standard fee (agreed discount).</small>
                       </div>
                     </div>
 
@@ -454,15 +536,21 @@
                       <div class="col-md-6 form-group">
                         <label class="font-weight-bold text-dark">Discount / Pricing Reason</label>
                         <input type="text" name="discount_reason" class="form-control"
-                               placeholder="e.g. Sibling discount, Summer promotion, Negotiated rate"
+                               placeholder="e.g. Sibling discount, Early bird, Negotiated rate"
                                value="{{ p.discount_reason }}">
                       </div>
                       <div class="col-md-6 form-group">
-                        <label class="font-weight-bold text-dark">Audit / Verification Remarks</label>
-                        <input type="text" name="notes" class="form-control"
-                               placeholder="e.g. Verified via GTBank alert or POS slip"
-                               value="{{ p.notes }}">
+                        <label class="font-weight-bold text-dark">Attach / Replace Bank Receipt File</label>
+                        <input type="file" name="payment_proof" class="form-control-file" accept="image/*,.pdf">
+                        <small class="form-text text-muted">Upload screenshot of bank transfer or PDF teller slip.</small>
                       </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="font-weight-bold text-dark">Audit / Verification Remarks</label>
+                      <input type="text" name="notes" class="form-control"
+                             placeholder="e.g. Verified via GTBank alert or teller slip"
+                             value="{{ p.notes }}">
                     </div>
 
                     <!-- Gated Receipt Generation Checkbox -->

@@ -169,13 +169,23 @@
         <input type="hidden" name="status" value="{{ status_filter }}">
 
         <!-- Search Input -->
-        <div class="col-lg-4 col-md-5 mb-2 mb-md-0">
+        <div class="col-lg-3 col-md-4 mb-2 mb-md-0">
           <div class="input-group">
             <div class="input-group-prepend">
               <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
             </div>
-            <input type="text" name="q" value="{{ query }}" class="form-control border-left-0" placeholder="Search student name, email, phone, ref...">
+            <input type="text" name="q" value="{{ query }}" class="form-control border-left-0" placeholder="Search student, month (e.g. September)...">
           </div>
+        </div>
+
+        <!-- Month Dropdown -->
+        <div class="col-lg-2 col-md-3 mb-2 mb-md-0">
+          <select name="month" class="form-control" onchange="this.form.submit()">
+            <option value="">📅 All Months</option>
+            {% for m in available_months %}
+              <option value="{{ m }}" {% if month_filter == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
         </div>
 
         <!-- Course Dropdown -->
@@ -189,19 +199,19 @@
         </div>
 
         <!-- Batch Dropdown -->
-        <div class="col-lg-3 col-md-3 mb-2 mb-md-0">
+        <div class="col-lg-2 col-md-2 mb-2 mb-md-0">
           <select name="batch_id" class="form-control" onchange="this.form.submit()">
-            <option value="">-- All Cohorts / Batches --</option>
+            <option value="">-- All Cohorts --</option>
             {% for b in all_batches %}
-              <option value="{{ b.id }}" {% if batch_filter == b.id|stringformat:"s" %}selected{% endif %}>{{ b.course.name }} - {{ b.name }}</option>
+              <option value="{{ b.id }}" {% if batch_filter == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
             {% endfor %}
           </select>
         </div>
 
         <!-- Submit & Reset Buttons -->
-        <div class="col-lg-2 col-md-1 text-right">
+        <div class="col-lg-2 col-md-12 text-lg-right mt-2 mt-lg-0">
           <button type="submit" class="btn btn-dark font-weight-bold px-3">Filter</button>
-          {% if query or course_filter or batch_filter or status_filter != 'all' %}
+          {% if query or course_filter or batch_filter or month_filter or status_filter != 'all' %}
             <a href="{% url 'debtors_ledger' %}" class="btn btn-outline-secondary font-weight-bold ml-1" title="Clear Filters">
               <i class="fas fa-times"></i>
             </a>
@@ -249,6 +259,8 @@
               <tr>
                 <th style="width: 50px;">#</th>
                 <th>Student Information</th>
+                <th>Billing Month</th>
+                <th>Bank Payment Date</th>
                 <th>Course / Cohort</th>
                 <th>Gross & Discount</th>
                 <th>Net Due</th>
@@ -256,6 +268,7 @@
                 <th>Outstanding Balance</th>
                 <th>Status</th>
                 <th>Approval</th>
+                <th>Bank Proof</th>
                 <th style="min-width: 140px;">Actions</th>
               </tr>
             </thead>
@@ -278,6 +291,24 @@
                       {% endif %}
                     </div>
                   </div>
+                </td>
+
+                <!-- Billing Month -->
+                <td>
+                  <span class="badge badge-info px-2 py-1 font-weight-bold" style="font-size: 0.82rem;">
+                    {{ p.billing_month }}
+                  </span>
+                </td>
+
+                <!-- Bank Payment Date -->
+                <td>
+                  {% if p.bank_payment_date %}
+                    <div class="font-weight-bold text-dark small">
+                      <i class="far fa-calendar-check text-success mr-1"></i>{{ p.bank_payment_date|date:"d-M-Y" }}
+                    </div>
+                  {% else %}
+                    <span class="text-muted small">Not set</span>
+                  {% endif %}
                 </td>
 
                 <!-- Course & Batch -->
@@ -306,7 +337,7 @@
 
                 <!-- Amount Paid -->
                 <td>
-                  <span class="font-weight-bold text-success">₦{{ p.amount_paid|floatformat:2 }}</span>
+                  <span class="font-weight-bold {% if p.amount_paid > 0 %}text-success{% else %}text-muted{% endif %}">₦{{ p.amount_paid|floatformat:2 }}</span>
                 </td>
 
                 <!-- Balance Owed -->
@@ -339,6 +370,17 @@
                     <span class="badge badge-success px-2 py-1"><i class="fas fa-check-double mr-1"></i> Approved</span>
                   {% else %}
                     <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-clock mr-1"></i> Pending</span>
+                  {% endif %}
+                </td>
+
+                <!-- Bank Proof -->
+                <td>
+                  {% if p.payment_proof %}
+                    <a href="{{ p.payment_proof.url }}" target="_blank" class="btn btn-xs btn-outline-info font-weight-bold" title="Inspect Bank Slip">
+                      <i class="fas fa-file-invoice mr-1"></i> View Slip
+                    </a>
+                  {% else %}
+                    <span class="text-muted small">None</span>
                   {% endif %}
                 </td>
 
@@ -407,7 +449,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form method="POST" action="{% url 'record_payment' %}">
+      <form method="POST" action="{% url 'record_payment' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="hidden" name="payment_id" id="modalPaymentId" value="">
         <div class="modal-body p-4">
@@ -421,9 +463,20 @@
             <select id="modalPaymentSelect" class="form-control" onchange="document.getElementById('modalPaymentId').value = this.value">
               <option value="" disabled selected>-- Select Student Account --</option>
               {% for p in payments %}
-                <option value="{{ p.id }}">{{ p.student.get_full_name|default:p.student.username }} ({{ p.course.name|default:"General" }}) - Balance: ₦{{ p.remaining_balance|floatformat:2 }}</option>
+                <option value="{{ p.id }}">{{ p.student.get_full_name|default:p.student.username }} [{{ p.billing_month }}] ({{ p.course.name|default:"General" }}) - Balance: ₦{{ p.remaining_balance|floatformat:2 }}</option>
               {% endfor %}
             </select>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Billing Month <span class="text-danger">*</span></label>
+              <input type="text" name="billing_month" class="form-control font-weight-bold" value="{{ month_filter|default:'September 2026' }}" required>
+            </div>
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Bank Payment Date</label>
+              <input type="date" name="bank_payment_date" class="form-control font-weight-bold">
+            </div>
           </div>
 
           <div class="row">
@@ -452,6 +505,11 @@
               <label class="font-weight-bold text-dark small text-uppercase">Discount Reason</label>
               <input type="text" name="discount_reason" class="form-control" placeholder="e.g. Sibling, Early Bird">
             </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark small text-uppercase">Attach Bank Receipt / Teller Slip (Optional)</label>
+            <input type="file" name="payment_proof" class="form-control-file" accept="image/*,.pdf">
           </div>
 
           <div class="form-group mb-3">

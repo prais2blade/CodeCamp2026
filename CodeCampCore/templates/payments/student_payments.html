@@ -1,52 +1,395 @@
 {% extends 'layouts/student_base.html' %}
-{% block title %}My Payments{% endblock %}
+{% load static %}
+
+{% block title %}My Tuition & Monthly Payments | CodeCamp Innovation Hub{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+<style>
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+  }
+  .payments-hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4c1d95 100%);
+    border-radius: 1.25rem;
+    padding: 2.25rem;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px -10px rgba(76, 29, 149, 0.4);
+    margin-bottom: 2rem;
+  }
+  .kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    height: 100%;
+    transition: transform 0.2s;
+  }
+  .kpi-card:hover {
+    transform: translateY(-2px);
+  }
+  .kpi-val {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .kpi-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+  .table-custom thead th {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.25rem;
+    border: none;
+  }
+  .table-custom td {
+    padding: 1.15rem 1.25rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+  }
+  .bank-details-card {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border: 1px solid #c4b5fd;
+    border-radius: 1rem;
+    padding: 1.5rem;
+  }
+</style>
+{% endblock extra_css %}
+
 {% block content %}
-<h2>My Payments</h2>
-{% if not request.user.profile.has_paid %}
-    <p style="background:#fdecea; color:#b71c1c; padding:10px;">
-    ⚠️ You haven’t made your first payment yet. 
-    Minimum amount due: ₦{{ due_payment }}.
-    </p>
-{% endif %}
+<div class="container-fluid px-3 py-3">
 
+  <!-- 🌟 HERO HEADER -->
+  <div class="payments-hero">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2 font-weight-bold small"
+             style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); color: #fde047;">
+          <i class="fas fa-shield-alt mr-1"></i> Official Student Bursary & Tuition Desk
+        </div>
+        <h1 class="font-weight-bold text-white mb-2" style="letter-spacing: -0.03em;">
+          My Tuition & Monthly Installments
+        </h1>
+        <p class="text-white-50 mb-3" style="font-size: 1.05rem; max-width: 650px;">
+          Payments are billed and verified on a monthly basis. Upload your bank payment receipt or transfer slip below to have your payment verified and official receipt issued.
+        </p>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <span class="badge badge-pill badge-light px-3 py-2 font-weight-bold mr-2 text-dark">
+            <i class="fas fa-calendar-check text-primary mr-1"></i> Current Billing Month: September 2026
+          </span>
+          {% if september_payment and september_payment.is_approved %}
+            <span class="badge badge-pill badge-success px-3 py-2 font-weight-bold">
+              <i class="fas fa-check-circle mr-1"></i> September 2026 Cleared
+            </span>
+          {% else %}
+            <span class="badge badge-pill badge-warning text-dark px-3 py-2 font-weight-bold">
+              <i class="fas fa-clock mr-1"></i> September 2026 Tuition Pending
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
+        <button type="button" class="btn btn-warning btn-lg font-weight-bold px-4 shadow-sm" data-toggle="modal" data-target="#uploadProofModal">
+          <i class="fas fa-upload mr-2"></i> Submit Bank Payment Slip
+        </button>
+      </div>
+    </div>
+  </div>
 
-{% if payments %}
-<table border="1" cellpadding="6">
-    <tr>
-        <th>Course</th>
-        <th>Batch</th>
-        <th>Amount Due</th>
-        <th>Paid</th>
-        <th>Status</th>
-        <th>Ref</th>
-        <th>Date</th>
-    </tr>
-    {% for p in payments %}
-    <tr>
-        <td>{{ p.course.name }}</td>
-        <td>{{ p.batch.name }}</td>
-        <td>₦{{ p.amount_due }}</td>
-        <td>₦{{ p.amount_paid }}</td>
-        <td>
-            {% if p.status == 'paid' %}<span class="status-paid">Paid</span>
-            {% elif p.status == 'partial' %}<span class="status-partial">Partial</span>
-            {% else %}<span class="status-pending">Pending</span>{% endif %}
-        </td>
-        <td>{{ p.payment_ref }}</td>
-        <td>{{ p.payment_date|date:"Y-m-d" }}</td>
-        <td>
-            {% for receipt in p.receipts.all %}
-            <a href="{% url 'view_receipt' receipt.id %}" target="_blank">View</a> |
-            <a href="{% url 'view_receipt' receipt.id %}?download=true">Download PDF</a><br>
-            {% empty %}
-            No receipts yet
-            {% endfor %}
-        </td>
+  <!-- 📈 FINANCIAL SUMMARY STRIP -->
+  <div class="row mb-4">
+    <div class="col-md-4 mb-3 mb-md-0">
+      <div class="kpi-card">
+        <div class="kpi-title">Total Tuition Invoiced</div>
+        <div class="kpi-val text-dark">₦{{ total_due|floatformat:2 }}</div>
+        <div class="small text-muted mt-1">Total program track fees</div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3 mb-md-0">
+      <div class="kpi-card">
+        <div class="kpi-title">Verified Amount Paid</div>
+        <div class="kpi-val text-success">₦{{ total_paid|floatformat:2 }}</div>
+        <div class="small text-success mt-1 font-weight-bold">
+          <i class="fas fa-check-double mr-1"></i> Confirmed & receipted by bursary
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="kpi-card" style="border-left: 4px solid {% if total_balance > 0 %}#ef4444{% else %}#10b981{% endif %};">
+        <div class="kpi-title">Outstanding Balance Owed</div>
+        <div class="kpi-val {% if total_balance > 0 %}text-danger{% else %}text-success{% endif %}">
+          ₦{{ total_balance|floatformat:2 }}
+        </div>
+        <div class="small text-muted mt-1">
+          {% if total_balance > 0 %}Please complete pending installment{% else %}All payments up to date{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>No payment records yet.</p>
-{% endif %}
-{% endblock %}
+  <!-- 📋 MONTHLY PAYMENTS LEDGER -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 1rem; overflow: hidden;">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap">
+      <h5 class="font-weight-bold text-dark mb-0">
+        <i class="fas fa-receipt text-primary mr-2"></i> Monthly Tuition Breakdown & Receipts
+      </h5>
+      <span class="text-muted small">Updated in real-time by CodeCamp Bursary</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-custom mb-0">
+        <thead>
+          <tr>
+            <th>Billing Month</th>
+            <th>Course & Track</th>
+            <th>Gross Fee</th>
+            <th>Discount</th>
+            <th>Amount Paid</th>
+            <th>Balance Owed</th>
+            <th>Bank Payment Date</th>
+            <th>Bank Proof</th>
+            <th>Approval Status</th>
+            <th class="text-right">Official Receipt</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td>
+              <strong class="font-weight-bold text-dark" style="font-size: 0.95rem;">
+                <i class="fas fa-calendar-alt text-primary mr-1"></i> {{ p.billing_month }}
+              </strong>
+            </td>
+            <td>
+              <div class="font-weight-bold text-dark">{{ p.course.name|default:"General Academy" }}</div>
+              {% if p.batch %}
+                <div class="small text-muted">{{ p.batch.name }}</div>
+              {% endif %}
+            </td>
+            <td class="font-weight-bold text-muted">
+              ₦{{ p.amount_due|floatformat:2 }}
+            </td>
+            <td>
+              {% if p.discount > 0 %}
+                <span class="badge badge-success px-2 py-1">-₦{{ p.discount|floatformat:2 }}</span>
+                {% if p.discount_reason %}
+                  <div class="small text-muted font-italic">{{ p.discount_reason }}</div>
+                {% endif %}
+              {% else %}
+                <span class="text-muted small">None</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="font-weight-bold {% if p.amount_paid > 0 %}text-success{% else %}text-muted{% endif %}">
+                ₦{{ p.amount_paid|floatformat:2 }}
+              </span>
+            </td>
+            <td>
+              {% if p.remaining_balance > 0 %}
+                <span class="font-weight-bold text-danger">₦{{ p.remaining_balance|floatformat:2 }}</span>
+              {% else %}
+                <span class="badge badge-success px-2 py-1"><i class="fas fa-check mr-1"></i> Cleared</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.bank_payment_date %}
+                <span class="font-weight-bold text-dark">{{ p.bank_payment_date|date:"d-M-Y" }}</span>
+              {% else %}
+                <span class="text-muted small">Not specified</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.payment_proof %}
+                <a href="{{ p.payment_proof.url }}" target="_blank" class="btn btn-xs btn-outline-info font-weight-bold" title="View Uploaded Proof">
+                  <i class="fas fa-file-invoice mr-1"></i> View Slip
+                </a>
+              {% else %}
+                <span class="text-muted small">None uploaded</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.is_approved %}
+                <span class="badge badge-success px-2 py-1 font-weight-bold">
+                  <i class="fas fa-check-circle mr-1"></i> Approved
+                </span>
+              {% elif p.amount_paid > 0 or p.payment_proof %}
+                <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold">
+                  <i class="fas fa-clock mr-1"></i> In Review
+                </span>
+              {% else %}
+                <span class="badge badge-danger px-2 py-1 font-weight-bold">
+                  <i class="fas fa-exclamation-circle mr-1"></i> Unpaid
+                </span>
+              {% endif %}
+            </td>
+            <td class="text-right">
+              {% for r in p.receipts.all %}
+                <a href="{% url 'view_receipt' r.id %}" target="_blank" class="btn btn-sm btn-outline-primary font-weight-bold mr-1" title="View Digital Receipt">
+                  <i class="fas fa-receipt mr-1"></i> View
+                </a>
+                <a href="{% url 'view_receipt' r.id %}?download=pdf" class="btn btn-sm btn-light border font-weight-bold" title="Download PDF">
+                  <i class="fas fa-file-pdf text-danger"></i> PDF
+                </a>
+              {% empty %}
+                <span class="text-muted small">Awaiting clearance</span>
+              {% endfor %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="text-center py-4 text-muted">
+              No payment records available.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 🏦 BANK ACCOUNT TRANSFER INSTRUCTIONS -->
+  <div class="bank-details-card mb-4">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h5 class="font-weight-bold" style="color: #4c1d95;">
+          <i class="fas fa-university mr-2"></i> Official CodeCamp Innovation Hub Bank Accounts
+        </h5>
+        <p class="text-muted small mb-2">
+          Make direct deposits or mobile transfers to the official academy accounts below, then click <strong>"Submit Bank Payment Slip"</strong> to upload your proof of payment.
+        </p>
+        <div class="row mt-3">
+          <div class="col-md-6 mb-2">
+            <div class="bg-white p-3 rounded border">
+              <div class="small text-muted font-weight-bold text-uppercase">Account Name</div>
+              <div class="font-weight-bold text-dark">CODECAMP INNOVATION HUB</div>
+              <div class="small text-muted font-weight-bold text-uppercase mt-2">Bank & Account Number</div>
+              <div class="font-weight-bold text-primary" style="font-size: 1.1rem;">GTBank &bull; 0123456789</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-2">
+            <div class="bg-white p-3 rounded border">
+              <div class="small text-muted font-weight-bold text-uppercase">Alternate Bank</div>
+              <div class="font-weight-bold text-dark">CODECAMP ENTERPRISE</div>
+              <div class="small text-muted font-weight-bold text-uppercase mt-2">Bank & Account Number</div>
+              <div class="font-weight-bold text-primary" style="font-size: 1.1rem;">Zenith Bank &bull; 1029384756</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
+        <button type="button" class="btn btn-primary btn-lg font-weight-bold shadow-sm" data-toggle="modal" data-target="#uploadProofModal">
+          <i class="fas fa-paperclip mr-2"></i> Upload Payment Proof
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 📤 MODAL: UPLOAD BANK PAYMENT RECEIPT SLIP -->
+<div class="modal fade" id="uploadProofModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title font-weight-bold">
+          <i class="fas fa-file-invoice text-warning mr-2"></i> Submit Bank Payment Slip / Transfer Proof
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'submit_payment_proof' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="alert alert-light border rounded-lg p-3 mb-4">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-info-circle fa-2x text-primary mr-3"></i>
+              <div>
+                <strong class="font-weight-bold text-dark">Notice to Students & Guardians</strong>
+                <div class="small text-muted">
+                  Please attach a clear photo, screenshot, or PDF of your bank teller or mobile transfer confirmation receipt. The finance desk will verify your payment and issue your official receipt.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Billing Month -->
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">
+                <i class="fas fa-calendar-alt text-primary mr-1"></i> Payment For Month *
+              </label>
+              <select name="billing_month" class="form-control form-control-lg font-weight-bold" required>
+                <option value="September 2026" selected>September 2026</option>
+                <option value="October 2026">October 2026</option>
+                <option value="November 2026">November 2026</option>
+                <option value="December 2026">December 2026</option>
+              </select>
+            </div>
+
+            <!-- Amount Transferred -->
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">
+                <i class="fas fa-wallet text-success mr-1"></i> Amount Paid (₦) *
+              </label>
+              <input type="number" step="0.01" min="1" name="amount" class="form-control form-control-lg font-weight-bold text-success"
+                     placeholder="e.g. 35000.00" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Bank Payment Date -->
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">
+                <i class="far fa-calendar-check text-primary mr-1"></i> Date of Transfer / Bank Payment *
+              </label>
+              <input type="date" name="bank_payment_date" class="form-control form-control-lg font-weight-bold" required>
+              <small class="form-text text-muted">Select the date money left your account or was deposited.</small>
+            </div>
+
+            <!-- Proof File Upload -->
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold text-dark">
+                <i class="fas fa-paperclip text-primary mr-1"></i> Upload Receipt / Teller Slip *
+              </label>
+              <input type="file" name="payment_proof" class="form-control-file" accept="image/*,.pdf" required>
+              <small class="form-text text-muted">Accepts JPG, PNG, or PDF format.</small>
+            </div>
+          </div>
+
+          <!-- Transaction Reference / Notes -->
+          <div class="form-group">
+            <label class="font-weight-bold text-dark">Transaction Reference / Bank Session ID / Notes</label>
+            <input type="text" name="notes" class="form-control"
+                   placeholder="e.g. GTBank Transfer ref: 090264826 or depositor name: John Doe">
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light px-4 py-3">
+          <button type="button" class="btn btn-secondary font-weight-bold px-4" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success font-weight-bold px-4 shadow-sm">
+            <i class="fas fa-paper-plane mr-1"></i> Submit Payment for Verification
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}

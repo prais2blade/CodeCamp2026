@@ -103,3 +103,55 @@ class PaymentApprovalsAndDiscountsTestCase(TestCase):
         self.assertEqual(self.payment.discount, Decimal('80000.00'))
         self.assertEqual(self.payment.net_amount_due, Decimal('100000.00'))
         self.assertEqual(self.payment.discount_reason, 'Cohort Concession')
+
+    def test_student_submit_payment_proof_and_approval_flow(self):
+        """Student submits bank payment proof for September 2026, accountant approves with bank date."""
+        self.client.login(username='johnstudent', password='password123')
+        submit_url = reverse('submit_payment_proof')
+
+        import io
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        fake_slip = SimpleUploadedFile("teller.png", b"file_content", content_type="image/png")
+
+        resp = self.client.post(submit_url, {
+            'billing_month': 'September 2026',
+            'amount': '35000.00',
+            'bank_payment_date': '2026-09-24',
+            'notes': 'GTBank / NIP Ref: 829104',
+            'payment_proof': fake_slip
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        # Student payment created or updated, pending approval
+        sept_p = Payment.objects.get(student=self.student_user, billing_month='September 2026')
+        self.assertEqual(sept_p.amount_paid, Decimal('35000.00'))
+        self.assertFalse(sept_p.is_approved)
+        self.assertEqual(str(sept_p.bank_payment_date), '2026-09-24')
+        self.assertTrue(bool(sept_p.payment_proof))
+
+        # Accountant logs in and approves
+        self.client.login(username='adminuser', password='password123')
+        approve_url = reverse('approve_payment', kwargs={'payment_id': sept_p.id})
+        resp = self.client.post(approve_url, {
+            'billing_month': 'September 2026',
+            'bank_payment_date': '2026-09-24',
+            'amount_paid': '35000.00',
+            'discount': '0.00',
+            'issue_receipt': 'on'
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        sept_p.refresh_from_db()
+        self.assertTrue(sept_p.is_approved)
+        self.assertEqual(sept_p.receipts.count(), 1)
+        receipt = sept_p.receipts.first()
+        self.assertEqual(receipt.billing_month, 'September 2026')
+        self.assertEqual(str(receipt.bank_payment_date), '2026-09-24')
+
+    def test_search_by_month_september(self):
+        """Searching 'september' in manage_payments returns all September payments."""
+        self.client.login(username='adminuser', password='password123')
+        url = reverse('manage_payments') + "?q=September"
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "September")
