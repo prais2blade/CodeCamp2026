@@ -1,0 +1,607 @@
+{% extends "layouts/student_base.html" %}
+{% load static humanize %}
+
+{% block title %}{{ problem.title }} | CodeCamp Monaco IDE & Defense{% endblock %}
+
+{% block custom_css %}
+<!-- Monaco Editor CSS & Fonts -->
+<link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css">
+<style>
+  body {
+    background-color: #0f172a !important;
+  }
+  .workspace-container {
+    height: calc(100vh - 120px);
+    min-height: 720px;
+    display: flex;
+    flex-direction: column;
+  }
+  .pane-dark {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+  }
+  .editor-wrapper {
+    height: 480px;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .console-panel {
+    background: #090d16;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .defense-modal-content {
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    border-radius: 16px;
+  }
+  .timer-badge {
+    background: #e11d48;
+    color: white;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+  .option-btn {
+    text-align: left;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    transition: all 0.15s ease;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+  .option-btn:hover {
+    background: #334155;
+    color: #ffffff;
+    border-color: #6366f1;
+  }
+  .option-btn.selected {
+    background: #4338ca;
+    border-color: #818cf8;
+    color: white;
+  }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="container-fluid py-3 workspace-container">
+
+  <!-- Workspace Top Bar -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 p-3 pane-dark text-white">
+    <div class="d-flex align-items-center">
+      <a href="{% url 'assessments:student_hub' %}" class="btn btn-outline-light btn-sm mr-3 font-weight-bold" style="border-radius: 8px;">
+        <i class="fas fa-arrow-left mr-1"></i> Hub
+      </a>
+      <h5 class="mb-0 font-weight-bold mr-3">{{ problem.title }}</h5>
+      <span class="badge badge-pill badge-primary mr-2">{{ problem.get_language_display }}</span>
+      {% if problem.difficulty == 'easy' %}
+        <span class="badge badge-pill badge-success mr-2">Easy</span>
+      {% elif problem.difficulty == 'medium' %}
+        <span class="badge badge-pill badge-warning text-dark mr-2">Medium</span>
+      {% else %}
+        <span class="badge badge-pill badge-danger mr-2">Hard</span>
+      {% endif %}
+      <span class="badge badge-pill badge-secondary">
+        <i class="fas fa-balance-scale mr-1"></i> 70% Practical / 30% Defense
+      </span>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+      <span id="telemetryIndicator" class="text-xs text-muted mr-3">
+        <i class="fas fa-shield-alt text-success mr-1"></i> Anti-Cheat Telemetry Active
+      </span>
+      <button id="runTestsBtn" class="btn btn-info btn-sm font-weight-bold mr-2 px-3" style="border-radius: 8px;">
+        <i class="fas fa-play mr-1"></i> Run Sample Tests
+      </button>
+      <button id="submitSolutionBtn" class="btn btn-success btn-sm font-weight-bold px-3 shadow" style="border-radius: 8px;">
+        <i class="fas fa-check-double mr-1"></i> Submit & Enter Code Defense
+      </button>
+    </div>
+  </div>
+
+  <!-- Split Pane (Problem Description vs Monaco Editor) -->
+  <div class="row flex-grow-1" style="min-height: 0;">
+    
+    <!-- Left Column: Problem Details & Sample Test Cases -->
+    <div class="col-lg-5 mb-3 mb-lg-0 h-100 d-flex flex-column">
+      <div class="pane-dark p-4 flex-grow-1 text-white overflow-auto" style="border-radius: 12px;">
+        <h5 class="font-weight-bold border-bottom pb-2 border-secondary mb-3">
+          <i class="fas fa-file-alt mr-2 text-primary"></i> Problem Description
+        </h5>
+        
+        <div class="text-slate-300 small mb-4" style="line-height: 1.6; white-space: pre-wrap;">{{ problem.description }}</div>
+
+        <h6 class="font-weight-bold text-uppercase text-xs text-muted mb-2">Specifications & Constraints</h6>
+        <div class="p-3 mb-3" style="background: #090d16; border-radius: 8px; font-size: 0.85rem;">
+          <div><strong class="text-slate-200">Execution Timeout:</strong> <span class="text-info">{{ problem.time_limit_sec }} seconds per test</span></div>
+          <div><strong class="text-slate-200">Memory Cap:</strong> <span class="text-warning">{{ problem.memory_limit_mb }} MB</span></div>
+          <div><strong class="text-slate-200">Evaluation Mode:</strong> <span class="text-success">Isolated Sandbox Runner</span></div>
+        </div>
+
+        <h6 class="font-weight-bold text-uppercase text-xs text-muted mb-2">Sample Test Cases (Visible)</h6>
+        {% for test in sample_tests %}
+        <div class="card mb-2 border-0" style="background: #090d16; border-radius: 8px;">
+          <div class="card-body p-3">
+            <div class="d-flex justify-content-between small font-weight-bold text-muted mb-1">
+              <span>{{ test.title|default:"Sample Case" }}</span>
+              <span class="text-success">{{ test.points }} pts</span>
+            </div>
+            {% if test.input_data %}
+            <div class="text-xs text-muted">Input:</div>
+            <pre class="m-0 p-1 text-info small" style="background: #1e293b; border-radius: 4px;">{{ test.input_data }}</pre>
+            {% endif %}
+            <div class="text-xs text-muted mt-1">Expected Output:</div>
+            <pre class="m-0 p-1 text-success small" style="background: #1e293b; border-radius: 4px;">{{ test.expected_output }}</pre>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted small">No sample test cases configured.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right Column: Monaco Code Editor & Console Output -->
+    <div class="col-lg-7 h-100 d-flex flex-column">
+      <div class="pane-dark p-3 flex-grow-1 d-flex flex-column">
+        <!-- Monaco Container -->
+        <div id="monacoEditorContainer" class="editor-wrapper mb-3"></div>
+
+        <!-- Execution Results Panel -->
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="text-xs font-weight-bold text-uppercase text-muted">
+            <i class="fas fa-terminal mr-1"></i> Test Results & Console Output
+          </span>
+          <span id="runStatusText" class="text-xs font-weight-bold text-muted">Ready</span>
+        </div>
+        <div id="consoleOutput" class="console-panel p-3 flex-grow-1">
+          <span class="text-muted">Press "Run Sample Tests" to test against visible test cases, or "Submit & Enter Code Defense" to evaluate full suite.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ===================================================================== -->
+<!-- CODE DEFENSE MODAL (AST-Driven Timed Viva & Verification)              -->
+<!-- ===================================================================== -->
+<div class="modal fade" id="defenseModal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content defense-modal-content shadow-lg">
+      
+      <!-- Defense Modal Header -->
+      <div class="modal-header border-bottom border-secondary p-4">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <div>
+            <span class="badge badge-info text-uppercase font-weight-bold px-2.5 py-1 mb-1">
+              <i class="fas fa-user-shield mr-1"></i> Phase 2: Automated Code Defense
+            </span>
+            <h5 class="modal-title font-weight-extrabold text-white mb-0" id="defenseQuestionCategory">Code Comprehension & Defense</h5>
+          </div>
+          <div class="d-flex align-items-center">
+            <span id="defenseTimerBadge" class="timer-badge">
+              <i class="fas fa-stopwatch mr-1"></i> <span id="defenseSecondsLeft">90</span>s
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Defense Modal Body -->
+      <div class="modal-body p-4" id="defenseModalBody">
+        
+        <!-- Progress Steps -->
+        <div class="d-flex justify-content-between align-items-center mb-3 text-xs text-muted">
+          <span id="defenseQuestionCounter" class="font-weight-bold text-primary">Question 1 of 3</span>
+          <span id="defenseWeightPill" class="badge badge-dark">30% Defense Weight</span>
+        </div>
+
+        <!-- Question Prompt -->
+        <div id="defensePromptContainer" class="p-3 mb-3" style="background: #1e293b; border-radius: 10px; border-left: 4px solid #6366f1;">
+          <p id="defenseQuestionPrompt" class="h6 font-weight-bold text-white mb-0" style="line-height: 1.5;">
+            Analyzing your code submission...
+          </p>
+        </div>
+
+        <!-- Target Snippet (if applicable) -->
+        <div id="defenseSnippetContainer" class="mb-3" style="display: none;">
+          <div class="text-xs text-muted font-weight-bold mb-1">REFERENCED CODE CONSTRUCT:</div>
+          <pre id="defenseTargetSnippet" class="p-2 small text-info mb-0" style="background: #090d16; border-radius: 8px; max-height: 100px; overflow-y: auto;"></pre>
+        </div>
+
+        <!-- Options Container -->
+        <div id="defenseOptionsList" class="mt-3">
+          <!-- Dynamic MCQ buttons populated via JS -->
+        </div>
+
+        <!-- Live Validation Alert -->
+        <div id="defenseFeedbackAlert" class="alert mt-3" style="display: none;"></div>
+
+      </div>
+
+      <!-- Defense Modal Footer -->
+      <div class="modal-footer border-top border-secondary p-3 d-flex justify-content-between">
+        <span class="text-xs text-muted">
+          <i class="fas fa-lock mr-1"></i> Responses are permanently recorded to your audit trail.
+        </span>
+        <button id="confirmDefenseAnswerBtn" class="btn btn-primary font-weight-bold px-4 shadow-sm" style="border-radius: 8px;" disabled>
+          Confirm Answer & Next <i class="fas fa-arrow-right ml-1"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- DEFENSE COMPLETION MODAL                                              -->
+<!-- ===================================================================== -->
+<div class="modal fade" id="defenseCompleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content defense-modal-content text-center p-4">
+      <div class="my-3">
+        <i class="fas fa-award fa-4x text-warning mb-3"></i>
+        <h4 class="font-weight-extrabold text-white mb-1">Assessment Finalized!</h4>
+        <p class="text-muted small">Your practical test execution and code defense scores have been verified.</p>
+      </div>
+
+      <div class="p-3 mb-4" style="background: #1e293b; border-radius: 12px;">
+        <div class="row text-center">
+          <div class="col-4 border-right border-secondary">
+            <div class="text-xs text-muted font-weight-bold">PRACTICAL</div>
+            <div id="summaryPracticalScore" class="h4 font-weight-extrabold text-info mb-0">100%</div>
+          </div>
+          <div class="col-4 border-right border-secondary">
+            <div class="text-xs text-muted font-weight-bold">DEFENSE</div>
+            <div id="summaryDefenseScore" class="h4 font-weight-extrabold text-warning mb-0">100%</div>
+          </div>
+          <div class="col-4">
+            <div class="text-xs text-muted font-weight-bold">FINAL</div>
+            <div id="summaryFinalScore" class="h4 font-weight-extrabold text-success mb-0">100%</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="summaryStandingBadge" class="mb-4">
+        <!-- Standing badge populated here -->
+      </div>
+
+      <div class="d-flex justify-content-center gap-2">
+        <a href="{% url 'assessments:student_hub' %}" class="btn btn-dark font-weight-bold px-4 mr-2" style="border-radius: 8px;">
+          Return to Hub
+        </a>
+        <a href="{% url 'student_certificates' %}" class="btn btn-warning font-weight-bold px-4 shadow-sm" style="border-radius: 8px;">
+          My Certificates
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block custom_js %}
+<!-- Monaco Loader -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<script>
+  let editor = null;
+  const problemId = {{ problem.id }};
+  const problemSlug = "{{ problem.slug }}";
+  const problemLanguage = "{{ problem.language }}";
+  const starterCode = `{{ problem.starter_code|default:"# Write your solution here\n\ndef solution(data):\n    pass\n"|escapejs }}`;
+
+  // Telemetry variables
+  let keystrokeCount = 0;
+  let pasteCount = 0;
+  let pasteCharsTotal = 0;
+  let sessionStartTime = Date.now();
+  let pasteDetected = false;
+
+  // Code Defense State
+  let currentDefenseSessionId = null;
+  let defenseQuestions = [];
+  let currentQuestionIndex = 0;
+  let currentSelectedAnswer = null;
+  let defenseTimerInterval = null;
+  let secondsRemaining = 90;
+  let questionStartTime = 0;
+
+  // Initialize Monaco Editor
+  require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+  require(['vs/editor/editor.main'], function() {
+    let monacoLang = 'python';
+    if (problemLanguage === 'javascript') monacoLang = 'javascript';
+    else if (problemLanguage === 'sql') monacoLang = 'sql';
+
+    editor = monaco.editor.create(document.getElementById('monacoEditorContainer'), {
+      value: starterCode,
+      language: monacoLang,
+      theme: 'vs-dark',
+      automaticLayout: true,
+      fontSize: 14,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      roundedSelection: true,
+    });
+
+    // Keystroke & Telemetry listener
+    editor.onKeyDown(function(e) {
+      keystrokeCount++;
+    });
+
+    editor.getModel().onDidChangeContent(function(e) {
+      for (let change of e.changes) {
+        if (change.text.length > 80) {
+          pasteDetected = true;
+          pasteCount++;
+          pasteCharsTotal += change.text.length;
+          document.getElementById('telemetryIndicator').innerHTML = 
+            '<i class="fas fa-exclamation-triangle text-warning mr-1"></i> Rapid Paste Detected (Flagged for Defense)';
+        }
+      }
+    });
+  });
+
+  // Helper: Format Console Results
+  function renderConsoleOutput(data) {
+    const consoleDiv = document.getElementById('consoleOutput');
+    let html = '';
+
+    if (data.results && data.results.length > 0) {
+      html += `<div class="mb-2"><strong>Summary:</strong> Passed ${data.tests_passed} / ${data.tests_total} tests | Practical Score: <strong>${data.practical_score}%</strong> | Runtime: ${data.total_execution_time_ms}ms</div>`;
+      
+      data.results.forEach((r, idx) => {
+        const badge = r.passed ? '<span class="text-success font-weight-bold">PASSED</span>' : '<span class="text-danger font-weight-bold">FAILED</span>';
+        html += `<div class="p-2 mb-2" style="background: #111827; border-radius: 6px; border-left: 3px solid ${r.passed ? '#10b981' : '#ef4444'};">`;
+        html += `<div class="d-flex justify-content-between"><span><strong>Test #${idx + 1}: ${r.title}</strong></span><span>${badge} (${r.execution_time_ms}ms)</span></div>`;
+        if (r.input_data && r.input_data !== '🔒 Hidden Test Input') {
+          html += `<div class="text-muted text-xs">Input: <span class="text-info">${r.input_data}</span></div>`;
+        }
+        if (r.expected_output && r.expected_output !== '🔒 Hidden') {
+          html += `<div class="text-muted text-xs">Expected: <span class="text-success">${r.expected_output}</span></div>`;
+        }
+        if (r.actual_output) {
+          html += `<div class="text-muted text-xs">Actual: <span class="${r.passed ? 'text-success' : 'text-danger'}">${r.actual_output}</span></div>`;
+        }
+        if (r.error_message) {
+          html += `<div class="text-danger text-xs mt-1">Error: ${r.error_message}</div>`;
+        }
+        html += `</div>`;
+      });
+    } else {
+      html = '<span class="text-muted">No test outputs returned.</span>';
+    }
+    consoleDiv.innerHTML = html;
+  }
+
+  // 1. Run Sample Tests Button
+  document.getElementById('runTestsBtn').addEventListener('click', function() {
+    if (!editor) return;
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Running...';
+    document.getElementById('runStatusText').innerText = 'Executing in sandbox...';
+
+    const payload = {
+      problem_id: problemId,
+      code: editor.getValue(),
+      language: problemLanguage,
+      is_submission: false,
+      paste_detected: pasteDetected,
+      paste_chars: pasteCharsTotal,
+      keystrokes: keystrokeCount,
+      duration_sec: Math.floor((Date.now() - sessionStartTime) / 1000)
+    };
+
+    fetch('/assessments/api/run/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      document.getElementById('runStatusText').innerText = `Finished (${data.tests_passed}/${data.tests_total} Passed)`;
+      renderConsoleOutput(data);
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      document.getElementById('consoleOutput').innerHTML = `<span class="text-danger">Execution error: ${err}</span>`;
+    });
+  });
+
+  // 2. Submit Solution & Enter Code Defense
+  document.getElementById('submitSolutionBtn').addEventListener('click', function() {
+    if (!editor) return;
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Submitting & Preparing Defense...';
+    document.getElementById('runStatusText').innerText = 'Submitting full evaluation suite...';
+
+    const payload = {
+      problem_id: problemId,
+      code: editor.getValue(),
+      language: problemLanguage,
+      is_submission: true,
+      paste_detected: pasteDetected,
+      paste_chars: pasteCharsTotal,
+      keystrokes: keystrokeCount,
+      duration_sec: Math.floor((Date.now() - sessionStartTime) / 1000)
+    };
+
+    fetch('/assessments/api/run/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      renderConsoleOutput(data);
+
+      if (data.defense_session_id) {
+        // Load the defense session questions and open modal
+        loadAndStartDefense(data.defense_session_id);
+      } else {
+        alert("Evaluation completed. Unit test suite did not achieve qualifying defense threshold.");
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      alert("Submission failed: " + err);
+    });
+  });
+
+  // Load and initiate Defense Session
+  function loadAndStartDefense(sessionId) {
+    currentDefenseSessionId = sessionId;
+    fetch(`/assessments/api/defense/${sessionId}/`)
+      .then(res => res.json())
+      .then(sessionData => {
+        defenseQuestions = sessionData.questions || [];
+        currentQuestionIndex = 0;
+        if (defenseQuestions.length > 0) {
+          $('#defenseModal').modal('show');
+          displayQuestion(currentQuestionIndex);
+        } else {
+          alert("No defense questions generated for this submission.");
+        }
+      });
+  }
+
+  // Display individual defense question with countdown timer
+  function displayQuestion(index) {
+    if (index >= defenseQuestions.length) {
+      // Completed all questions!
+      finishDefenseSession();
+      return;
+    }
+
+    const q = defenseQuestions[index];
+    currentSelectedAnswer = null;
+    questionStartTime = Date.now();
+    document.getElementById('confirmDefenseAnswerBtn').disabled = true;
+    document.getElementById('defenseFeedbackAlert').style.display = 'none';
+
+    document.getElementById('defenseQuestionCounter').innerText = `Question ${index + 1} of ${defenseQuestions.length}`;
+    document.getElementById('defenseQuestionCategory').innerText = q.category_display || 'Code Defense';
+    document.getElementById('defenseQuestionPrompt').innerText = q.prompt;
+
+    // Snippet
+    if (q.target_code_snippet) {
+      document.getElementById('defenseSnippetContainer').style.display = 'block';
+      document.getElementById('defenseTargetSnippet').innerText = q.target_code_snippet;
+    } else {
+      document.getElementById('defenseSnippetContainer').style.display = 'none';
+    }
+
+    // Options
+    const optionsContainer = document.getElementById('defenseOptionsList');
+    optionsContainer.innerHTML = '';
+
+    if (q.options && q.options.length > 0) {
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn d-flex align-items-center';
+        btn.innerHTML = `<span class="badge badge-secondary mr-3 px-2 py-1 font-weight-bold">${opt.key}</span> <span>${opt.text}</span>`;
+        btn.onclick = function() {
+          document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          currentSelectedAnswer = opt.key;
+          document.getElementById('confirmDefenseAnswerBtn').disabled = false;
+        };
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    // Reset countdown timer
+    clearInterval(defenseTimerInterval);
+    secondsRemaining = q.time_limit_sec || 90;
+    document.getElementById('defenseSecondsLeft').innerText = secondsRemaining;
+
+    defenseTimerInterval = setInterval(() => {
+      secondsRemaining--;
+      document.getElementById('defenseSecondsLeft').innerText = secondsRemaining;
+      if (secondsRemaining <= 0) {
+        clearInterval(defenseTimerInterval);
+        // Auto submit with default or blank answer
+        submitAnswerAction(q.id, currentSelectedAnswer || 'TIMEOUT');
+      }
+    }, 1000);
+  }
+
+  // Confirm Answer Button
+  document.getElementById('confirmDefenseAnswerBtn').addEventListener('click', function() {
+    const q = defenseQuestions[currentQuestionIndex];
+    if (!currentSelectedAnswer) return;
+    submitAnswerAction(q.id, currentSelectedAnswer);
+  });
+
+  function submitAnswerAction(questionId, answer) {
+    clearInterval(defenseTimerInterval);
+    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
+
+    const payload = {
+      question_id: questionId,
+      student_answer: answer,
+      time_spent_sec: timeSpent
+    };
+
+    fetch('/assessments/api/defense/answer/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      currentQuestionIndex++;
+      setTimeout(() => {
+        displayQuestion(currentQuestionIndex);
+      }, 300);
+    })
+    .catch(err => {
+      alert("Error recording defense answer: " + err);
+    });
+  }
+
+  function finishDefenseSession() {
+    $('#defenseModal').modal('hide');
+
+    // Retrieve Final Practical Grade summary
+    fetch(`/assessments/api/defense/${currentDefenseSessionId}/`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('summaryDefenseScore').innerText = `${data.total_defense_score}%`;
+        
+        // Refresh page or show completion dialog
+        $('#defenseCompleteModal').modal('show');
+      });
+  }
+</script>
+{% endblock custom_js %}

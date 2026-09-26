@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.blog',
     'apps.competition',
     'apps.tasks',
+    'apps.assessments',
 ]
 
 REST_FRAMEWORK = {

@@ -23,6 +23,7 @@ from openpyxl.utils import get_column_letter
 from apps.accounts.decorators import role_required
 from apps.courses.models import Course
 from apps.scheduling.models import Batch
+from apps.tenants.utils import get_tenant_signatory_data
 from .models import Payment, Receipt
 
 
@@ -1124,6 +1125,8 @@ def view_receipt(request, receipt_id):
     except Exception:
         pass
 
+    signatory = get_tenant_signatory_data(request=request)
+
     context = {
         'receipt': receipt,
         'payment': payment,
@@ -1138,6 +1141,10 @@ def view_receipt(request, receipt_id):
         'amount_paid_this_receipt': amount_paid_this_receipt,
         'outstanding_to_date': outstanding_to_date,
         'logo_data_uri': logo_data_uri,
+        'director_signature_url': signatory['director_signature_url'],
+        'director_signature_data_uri': signatory['director_signature_data_uri'],
+        'director_name': signatory['director_name'],
+        'director_title': signatory['director_title'],
         'request': request,
     }
     html_string = render_to_string('payments/receipt_template.html', context)

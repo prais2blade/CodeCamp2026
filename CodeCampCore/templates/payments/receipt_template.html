@@ -542,12 +542,17 @@
         Audit Hash: <code>{{ receipt.reference }}</code>
       </div>
 
-      <div class="sign-block">
+      <div class="sign-block" style="text-align: center; position: relative;">
+        {% if director_signature_data_uri %}
+          <img src="{{ director_signature_data_uri }}" alt="Director Signature" style="max-height: 48px; max-width: 160px; object-fit: contain; margin-bottom: -8px; display: block; margin-left: auto; margin-right: auto;">
+        {% elif director_signature_url %}
+          <img src="{{ director_signature_url }}" alt="Director Signature" style="max-height: 48px; max-width: 160px; object-fit: contain; margin-bottom: -8px; display: block; margin-left: auto; margin-right: auto;">
+        {% endif %}
         <div class="sign-line"></div>
         <div class="sign-name">
-          {% if payment.verified_by %}{{ payment.verified_by.get_full_name|default:payment.verified_by.username }}{% else %}Finance Desk / Bursary{% endif %}
+          {{ director_name|default:"Engr. Praise — Academic Director" }}
         </div>
-        <div class="sign-role">CodeCamp Accounts Office</div>
+        <div class="sign-role">{{ director_title|default:"Academic Director & Lead Instructor" }}</div>
       </div>
     </div>
 

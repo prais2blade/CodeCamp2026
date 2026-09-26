@@ -1,0 +1,279 @@
+{% extends "layouts/admin_base.html" %}
+{% load static humanize %}
+
+{% block title %}Code Defense Review Queue | CodeCamp Faculty{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-2">
+
+  <!-- Header Banner -->
+  <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #090d16 0%, #1e1b4b 60%, #312e81 100%); border-radius: 16px;">
+    <div class="card-body p-4 p-md-5">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1 mb-2 text-uppercase">
+            <i class="fas fa-shield-alt mr-1"></i> Academic Integrity & Oral Defense
+          </span>
+          <h2 class="font-weight-extrabold text-white mb-1">Code Defense & Assessment Review Queue</h2>
+          <p class="text-white-50 mb-0" style="max-width: 700px;">
+            Inspect student submissions flagged for practical-to-defense score mismatches or rapid paste velocity. Review answers side-by-side with code and apply faculty overrides.
+          </p>
+        </div>
+        <div class="mt-3 mt-md-0">
+          <a href="{% url 'admin_certificates_hub' %}" class="btn btn-warning font-weight-bold shadow-sm">
+            <i class="fas fa-award mr-1"></i> Graduation & Certificates Hub
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Overview Cards -->
+  <div class="row mb-4">
+    <div class="col-md-4 mb-3 mb-md-0">
+      <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 14px;">
+        <div class="text-muted small text-uppercase font-weight-bold mb-1">Flagged for Review</div>
+        <div class="h2 font-weight-extrabold text-danger mb-0">{{ flagged_count }}</div>
+        <p class="text-muted small mt-2 mb-0">Submissions where practical pass does not match code defense comprehension.</p>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3 mb-md-0">
+      <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 14px;">
+        <div class="text-muted small text-uppercase font-weight-bold mb-1">Total Submissions Monitored</div>
+        <div class="h2 font-weight-extrabold text-dark mb-0">{{ sessions.count }}</div>
+        <p class="text-muted small mt-2 mb-0">Defense sessions evaluated by the AST engine.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 14px;">
+        <div class="text-muted small text-uppercase font-weight-bold mb-1">Graduation Pipeline</div>
+        <div class="d-flex align-items-center mt-1">
+          <i class="fas fa-check-double text-success fa-2x mr-2"></i>
+          <div>
+            <div class="font-weight-bold text-dark">Auto-Sync Active</div>
+            <div class="text-muted small">Passing defense qualifies students for Distinction/Merit certificates.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Queue Table -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+    <div class="card-header bg-white border-0 pt-4 px-4">
+      <h5 class="font-weight-extrabold text-dark mb-0">Submissions & Defense Sessions</h5>
+      <p class="text-muted small mb-0">Click "Inspect & Replay" to review code side-by-side with defense responses.</p>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th class="px-4 py-3 text-xs text-uppercase font-weight-bold text-muted">Student</th>
+              <th class="py-3 text-xs text-uppercase font-weight-bold text-muted">Problem</th>
+              <th class="py-3 text-xs text-uppercase font-weight-bold text-muted text-center">Practical (70%)</th>
+              <th class="py-3 text-xs text-uppercase font-weight-bold text-muted text-center">Defense (30%)</th>
+              <th class="py-3 text-xs text-uppercase font-weight-bold text-muted text-center">Telemetry Flag</th>
+              <th class="py-3 text-xs text-uppercase font-weight-bold text-muted text-center">Integrity Risk</th>
+              <th class="py-3 text-xs text-uppercase font-weight-bold text-muted text-center">Status</th>
+              <th class="px-4 py-3 text-xs text-uppercase font-weight-bold text-muted text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sessions %}
+            <tr>
+              <td class="px-4 py-3 font-weight-bold text-dark">
+                {{ s.student.first_name|default:s.student.username }}
+                <div class="text-xs text-muted font-normal">@{{ s.student.username }}</div>
+              </td>
+              <td class="py-3">
+                <span class="font-weight-bold text-dark">{{ s.submission.problem.title }}</span>
+                <div class="text-xs text-muted">{{ s.submission.problem.get_language_display }}</div>
+              </td>
+              <td class="py-3 text-center">
+                <span class="badge badge-light-primary text-primary font-weight-bold px-2 py-1">
+                  {{ s.submission.practical_score }}%
+                </span>
+              </td>
+              <td class="py-3 text-center">
+                <span class="badge {% if s.total_defense_score >= 70 %}badge-light-success text-success{% elif s.total_defense_score >= 50 %}badge-light-warning text-warning{% else %}badge-light-danger text-danger{% endif %} font-weight-bold px-2 py-1">
+                  {{ s.total_defense_score }}%
+                </span>
+                {% if s.tutor_override_score %}
+                  <div class="text-xs text-info font-weight-bold">Override: {{ s.tutor_override_score }}%</div>
+                {% endif %}
+              </td>
+              <td class="py-3 text-center">
+                {% if s.submission.telemetry_paste_detected %}
+                  <span class="badge badge-warning text-dark font-weight-bold px-2 py-1" title="{{ s.submission.telemetry_paste_chars }} chars pasted rapidly">
+                    <i class="fas fa-paste mr-1"></i> Rapid Paste
+                  </span>
+                {% else %}
+                  <span class="badge badge-light text-muted font-weight-bold px-2 py-1">
+                    <i class="fas fa-keyboard mr-1"></i> Typed
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3 text-center">
+                {% if s.cheating_risk_score >= 0.70 %}
+                  <span class="badge badge-danger font-weight-bold px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i> Critical ({{ s.cheating_risk_score }})</span>
+                {% elif s.cheating_risk_score >= 0.40 %}
+                  <span class="badge badge-warning font-weight-bold px-2 py-1 text-dark"><i class="fas fa-exclamation-circle mr-1"></i> Elevated ({{ s.cheating_risk_score }})</span>
+                {% else %}
+                  <span class="badge badge-success font-weight-bold px-2 py-1"><i class="fas fa-check-circle mr-1"></i> Normal</span>
+                {% endif %}
+              </td>
+              <td class="py-3 text-center">
+                {% if s.status == 'flagged' %}
+                  <span class="badge badge-danger font-weight-bold px-2 py-1">Flagged</span>
+                {% elif s.status == 'completed' %}
+                  <span class="badge badge-success font-weight-bold px-2 py-1">Verified</span>
+                {% else %}
+                  <span class="badge badge-secondary font-weight-bold px-2 py-1">{{ s.status }}</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button class="btn btn-outline-primary btn-sm font-weight-bold px-3" style="border-radius: 8px;" onclick="openInspectModal({{ s.id }}, '{{ s.student.username }}', '{{ s.submission.problem.title }}', {{ s.total_defense_score }}, '{{ s.submission.submitted_code|escapejs }}')">
+                  <i class="fas fa-search mr-1"></i> Inspect & Replay
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                <i class="fas fa-clipboard-check fa-3x text-muted mb-3 d-block"></i>
+                No assessment submissions currently in the review queue.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Inspection & Replay Modal -->
+<div class="modal fade" id="inspectDefenseModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-content shadow-lg" style="border-radius: 16px; border: 0;">
+      
+      <div class="modal-header bg-dark text-white p-4">
+        <div>
+          <h5 class="modal-title font-weight-bold mb-1" id="inspectModalTitle">Defense Audit & Replay</h5>
+          <span class="text-muted small" id="inspectModalSubtitle">Student submission analysis</span>
+        </div>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body p-4">
+        <div class="row">
+          <!-- Left: Student Code -->
+          <div class="col-lg-6 mb-3 mb-lg-0">
+            <h6 class="font-weight-bold text-dark border-bottom pb-2">
+              <i class="fas fa-code mr-1 text-primary"></i> Submitted Code
+            </h6>
+            <pre id="inspectCodeView" class="p-3 text-light bg-dark small" style="border-radius: 8px; max-height: 480px; overflow-y: auto; font-family: 'Courier New', Courier, monospace;"></pre>
+          </div>
+
+          <!-- Right: Defense Questions & Faculty Override -->
+          <div class="col-lg-6">
+            <h6 class="font-weight-bold text-dark border-bottom pb-2">
+              <i class="fas fa-user-shield mr-1 text-info"></i> Code Defense Questions & Responses
+            </h6>
+            <div id="inspectQuestionsList" style="max-height: 320px; overflow-y: auto;">
+              <!-- Populated via JS -->
+            </div>
+
+            <!-- Faculty Override Section -->
+            <div class="mt-4 p-3 border rounded bg-light">
+              <h6 class="font-weight-bold text-dark mb-2">Faculty Score Override & Commendation</h6>
+              <div class="form-group mb-2">
+                <label class="text-xs font-weight-bold text-muted">Override Defense Score (0 - 100):</label>
+                <input type="number" id="overrideScoreInput" class="form-control" min="0" max="100" placeholder="e.g. 85">
+              </div>
+              <div class="form-group mb-2">
+                <label class="text-xs font-weight-bold text-muted">Faculty Review Remarks:</label>
+                <textarea id="tutorNotesInput" class="form-control" rows="2" placeholder="Student verbally defended approach during lab session..."></textarea>
+              </div>
+              <button class="btn btn-success btn-block font-weight-bold shadow-sm" onclick="submitTutorOverride()">
+                <i class="fas fa-check-circle mr-1"></i> Confirm & Resolve Flag
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+  let activeSessionId = null;
+
+  function openInspectModal(sessionId, username, problemTitle, defenseScore, submittedCode) {
+    activeSessionId = sessionId;
+    document.getElementById('inspectModalTitle').innerText = `${username} - ${problemTitle}`;
+    document.getElementById('inspectModalSubtitle').innerText = `Automated Defense Score: ${defenseScore}%`;
+    document.getElementById('inspectCodeView').innerText = submittedCode;
+    document.getElementById('overrideScoreInput').value = defenseScore;
+    document.getElementById('tutorNotesInput').value = '';
+
+    const questionsList = document.getElementById('inspectQuestionsList');
+    questionsList.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading defense viva...</div>';
+
+    fetch(`/assessments/api/defense/${sessionId}/`)
+      .then(res => res.json())
+      .then(data => {
+        let html = '';
+        if (data.questions && data.questions.length > 0) {
+          data.questions.forEach((q, idx) => {
+            const isCorrect = q.is_correct;
+            const badge = isCorrect ? '<span class="badge badge-success">Correct (100 pts)</span>' : '<span class="badge badge-danger">Incorrect (0 pts)</span>';
+            html += `<div class="p-3 mb-2 border rounded" style="background: #ffffff; border-left: 4px solid ${isCorrect ? '#10b981' : '#ef4444'} !important;">`;
+            html += `<div class="d-flex justify-content-between mb-1"><strong class="small">Q${idx + 1}: ${q.category_display}</strong>${badge}</div>`;
+            html += `<div class="small text-muted mb-2">${q.prompt}</div>`;
+            html += `<div class="small"><strong>Student Answer:</strong> <span class="badge badge-dark">${q.student_answer || 'None / Timed out'}</span></div>`;
+            html += `</div>`;
+          });
+        } else {
+          html = '<div class="text-muted small">No questions recorded.</div>';
+        }
+        questionsList.innerHTML = html;
+        $('#inspectDefenseModal').modal('show');
+      });
+  }
+
+  function submitTutorOverride() {
+    if (!activeSessionId) return;
+    const scoreVal = document.getElementById('overrideScoreInput').value;
+    const notesVal = document.getElementById('tutorNotesInput').value;
+
+    fetch(`/assessments/api/tutor/review/${activeSessionId}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({
+        override_score: scoreVal,
+        tutor_notes: notesVal
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert("Faculty review applied! Final composite grade: " + data.final_score + "% (" + data.status + ")");
+      location.reload();
+    })
+    .catch(err => {
+      alert("Failed to submit override: " + err);
+    });
+  }
+</script>
+{% endblock custom_js %}

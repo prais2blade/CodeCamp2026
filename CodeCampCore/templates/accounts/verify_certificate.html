@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verify Official Certificate | CodeCamp Innovation Hub{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-16 px-4 bg-slate-900 text-slate-100 flex flex-col justify-center items-center">
+  <div class="max-w-xl w-full bg-slate-800/90 border border-slate-700/80 rounded-2xl shadow-2xl p-8 backdrop-blur-md relative overflow-hidden">
+    
+    <!-- Top Decorative Glow -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="text-center mb-8">
+      <img src="{% static 'images/codecamp-logo.png' %}" alt="CodeCamp Logo" class="h-16 mx-auto mb-3 object-contain">
+      <h2 class="text-xs uppercase tracking-widest text-indigo-400 font-extrabold">CodeCamp Innovation Hub</h2>
+      <h1 class="text-2xl font-black text-white mt-1">Official Credential Verification</h1>
+    </div>
+
+    {% if is_valid %}
+      <div class="p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex items-center gap-3 mb-6">
+        <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl font-bold flex-shrink-0">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-emerald-300 text-base">Authentic & Verified Credential</h3>
+          <p class="text-xs text-emerald-200/80">This official certificate has been verified by the CodeCamp Academic Registry.</p>
+        </div>
+      </div>
+
+      <div class="space-y-4 bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 mb-6 text-sm">
+        <div class="flex justify-between items-center py-2 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Recipient Name:</span>
+          <span class="font-bold text-white text-base">{{ certificate.student.get_full_name|default:certificate.student.username }}</span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Program Track:</span>
+          <span class="font-semibold text-indigo-300 text-right">{{ certificate.title }}</span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Performance Grade:</span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase
+            {% if certificate.grade == 'Distinction' %}bg-amber-400/20 text-amber-300 border border-amber-400/40
+            {% elif certificate.grade == 'Merit' %}bg-indigo-400/20 text-indigo-300 border border-indigo-400/40
+            {% elif certificate.grade == 'Credit' %}bg-blue-400/20 text-blue-300 border border-blue-400/40
+            {% else %}bg-slate-700 text-slate-300{% endif %}">
+            {{ certificate.grade }}
+          </span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Issue Date:</span>
+          <span class="font-semibold text-slate-200">{{ certificate.issue_date|date:"F d, Y" }}</span>
+        </div>
+
+        <div class="flex justify-between items-center py-2 border-b border-slate-800">
+          <span class="text-slate-400 font-medium">Verification Reference:</span>
+          <code class="font-mono text-xs font-bold text-purple-300">{{ certificate.formatted_ref }}</code>
+        </div>
+
+        <div class="flex justify-between items-center py-2">
+          <span class="text-slate-400 font-medium">Authorized Signatory:</span>
+          <span class="font-semibold text-slate-200">{{ signatory.director_name|default:"Academic Director" }}</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="{% url 'view_certificate' certificate.id %}" target="_blank" class="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl text-center shadow-lg transition">
+          <i class="fas fa-external-link-alt mr-2"></i> View Branded Certificate
+        </a>
+        <a href="{% url 'home' %}" class="py-3 px-5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-sm rounded-xl text-center transition">
+          CodeCamp Home
+        </a>
+      </div>
+
+    {% else %}
+      <div class="p-6 rounded-xl bg-rose-950/70 border border-rose-500/40 text-center mb-6">
+        <div class="w-16 h-16 rounded-full bg-rose-500/20 text-rose-400 text-3xl flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="text-lg font-bold text-rose-300 mb-1">Credential Not Verified</h3>
+        <p class="text-sm text-rose-200/80 mb-4">
+          The reference ID provided does not match any valid accredited certificate in the CodeCamp registry, or the credential has been revoked.
+        </p>
+        <code class="text-xs font-mono bg-slate-900 px-3 py-1.5 rounded text-rose-300 border border-rose-900/60">
+          Ref: {{ reference_id }}
+        </code>
+      </div>
+
+      <div class="text-center">
+        <a href="{% url 'home' %}" class="inline-block py-2.5 px-6 bg-slate-700 hover:bg-slate-600 text-white font-semibold text-sm rounded-xl transition">
+          Return to Portal
+        </a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

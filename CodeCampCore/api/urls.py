@@ -39,4 +39,5 @@ urlpatterns = [
     path("accounts/login/", LoginAPI.as_view(), name="account_login"),
     path("accounts/dashboard/student/", StudentDashboardAPI.as_view(), name="dashboard_student"),
     path("accounts/dashboard/teacher/", TeacherDashboardAPI.as_view(), name="dashboard_teacher"),
+    path("assessments/", include("apps.assessments.urls")),
 ]

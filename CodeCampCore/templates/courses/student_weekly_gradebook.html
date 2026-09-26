@@ -1,0 +1,281 @@
+{% extends "layouts/student_base.html" %}
+{% load static humanize %}
+
+{% block title %}My Weekly Assignments & Progress | CodeCamp Student Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Header Banner -->
+  <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4338ca 100%); border-radius: 16px;">
+    <div class="card-body p-4 p-md-5">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1 mb-2 text-uppercase">
+            <i class="fas fa-graduation-cap mr-1"></i> Weekly Curriculum & Gradebook
+          </span>
+          <h2 class="font-weight-extrabold text-white mb-1">Weekly Assignments & Progress</h2>
+          <p class="text-white-50 mb-0">
+            Track your weekly lab submissions, rubric evaluations, tutor commendations, and overall graduation standing.
+          </p>
+        </div>
+        <div class="mt-3 mt-md-0">
+          <a href="{% url 'student_certificates' %}" class="btn btn-warning font-weight-bold shadow-sm">
+            <i class="fas fa-award mr-1"></i> My Certificates
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cumulative Standing & Progress Bar -->
+  <div class="row mb-4">
+    <!-- Academic Standing Card -->
+    <div class="col-lg-4 mb-3 mb-lg-0">
+      <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px; background: #ffffff;">
+        <div class="text-muted small text-uppercase font-weight-bold mb-1">Overall Academic Standing</div>
+        <div class="d-flex align-items-baseline mb-2">
+          {% if cumulative_avg %}
+            <div class="h1 font-weight-extrabold text-dark mb-0 mr-2">{{ cumulative_avg }}%</div>
+            <span class="badge {{ standing_badge }} font-weight-bold px-2.5 py-1 text-uppercase">
+              {{ academic_standing }}
+            </span>
+          {% else %}
+            <div class="h3 font-weight-bold text-muted mb-0">Pending Grading</div>
+          {% endif %}
+        </div>
+        <small class="text-muted">
+          Calculated across all verified weekly rubric scores. This standing determines your official graduation certificate grade.
+        </small>
+      </div>
+    </div>
+
+    <!-- Curriculum Progress Tracker -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px; background: #ffffff;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="text-muted small text-uppercase font-weight-bold">Program Progression</div>
+          <span class="font-weight-bold text-primary">{{ submitted_count }} of {{ total_assignments }} Submitted ({{ completion_pct }}%)</span>
+        </div>
+        
+        <div class="progress mb-3" style="height: 14px; border-radius: 10px; background-color: #f1f5f9;">
+          <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" 
+            style="width: {{ completion_pct }}%; border-radius: 10px;" aria-valuenow="{{ completion_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <div class="row text-center pt-2">
+          <div class="col-4 border-right">
+            <div class="font-weight-bold text-dark h5 mb-0">{{ total_assignments }}</div>
+            <small class="text-muted">Total Modules</small>
+          </div>
+          <div class="col-4 border-right">
+            <div class="font-weight-bold text-success h5 mb-0">{{ graded_count }}</div>
+            <small class="text-muted">Evaluated</small>
+          </div>
+          <div class="col-4">
+            <div class="font-weight-bold text-warning h5 mb-0">{{ submitted_count|add:"-"|add:graded_count }}</div>
+            <small class="text-muted">In Review</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week-by-Week Modules Accordion/Cards -->
+  <h4 class="font-weight-bold text-dark mb-3">
+    <i class="fas fa-calendar-week text-primary mr-2"></i> Weekly Curriculum Modules
+  </h4>
+
+  <div class="space-y-4">
+    {% for week_num, week_assignments in weeks_dict.items %}
+      <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; overflow: hidden;">
+        <div class="card-header bg-light border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center">
+            <span class="badge badge-primary px-3 py-1 font-weight-bold mr-3" style="font-size: 0.9rem;">
+              WEEK {{ week_num }}
+            </span>
+            <span class="font-weight-bold text-dark" style="font-size: 1.05rem;">
+              Curriculum Milestone & Labs
+            </span>
+          </div>
+          <span class="text-muted small font-weight-bold">{{ week_assignments|length }} Assignment(s)</span>
+        </div>
+
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            {% for a in week_assignments %}
+              <div class="list-group-item p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                  <div class="mb-3 mb-md-0" style="max-width: 650px;">
+                    <div class="d-flex align-items-center mb-1">
+                      <h5 class="font-weight-bold text-dark mb-0 mr-2">{{ a.title }}</h5>
+                      <span class="badge badge-light border text-muted small">{{ a.subject.name }}</span>
+                    </div>
+
+                    <p class="text-muted small mb-2">
+                      {{ a.description|default:"Complete all technical specifications and lab challenges for this module."|truncatewords:30 }}
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-3 text-muted small" style="gap: 15px;">
+                      <span><i class="far fa-calendar-alt text-primary mr-1"></i> Due: <strong>{{ a.due_date|date:"F d, Y" }}</strong></span>
+                      <span><i class="fas fa-check-circle text-info mr-1"></i> Max Points: <strong>{{ a.max_score }}</strong></span>
+                      {% if a.file %}
+                        <a href="{{ a.file.url }}" target="_blank" class="text-primary font-weight-bold">
+                          <i class="fas fa-paperclip mr-1"></i> Starter Attachment
+                        </a>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- Status & Action Box -->
+                  <div class="text-md-right">
+                    {% if a.submission %}
+                      {% if a.submission.total_score is not None %}
+                        <!-- GRADED -->
+                        <div class="mb-2">
+                          <span class="h4 font-weight-bold text-dark mr-1">{{ a.submission.total_score|floatformat:1 }}%</span>
+                          <span class="badge {% if a.submission.letter_grade == 'Distinction' %}badge-warning text-dark{% elif a.submission.letter_grade == 'Merit' %}badge-primary{% elif a.submission.letter_grade == 'Credit' %}badge-info{% elif a.submission.letter_grade == 'Pass' %}badge-secondary{% else %}badge-danger{% endif %} font-weight-bold px-2 py-1">
+                            {{ a.submission.letter_grade }}
+                          </span>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm font-weight-bold" data-toggle="modal" data-target="#rubricModal{{ a.submission.id }}">
+                          <i class="fas fa-search-plus mr-1"></i> View Rubric Breakdown
+                        </button>
+                      {% else %}
+                        <!-- SUBMITTED BUT PENDING -->
+                        <div class="mb-2">
+                          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1">
+                            <i class="fas fa-clock mr-1"></i> In Review by Tutor
+                          </span>
+                        </div>
+                        <a href="{% url 'submit_assignment' a.id %}" class="btn btn-outline-secondary btn-sm">
+                          <i class="fas fa-edit mr-1"></i> Edit Submission
+                        </a>
+                      {% endif %}
+
+                    {% else %}
+                      <!-- NOT SUBMITTED -->
+                      <div class="mb-2">
+                        <span class="badge badge-light border text-danger font-weight-bold px-2.5 py-1">
+                          <i class="fas fa-exclamation-circle mr-1"></i> Not Submitted
+                        </span>
+                      </div>
+                      <a href="{% url 'submit_assignment' a.id %}" class="btn btn-primary btn-sm font-weight-bold shadow-sm">
+                        <i class="fas fa-upload mr-1"></i> Submit Work
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- Tutor Feedback Note if present -->
+                {% if a.submission and a.submission.feedback %}
+                  <div class="mt-3 p-3 rounded bg-light border-left border-primary" style="border-left-width: 4px !important;">
+                    <div class="d-flex align-items-center mb-1">
+                      <i class="fas fa-comment-dots text-primary mr-2"></i>
+                      <strong class="text-dark small">Tutor Feedback</strong>
+                      {% if a.submission.graded_by %}
+                        <small class="text-muted ml-2">&bull; by {{ a.submission.graded_by.get_full_name|default:a.submission.graded_by.username }}</small>
+                      {% endif %}
+                    </div>
+                    <p class="text-muted small mb-0">{{ a.submission.feedback }}</p>
+                  </div>
+                {% endif %}
+
+              </div>
+
+              <!-- MODAL: DETAILED RUBRIC EVALUATION BREAKDOWN -->
+              {% if a.submission and a.submission.total_score is not None %}
+                <div class="modal fade text-left" id="rubricModal{{ a.submission.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content" style="border-radius: 16px;">
+                      <div class="modal-header bg-dark text-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                        <h5 class="modal-title font-weight-bold">
+                          <i class="fas fa-balance-scale text-warning mr-2"></i> Rubric Evaluation: {{ a.title }}
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                      </div>
+
+                      <div class="modal-body p-4">
+                        <div class="p-3 rounded mb-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #ffffff; border-radius: 12px;">
+                          <div>
+                            <div class="small text-white-50 text-uppercase font-weight-bold">Total Score</div>
+                            <div class="h2 font-weight-extrabold mb-0 text-warning">{{ a.submission.total_score|floatformat:1 }}%</div>
+                          </div>
+                          <span class="badge badge-warning px-3 py-1 font-weight-bold text-uppercase">
+                            {{ a.submission.letter_grade }}
+                          </span>
+                        </div>
+
+                        <div class="list-group list-group-flush mb-3">
+                          <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                              <strong>1. Functionality & Logic</strong>
+                              <small class="text-muted d-block">Meets requirements, zero fatal bugs</small>
+                            </div>
+                            <span class="badge badge-primary font-weight-bold" style="font-size: 0.9rem;">
+                              {{ a.submission.rubric_scores.functionality|default:0 }} / 40 pts
+                            </span>
+                          </div>
+
+                          <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                              <strong>2. Code Quality & Architecture</strong>
+                              <small class="text-muted d-block">Modularity, clean naming, readability</small>
+                            </div>
+                            <span class="badge badge-primary font-weight-bold" style="font-size: 0.9rem;">
+                              {{ a.submission.rubric_scores.code_quality|default:0 }} / 25 pts
+                            </span>
+                          </div>
+
+                          <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                              <strong>3. UI/UX & Output Presentation</strong>
+                              <small class="text-muted d-block">Visual design, responsiveness, documentation</small>
+                            </div>
+                            <span class="badge badge-primary font-weight-bold" style="font-size: 0.9rem;">
+                              {{ a.submission.rubric_scores.ui_ux|default:0 }} / 20 pts
+                            </span>
+                          </div>
+
+                          <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                              <strong>4. Timeliness & Best Practices</strong>
+                              <small class="text-muted d-block">Git commit history, punctual submission</small>
+                            </div>
+                            <span class="badge badge-primary font-weight-bold" style="font-size: 0.9rem;">
+                              {{ a.submission.rubric_scores.best_practices|default:0 }} / 15 pts
+                            </span>
+                          </div>
+                        </div>
+
+                        {% if a.submission.feedback %}
+                          <div class="p-3 bg-light rounded border">
+                            <strong class="text-dark small d-block mb-1">Tutor Remarks:</strong>
+                            <p class="text-muted small mb-0">{{ a.submission.feedback }}</p>
+                          </div>
+                        {% endif %}
+                      </div>
+
+                      <div class="modal-footer bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="card border-0 shadow-sm text-center py-5" style="border-radius: 16px;">
+        <i class="fas fa-book-open fa-3x mb-3 text-secondary"></i>
+        <h5 class="font-weight-bold text-dark">No Assignments Available Yet</h5>
+        <p class="text-muted small">Your instructors will publish weekly modules as your cohort advances.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

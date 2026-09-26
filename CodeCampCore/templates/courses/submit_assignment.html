@@ -1,41 +1,141 @@
 {% extends "layouts/student_base.html" %}
+{% load static %}
+
+{% block title %}Submit Assignment: {{ assignment.title }} | CodeCamp Student Portal{% endblock %}
 
 {% block content %}
+<div class="container-fluid py-4">
 
-<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
 
-    <h3 class="mb-3">Submit Assignment</h3>
+      <!-- Header Card -->
+      <div class="card border-0 shadow-sm text-white mb-4" style="background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4338ca 100%); border-radius: 16px;">
+        <div class="card-body p-4 p-md-5">
+          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1 mb-2 text-uppercase">
+            <i class="fas fa-tasks mr-1"></i> Week {{ assignment.week_number }} Submission
+          </span>
+          <h2 class="font-weight-extrabold text-white mb-1">{{ assignment.title }}</h2>
+          <p class="text-white-50 mb-0">
+            {{ assignment.subject.name }} &bull; Due: {{ assignment.due_date|date:"F d, Y" }} &bull; Max Points: {{ assignment.max_score }}
+          </p>
+        </div>
+      </div>
 
-    <div class="card">
-        <div class="card-body">
+      <!-- Submission Status Alert if already submitted -->
+      {% if existing %}
+        <div class="alert alert-info border-0 shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center" style="border-radius: 14px; background: #e0e7ff; color: #1e1b4b;">
+          <div>
+            <h6 class="font-weight-bold mb-1"><i class="fas fa-info-circle mr-1 text-primary"></i> Previous Submission on Record</h6>
+            <p class="small mb-0">
+              Submitted on {{ existing.submitted_at|date:"M d, Y &bull; h:i A" }}. Submitting this form will update your submission for tutor review.
+            </p>
+          </div>
+          {% if existing.total_score is not None %}
+            <span class="badge badge-primary font-weight-bold px-3 py-2" style="font-size: 0.95rem;">
+              Score: {{ existing.total_score }}% ({{ existing.letter_grade }})
+            </span>
+          {% endif %}
+        </div>
+      {% endif %}
 
-            <h5>{{ assignment.title }}</h5>
-            <p>{{ assignment.description }}</p>
-            <p><strong>Due:</strong> {{ assignment.due_date }}</p>
+      <!-- Submission Form Card -->
+      <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+        <div class="card-body p-4 p-md-5">
+          
+          <h5 class="font-weight-bold text-dark mb-2">Assignment Brief & Instructions</h5>
+          <p class="text-muted small mb-4" style="line-height: 1.6;">
+            {{ assignment.description|default:"Please complete all project tasks and adhere to coding best practices."|linebreaks }}
+          </p>
 
-            {% if existing %}
-                <div class="alert alert-info">
-                    You have already submitted this assignment. You can update it.
-                </div>
-            {% endif %}
+          {% if assignment.file %}
+            <div class="p-3 bg-light rounded border mb-4 d-flex justify-content-between align-items-center">
+              <div>
+                <span class="font-weight-bold text-dark small">Starter Attachment / Project Files</span>
+                <small class="text-muted d-block">Download and consult before starting your project.</small>
+              </div>
+              <a href="{{ assignment.file.url }}" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold">
+                <i class="fas fa-download mr-1"></i> Download Starter Files
+              </a>
+            </div>
+          {% endif %}
 
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
 
-                <div class="mb-3">
-                    <label>Upload File</label>
-                    <input type="file" name="file" class="form-control" required>
-                </div>
+            <!-- GitHub Repo Link -->
+            <div class="form-group mb-3">
+              <label class="font-weight-bold text-dark">
+                <i class="fab fa-github mr-1"></i> GitHub / Repository URL
+              </label>
+              <input type="url" name="repo_url" class="form-control" 
+                placeholder="https://github.com/username/repository" 
+                value="{{ existing.repo_url|default:'' }}">
+              <small class="form-text text-muted">Provide the public repository link containing your code commits.</small>
+            </div>
 
-                <button class="btn btn-success">
-                    {% if existing %}Update Submission{% else %}Submit Assignment{% endif %}
-                </button>
+            <!-- Live Demo URL -->
+            <div class="form-group mb-3">
+              <label class="font-weight-bold text-dark">
+                <i class="fas fa-globe mr-1 text-success"></i> Live Demo / Deployment URL (Optional)
+              </label>
+              <input type="url" name="live_demo_url" class="form-control" 
+                placeholder="https://your-app.vercel.app" 
+                value="{{ existing.live_demo_url|default:'' }}">
+              <small class="form-text text-muted">Optional live link (Vercel, Netlify, Render, or deployed server).</small>
+            </div>
 
-            </form>
+            <!-- Project File Upload -->
+            <div class="form-group mb-3">
+              <label class="font-weight-bold text-dark">
+                <i class="fas fa-file-archive mr-1 text-warning"></i> Upload Project File (ZIP / PDF / Code)
+              </label>
+              <input type="file" name="file" class="form-control-file border p-2 rounded w-100">
+              {% if existing.file %}
+                <small class="form-text text-muted">Current file: <a href="{{ existing.file.url }}" target="_blank" class="font-weight-bold">Download Current Submission</a></small>
+              {% else %}
+                <small class="form-text text-muted">Attach compressed zip archive or documentation file.</small>
+              {% endif %}
+            </div>
+
+            <!-- Student Notes -->
+            <div class="form-group mb-4">
+              <label class="font-weight-bold text-dark">
+                <i class="far fa-comment-dots mr-1 text-primary"></i> Notes / Self-Reflection for Tutor
+              </label>
+              <textarea name="notes" class="form-control" rows="3" placeholder="Explain your design decisions, key features implemented, or any challenges faced...">{{ existing.notes|default:'' }}</textarea>
+            </div>
+
+            <!-- Marking Rubric Guidance Box -->
+            <div class="card bg-light border p-3 mb-4" style="border-radius: 12px;">
+              <h6 class="font-weight-bold text-dark small text-uppercase mb-2">
+                <i class="fas fa-balance-scale mr-1 text-primary"></i> How You Will Be Evaluated (Marking Rubric)
+              </h6>
+              <div class="row small text-muted">
+                <div class="col-md-6 mb-1"><strong>1. Functionality & Logic (40 pts):</strong> Correct requirements, zero crash bugs.</div>
+                <div class="col-md-6 mb-1"><strong>2. Code Quality (25 pts):</strong> Modularity, readable clean code conventions.</div>
+                <div class="col-md-6 mb-1"><strong>3. UI/UX & Output (20 pts):</strong> Presentation, layout, documentation.</div>
+                <div class="col-md-6 mb-1"><strong>4. Timeliness (15 pts):</strong> Git commit hygiene, submitted on schedule.</div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <a href="{% url 'student_weekly_gradebook' %}" class="btn btn-outline-secondary font-weight-bold">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Gradebook
+              </a>
+
+              <button type="submit" class="btn btn-primary font-weight-bold px-4 py-2 shadow-sm">
+                <i class="fas fa-paper-plane mr-1"></i> {% if existing %}Update Submission{% else %}Submit Assignment{% endif %}
+              </button>
+            </div>
+
+          </form>
 
         </div>
+      </div>
+
     </div>
+  </div>
 
 </div>
-
 {% endblock %}

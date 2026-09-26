@@ -17,14 +17,15 @@ import json
 from datetime import timedelta
 from decimal import Decimal
 
-from .models import Attendance, Profile, SummerCertificate
+from .models import Attendance, Profile, SummerCertificate, Certificate
 from .decorators import role_required
-from apps.accounts.utils import get_dashboard_url_name, get_next_onboarding_url
-from apps.courses.models import Subject, Course
+from apps.accounts.utils import get_dashboard_url_name, get_next_onboarding_url, generate_qr_code_data_uri
+from apps.courses.models import Subject, Course, Submission
 from apps.scheduling.models import Batch, ClassSession
 from apps.payments.models import Payment, Receipt
 from apps.tenants.models import Tenant
 from apps.tenants.context import get_current_tenant
+from apps.tenants.utils import get_tenant_signatory_data
 from apps.notifications.models import NotificationLog
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -569,10 +570,433 @@ def student_continue_registration(request):
 
 
 @login_required
+def view_certificate(request, cert_id=None):
+    """
+    Renders or exports an official Certificate of Completion.
+    Includes dynamic QR code for public verification, director signature,
+    and print / PDF download support.
+    """
+    certificate = None
+    if cert_id:
+        certificate = Certificate.objects.filter(id=cert_id).first()
+        if not certificate:
+            # Fallback check for SummerCertificate if requested by legacy ID
+            summer_cert = SummerCertificate.objects.filter(id=cert_id).first()
+            if summer_cert:
+                return view_summer_certificate(request, cert_id=summer_cert.id)
+            raise Http404("Certificate not found.")
+    else:
+        # Get latest certificate for logged-in user
+        if not request.user.is_authenticated:
+            return redirect('login')
+        certificate = Certificate.objects.filter(student=request.user, is_revoked=False).order_by('-issue_date').first()
+        if not certificate:
+            summer_cert = SummerCertificate.objects.filter(student=request.user).first()
+            if summer_cert:
+                return view_summer_certificate(request, cert_id=summer_cert.id)
+            messages.info(request, "No official certificate issued yet. Please check back upon completing your training.")
+            return redirect('student_dashboard')
+
+    # Security check: Superuser, staff, or certificate owner
+    user_role = getattr(getattr(request.user, 'profile', None), 'role', '')
+    if not (request.user.is_superuser or certificate.student == request.user or user_role in ['hod', 'instructor', 'accountant']):
+        messages.error(request, "Permission denied to view this certificate.")
+        return redirect('home')
+
+    if certificate.certificate_file and 'download' in request.GET:
+        return FileResponse(
+            certificate.certificate_file.open('rb'),
+            as_attachment=True,
+            filename=f"Certificate_{certificate.formatted_ref}.pdf"
+        )
+
+    # Prepare Signatory and QR code
+    signatory = get_tenant_signatory_data(tenant=certificate.tenant, request=request)
+    verify_url = request.build_absolute_uri(reverse('verify_certificate', args=[certificate.reference_id]))
+    qr_code_data_uri = generate_qr_code_data_uri(verify_url)
+
+    # Logo Data URI
+    logo_data_uri = None
+    try:
+        import os, base64
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'codecamp-logo.png')
+        if os.path.exists(logo_path):
+            with open(logo_path, 'rb') as f:
+                b64 = base64.b64encode(f.read()).decode('utf-8')
+                logo_data_uri = f"data:image/png;base64,{b64}"
+    except Exception:
+        pass
+
+    context = {
+        'certificate': certificate,
+        'student': certificate.student,
+        'course': certificate.course,
+        'signatory': signatory,
+        'director_name': signatory['director_name'],
+        'director_title': signatory['director_title'],
+        'director_signature_url': signatory['director_signature_url'],
+        'director_signature_data_uri': signatory['director_signature_data_uri'],
+        'qr_code_data_uri': qr_code_data_uri,
+        'logo_data_uri': logo_data_uri,
+    }
+    html_string = render_to_string('accounts/certificate_template.html', context)
+
+    if 'download' in request.GET:
+        try:
+            from weasyprint import HTML
+            import tempfile
+            from django.http import HttpResponse
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Certificate_{certificate.formatted_ref}.pdf"'
+            html = HTML(string=html_string)
+            with tempfile.NamedTemporaryFile(delete=True) as tmp:
+                html.write_pdf(target=tmp.name)
+                tmp.seek(0)
+                response.write(tmp.read())
+            return response
+        except Exception:
+            from django.http import HttpResponse
+            return HttpResponse(html_string)
+
+    from django.http import HttpResponse
+    return HttpResponse(html_string)
+
+
+def verify_certificate(request, reference_id):
+    """
+    Public verification endpoint for students, employers, and accreditation bodies.
+    Validates QR codes and certificate verification links.
+    """
+    reference_id_str = str(reference_id).strip()
+    cert = Certificate.objects.filter(reference_id=reference_id_str, is_revoked=False).select_related('student', 'course', 'tenant').first()
+    if not cert and reference_id_str.startswith('CC-'):
+        short_ref = reference_id_str.replace('CC-', '').lower()
+        cert = Certificate.objects.filter(reference_id__startswith=short_ref, is_revoked=False).select_related('student', 'course', 'tenant').first()
+
+    # Also check SummerCertificate for legacy support
+    if not cert:
+        summer_cert = SummerCertificate.objects.filter(reference_id=reference_id_str).select_related('student', 'course').first()
+        if summer_cert:
+            signatory = get_tenant_signatory_data(request=request)
+            return render(request, 'accounts/verify_certificate.html', {
+                'is_valid': True,
+                'certificate': summer_cert,
+                'reference_id': reference_id_str,
+                'signatory': signatory,
+            })
+
+    if not cert:
+        return render(request, 'accounts/verify_certificate.html', {
+            'is_valid': False,
+            'reference_id': reference_id_str,
+        })
+
+    signatory = get_tenant_signatory_data(tenant=cert.tenant, request=request)
+    return render(request, 'accounts/verify_certificate.html', {
+        'is_valid': True,
+        'certificate': cert,
+        'reference_id': reference_id_str,
+        'signatory': signatory,
+    })
+
+
+@login_required
+def admin_certificates_hub(request):
+    """
+    Admin Command Center for student completion, grading, and certificate issuing.
+    """
+    user_role = getattr(getattr(request.user, 'profile', None), 'role', '')
+    if not (request.user.is_superuser or user_role in ['hod', 'instructor']):
+        messages.error(request, "Access restricted to administrators and academic faculty.")
+        return redirect('login')
+
+    course_filter = request.GET.get('course_id')
+    batch_filter = request.GET.get('batch_id')
+    search_q = request.GET.get('q', '').strip()
+
+    # KPIs
+    total_issued = Certificate.objects.filter(is_revoked=False).count()
+    distinction_count = Certificate.objects.filter(grade='Distinction', is_revoked=False).count()
+    merit_count = Certificate.objects.filter(grade='Merit', is_revoked=False).count()
+    credit_count = Certificate.objects.filter(grade='Credit', is_revoked=False).count()
+    pass_count = Certificate.objects.filter(grade='Pass', is_revoked=False).count()
+    eligible_students_count = Profile.objects.filter(role='student', student_status__in=['active', 'completed']).count()
+
+    # Active & Completing Students
+    students_qs = Profile.objects.filter(role='student').select_related('user', 'course', 'batch', 'assigned_tutor').order_by('-user__date_joined')
+    if course_filter:
+        students_qs = students_qs.filter(course_id=course_filter)
+    if batch_filter:
+        students_qs = students_qs.filter(batch_id=batch_filter)
+    if search_q:
+        students_qs = students_qs.filter(
+            Q(user__first_name__icontains=search_q) |
+            Q(user__last_name__icontains=search_q) |
+            Q(user__username__icontains=search_q) |
+            Q(user__email__icontains=search_q)
+        )
+
+    # Pre-fetch existing certificates
+    existing_certs_map = {
+        c.student_id: c
+        for c in Certificate.objects.filter(student_id__in=[s.user_id for s in students_qs], is_revoked=False)
+    }
+
+    # Pre-fetch submissions for computing running averages
+    from django.db.models import Avg
+    student_scores = dict(
+        Submission.objects.filter(student_id__in=[s.user_id for s in students_qs], total_score__isnull=False)
+        .values('student_id')
+        .annotate(avg_score=Avg('total_score'))
+        .values_list('student_id', 'avg_score')
+    )
+
+    students_list = []
+    for s in students_qs:
+        s.cert = existing_certs_map.get(s.user_id)
+        avg = student_scores.get(s.user_id)
+        s.avg_assignment_score = round(float(avg), 1) if avg is not None else None
+        
+        # Determine recommended grade based on weekly assignments or default Merit
+        if s.avg_assignment_score is not None:
+            if s.avg_assignment_score >= 90:
+                s.recommended_grade = 'Distinction'
+            elif s.avg_assignment_score >= 75:
+                s.recommended_grade = 'Merit'
+            elif s.avg_assignment_score >= 60:
+                s.recommended_grade = 'Credit'
+            elif s.avg_assignment_score >= 50:
+                s.recommended_grade = 'Pass'
+            else:
+                s.recommended_grade = 'Merit'
+        else:
+            s.recommended_grade = 'Merit'
+            
+        students_list.append(s)
+
+    # Issued Certificates Registry
+    certs_registry_qs = Certificate.objects.all().select_related('student', 'course', 'batch', 'issued_by').order_by('-issue_date', '-created_at')
+    if course_filter:
+        certs_registry_qs = certs_registry_qs.filter(course_id=course_filter)
+    if search_q:
+        certs_registry_qs = certs_registry_qs.filter(
+            Q(student__first_name__icontains=search_q) |
+            Q(student__last_name__icontains=search_q) |
+            Q(student__username__icontains=search_q) |
+            Q(reference_id__icontains=search_q)
+        )
+
+    # Signatory details
+    signatory = get_tenant_signatory_data(request=request)
+
+    all_courses = Course.objects.all().order_by('name')
+    all_batches = Batch.objects.all().select_related('course').order_by('course__name', 'name')
+
+    context = {
+        'total_issued': total_issued,
+        'distinction_count': distinction_count,
+        'merit_count': merit_count,
+        'credit_count': credit_count,
+        'pass_count': pass_count,
+        'eligible_students_count': eligible_students_count,
+        'students': students_list,
+        'issued_certificates': certs_registry_qs[:100],
+        'signatory': signatory,
+        'all_courses': all_courses,
+        'all_batches': all_batches,
+        'selected_course': course_filter,
+        'selected_batch': batch_filter,
+        'search_q': search_q,
+    }
+    return render(request, 'admin/certificates.html', context)
+
+
+@login_required
+def admin_issue_certificate(request):
+    """
+    Endpoint for one-click completion & certificate generation with grade.
+    """
+    user_role = getattr(getattr(request.user, 'profile', None), 'role', '')
+    if not (request.user.is_superuser or user_role in ['hod', 'instructor']):
+        messages.error(request, "Permission denied.")
+        return redirect('admin_certificates_hub')
+
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        student = get_object_or_404(User, id=student_id)
+        
+        course_id = request.POST.get('course_id') or getattr(student.profile, 'course_id', None)
+        course = Course.objects.filter(id=course_id).first() if course_id else None
+        
+        batch_id = request.POST.get('batch_id') or getattr(student.profile, 'batch_id', None)
+        batch = Batch.objects.filter(id=batch_id).first() if batch_id else None
+
+        grade = request.POST.get('grade', 'Merit')
+        title = request.POST.get('title')
+        if not title:
+            title = f"Certificate of Completion - {course.name if course else 'Software Engineering'}"
+
+        remarks = request.POST.get('remarks', 'Outstanding completion of all training modules and practical benchmarks.')
+        issue_date = request.POST.get('issue_date') or timezone.localdate()
+        mark_completed = request.POST.get('mark_completed') in ['on', 'true', '1']
+        cert_file = request.FILES.get('certificate_file')
+
+        cert, created = Certificate.objects.get_or_create(
+            student=student,
+            course=course,
+            defaults={
+                'batch': batch,
+                'grade': grade,
+                'title': title,
+                'remarks': remarks,
+                'issue_date': issue_date,
+                'issued_by': request.user,
+                'tenant': student.profile.tenant,
+            }
+        )
+        if not created:
+            cert.batch = batch
+            cert.grade = grade
+            cert.title = title
+            cert.remarks = remarks
+            cert.issue_date = issue_date
+            cert.issued_by = request.user
+            cert.is_revoked = False
+
+        if cert_file:
+            cert.certificate_file = cert_file
+        cert.save()
+
+        # Update student profile status if requested
+        if mark_completed:
+            student.profile.student_status = 'completed'
+            student.profile.save()
+
+        messages.success(
+            request,
+            f"🎓 Official Certificate generated for {student.get_full_name() or student.username} with grade {grade}! Student can now view and download it."
+        )
+        return redirect('admin_certificates_hub')
+
+    return redirect('admin_certificates_hub')
+
+
+@login_required
+def admin_bulk_issue_certificates(request):
+    user_role = getattr(getattr(request.user, 'profile', None), 'role', '')
+    if not (request.user.is_superuser or user_role in ['hod', 'instructor']):
+        messages.error(request, "Permission denied.")
+        return redirect('admin_certificates_hub')
+
+    if request.method == 'POST':
+        student_ids = request.POST.getlist('selected_students')
+        default_grade = request.POST.get('default_grade', 'Merit')
+        mark_completed = request.POST.get('mark_completed') in ['on', 'true', '1']
+
+        if not student_ids:
+            messages.warning(request, "No students selected for bulk certificate issue.")
+            return redirect('admin_certificates_hub')
+
+        issued_count = 0
+        for s_id in student_ids:
+            try:
+                student = User.objects.get(id=s_id)
+                course = getattr(student.profile, 'course', None)
+                batch = getattr(student.profile, 'batch', None)
+                title = f"Certificate of Completion - {course.name if course else 'Software Engineering'}"
+
+                cert, _ = Certificate.objects.get_or_create(
+                    student=student,
+                    course=course,
+                    defaults={
+                        'batch': batch,
+                        'grade': default_grade,
+                        'title': title,
+                        'issued_by': request.user,
+                        'tenant': student.profile.tenant,
+                    }
+                )
+                cert.grade = default_grade
+                cert.issued_by = request.user
+                cert.is_revoked = False
+                cert.save()
+
+                if mark_completed:
+                    student.profile.student_status = 'completed'
+                    student.profile.save()
+
+                issued_count += 1
+            except Exception:
+                continue
+
+        messages.success(request, f"🎉 Successfully issued {issued_count} certificates with grade '{default_grade}'!")
+        return redirect('admin_certificates_hub')
+
+    return redirect('admin_certificates_hub')
+
+
+@login_required
+def admin_update_director_signature(request):
+    if not request.user.is_superuser:
+        messages.error(request, "Only administrators can update the official director signature.")
+        return redirect('admin_certificates_hub')
+
+    if request.method == 'POST':
+        director_name = request.POST.get('director_name')
+        director_title = request.POST.get('director_title')
+        sig_file = request.FILES.get('director_signature')
+
+        tenant = get_current_tenant() or Tenant.objects.filter(is_default=True).first() or Tenant.objects.first()
+        if not tenant:
+            tenant = Tenant.objects.create(name='CodeCamp Global Tech Academy', slug='lagos-hq', is_default=True)
+
+        if director_name:
+            tenant.director_name = director_name
+        if director_title:
+            tenant.director_title = director_title
+        if sig_file:
+            tenant.director_signature = sig_file
+        tenant.save()
+
+        messages.success(request, "✅ Authorized Director Signature & credentials updated! All certificates and receipts will now bear this signature.")
+        return redirect('admin_certificates_hub')
+
+    return redirect('admin_certificates_hub')
+
+
+@login_required
+def admin_revoke_certificate(request, cert_id):
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_certificates_hub')
+
+    cert = get_object_or_404(Certificate, id=cert_id)
+    cert.is_revoked = not cert.is_revoked
+    cert.save()
+    status_msg = "revoked" if cert.is_revoked else "re-instated"
+    messages.info(request, f"Certificate {cert.formatted_ref} has been {status_msg}.")
+    return redirect('admin_certificates_hub')
+
+
+@login_required
+@role_required('student')
+def student_certificates(request):
+    """
+    Student Portal Hub: displays all verified, signed completion certificates earned by the student.
+    """
+    certificates = Certificate.objects.filter(student=request.user, is_revoked=False).select_related('course', 'batch').order_by('-issue_date')
+    signatory = get_tenant_signatory_data(request=request)
+
+    return render(request, 'accounts/student_certificates.html', {
+        'certificates': certificates,
+        'signatory': signatory,
+    })
+
+
+@login_required
 def view_summer_certificate(request, cert_id=None):
     """
-    Renders or downloads the student's summer certificate.
-    Supports uploaded PDF files or dynamically generated branded certificate template.
+    Legacy support: renders or downloads summer certificate.
     """
     if cert_id:
         certificate = get_object_or_404(SummerCertificate, id=cert_id)
@@ -590,7 +1014,6 @@ def view_summer_certificate(request, cert_id=None):
                 remarks="Successfully completed the intensive 2026 Summer Coding & Technology Camp."
             )
 
-    # If an uploaded file exists and user requested download
     if certificate.certificate_file:
         if 'download' in request.GET:
             from django.http import FileResponse
@@ -601,31 +1024,18 @@ def view_summer_certificate(request, cert_id=None):
             )
         return redirect(certificate.certificate_file.url)
 
-    # Render branded certificate HTML
+    signatory = get_tenant_signatory_data(request=request)
     context = {
         'certificate': certificate,
         'student': certificate.student,
         'course': certificate.course,
+        'signatory': signatory,
+        'director_name': signatory['director_name'],
+        'director_title': signatory['director_title'],
+        'director_signature_url': signatory['director_signature_url'],
+        'director_signature_data_uri': signatory['director_signature_data_uri'],
     }
     html_string = render_to_string('accounts/summer_certificate_template.html', context)
-
-    if 'download' in request.GET:
-        try:
-            from weasyprint import HTML
-            import tempfile
-            from django.http import HttpResponse
-            response = HttpResponse(content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="Certificate_{certificate.reference_id}.pdf"'
-            html = HTML(string=html_string)
-            with tempfile.NamedTemporaryFile(delete=True) as tmp:
-                html.write_pdf(target=tmp.name)
-                tmp.seek(0)
-                response.write(tmp.read())
-            return response
-        except Exception:
-            from django.http import HttpResponse
-            return HttpResponse(html_string)
-
     from django.http import HttpResponse
     return HttpResponse(html_string)
 
@@ -634,7 +1044,7 @@ def view_summer_certificate(request, cert_id=None):
 @role_required(['hod', 'accountant', 'instructor'])
 def admin_upload_certificate(request):
     """
-    Admin & Faculty endpoint to attach or update certificate documents for students.
+    Legacy admin endpoint to attach or update certificate documents for students.
     """
     if request.method == 'POST':
         student_id = request.POST.get('student_id')
@@ -663,6 +1073,7 @@ def admin_upload_certificate(request):
         return redirect(request.META.get('HTTP_REFERER', 'admin_dashboard'))
 
     return redirect('admin_dashboard')
+
 
 
 

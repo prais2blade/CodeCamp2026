@@ -24,9 +24,14 @@ urlpatterns = [
     # ATTENDANCE
     path('attendance/<int:subject_id>/', views.mark_attendance, name='mark_attendance'),
     
-    # ASSIGNMENTS
-    path('assignments/<int:subject_id>/', views.manage_assignments, name='manage_assignments'),
+    # ASSIGNMENTS & RUBRIC GRADING
+    path('instructor/assignments/', views.instructor_assignments, name='instructor_assignments'),
+    path('assignments/create/', views.create_assignment, name='create_assignment_general'),
     path('assignments/create/<int:subject_id>/', views.create_assignment, name='create_assignment'),
-    path('assignments/submit/<int:assignment_id>/', views.submit_assignment, name='submit_assignment'),
+    path('assignments/<int:subject_id>/', views.manage_assignments, name='manage_assignments'),
+    path('assignments/<int:assignment_id>/submissions/', views.assignment_submissions, name='assignment_submissions'),
+    path('submissions/<int:submission_id>/grade/', views.grade_submission, name='grade_submission'),
+    path('student/assignments/submit/<int:assignment_id>/', views.submit_assignment, name='submit_assignment'),
+    path('student/gradebook/', views.student_weekly_gradebook, name='student_weekly_gradebook'),
     path('student/assignments/', views.student_assignments, name='student_assignments'),
 ]

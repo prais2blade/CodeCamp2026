@@ -1,0 +1,674 @@
+{% extends "layouts/admin_base.html" %}
+{% load static humanize %}
+
+{% block title %}Certificates & Graduation Hub | CodeCamp Admin{% endblock title %}
+
+{% block extra_css %}
+<style>
+  .hub-hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #31104b 50%, #0f172a 100%);
+    border-radius: 1.25rem;
+    padding: 2.25rem;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.4);
+    margin-bottom: 2rem;
+  }
+  .hub-hero::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(234, 179, 8, 0.25) 0%, rgba(99, 102, 241, 0) 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fef08a;
+    margin-bottom: 0.75rem;
+  }
+
+  .kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1.4rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    height: 100%;
+  }
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px -6px rgba(0, 0, 0, 0.08);
+  }
+  .kpi-val {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #1e293b;
+  }
+  .kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  /* Signature Banner Card */
+  .sig-banner {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .sig-preview-img {
+    max-height: 48px;
+    max-width: 140px;
+    object-fit: contain;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .nav-pills .nav-link {
+    border-radius: 0.75rem;
+    font-weight: 700;
+    padding: 0.65rem 1.25rem;
+    color: #64748b;
+  }
+  .nav-pills .nav-link.active {
+    background: #4f46e5;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+  }
+
+  .table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+
+  .badge-distinction {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+    font-weight: 700;
+  }
+  .badge-merit {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    border: 1px solid #6366f1;
+    font-weight: 700;
+  }
+  .badge-credit {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #3b82f6;
+    font-weight: 700;
+  }
+  .badge-pass {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #94a3b8;
+    font-weight: 700;
+  }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container-fluid px-3 py-2">
+
+  <!-- Executive Hero Header -->
+  <div class="hub-hero">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+      <div>
+        <div class="hero-tag">
+          <i class="fas fa-certificate text-warning"></i> Academic Credentials & Graduation
+        </div>
+        <h1 class="font-weight-extrabold text-white mb-2" style="font-size: 2rem;">
+          Certificates & Graduation Hub
+        </h1>
+        <p class="text-white-50 mb-0 font-weight-normal" style="max-width: 680px; font-size: 0.95rem;">
+          Issue official certificates of completion with verified professional grades (Distinction, Merit, Credit, Pass), manage authorized digital signatures, and provide instant QR verification.
+        </p>
+      </div>
+
+      <div class="mt-3 mt-md-0 d-flex gap-2" style="gap: 10px;">
+        <button class="btn btn-warning font-weight-bold shadow-sm" data-toggle="modal" data-target="#signatureModal">
+          <i class="fas fa-signature mr-1"></i> Update Director Signature
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-sm-6 mb-3">
+      <div class="kpi-card d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-muted small text-uppercase font-weight-bold">Certificates Issued</div>
+          <div class="kpi-val text-primary">{{ total_issued }}</div>
+          <small class="text-success font-weight-bold"><i class="fas fa-check-double mr-1"></i> Verified & Live</small>
+        </div>
+        <div class="kpi-icon bg-light text-primary">
+          <i class="fas fa-award"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6 mb-3">
+      <div class="kpi-card d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-muted small text-uppercase font-weight-bold">⭐ Distinction / Excellent</div>
+          <div class="kpi-val text-warning">{{ distinction_count }}</div>
+          <small class="text-muted">Top Tier Honors (90%+)</small>
+        </div>
+        <div class="kpi-icon bg-light text-warning">
+          <i class="fas fa-star"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6 mb-3">
+      <div class="kpi-card d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-muted small text-uppercase font-weight-bold">✨ Merit / Very Good</div>
+          <div class="kpi-val text-indigo" style="color: #6366f1;">{{ merit_count }}</div>
+          <small class="text-muted">High Proficiency (75-89%)</small>
+        </div>
+        <div class="kpi-icon bg-light text-indigo" style="color: #6366f1;">
+          <i class="fas fa-medal"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6 mb-3">
+      <div class="kpi-card d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-muted small text-uppercase font-weight-bold">🎓 Students Eligible</div>
+          <div class="kpi-val text-success">{{ eligible_students_count }}</div>
+          <small class="text-muted">In Active Cohorts</small>
+        </div>
+        <div class="kpi-icon bg-light text-success">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authorized Signatory Status Banner -->
+  <div class="sig-banner">
+    <div class="d-flex align-items-center gap-3">
+      <div class="mr-3">
+        {% if signatory.director_signature_url %}
+          <img src="{{ signatory.director_signature_url }}" alt="Signature Preview" class="sig-preview-img">
+        {% else %}
+          <div class="bg-light border text-muted px-3 py-2 rounded text-center small">
+            <i class="fas fa-signature text-secondary mr-1"></i> No signature image uploaded
+          </div>
+        {% endif %}
+      </div>
+      <div>
+        <div class="font-weight-bold text-dark" style="font-size: 0.95rem;">
+          Authorized Signatory: {{ signatory.director_name|default:"Director of Academic Affairs" }}
+        </div>
+        <div class="text-muted small">
+          {{ signatory.director_title|default:"Academic Director & Lead Instructor" }} &bull;
+          {% if signatory.director_signature_url %}
+            <span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i> Signature Active on all Certificates & Receipts</span>
+          {% else %}
+            <span class="text-warning font-weight-bold"><i class="fas fa-exclamation-triangle mr-1"></i> Upload your official signature image to appear on certificates & receipts</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <button class="btn btn-outline-primary btn-sm font-weight-bold" data-toggle="modal" data-target="#signatureModal">
+        <i class="fas fa-pencil-alt mr-1"></i> Configure Signature
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="card shadow-sm border-0 mb-4" style="border-radius: 14px;">
+    <div class="card-body p-3">
+      <form method="GET" action="{% url 'admin_certificates_hub' %}" class="row align-items-center">
+        <div class="col-md-4 mb-2 mb-md-0">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+            </div>
+            <input type="text" name="q" class="form-control border-left-0" placeholder="Search student name, email, or ref ID..." value="{{ search_q }}">
+          </div>
+        </div>
+
+        <div class="col-md-3 mb-2 mb-md-0">
+          <select name="course_id" class="form-control font-weight-bold" onchange="this.form.submit()">
+            <option value="">All Programs / Courses</option>
+            {% for c in all_courses %}
+              <option value="{{ c.id }}" {% if selected_course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3 mb-2 mb-md-0">
+          <select name="batch_id" class="form-control" onchange="this.form.submit()">
+            <option value="">All Cohorts / Batches</option>
+            {% for b in all_batches %}
+              <option value="{{ b.id }}" {% if selected_batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }} ({{ b.course.name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2 text-right">
+          <button type="submit" class="btn btn-primary btn-block font-weight-bold">
+            <i class="fas fa-filter mr-1"></i> Filter
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="pills-eligible-tab" data-toggle="pill" href="#pills-eligible" role="tab">
+        <i class="fas fa-user-graduate mr-1"></i> Students Ready for Completion ({{ students|length }})
+      </a>
+    </li>
+    <li class="nav-item ml-2">
+      <a class="nav-link" id="pills-issued-tab" data-toggle="pill" href="#pills-issued" role="tab">
+        <i class="fas fa-award mr-1"></i> Issued Certificates Registry ({{ total_issued }})
+      </a>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="pills-tabContent">
+
+    <!-- TAB 1: ELIGIBLE STUDENTS -->
+    <div class="tab-pane fade show active" id="pills-eligible" role="tabpanel">
+      <form action="{% url 'admin_bulk_issue_certificates' %}" method="POST" id="bulkIssueForm">
+        {% csrf_token %}
+
+        <!-- Bulk Action Header -->
+        <div class="alert alert-light border d-flex justify-content-between align-items-center p-3 mb-3" style="border-radius: 12px;">
+          <div class="d-flex align-items-center">
+            <input type="checkbox" id="selectAllCheckbox" class="mr-2" style="transform: scale(1.2);">
+            <label for="selectAllCheckbox" class="font-weight-bold mb-0 text-dark">Select All Visible Students</label>
+          </div>
+
+          <div class="d-flex align-items-center" style="gap: 10px;">
+            <select name="default_grade" class="form-control form-control-sm font-weight-bold" style="width: 220px;">
+              <option value="Merit">✨ Default: Merit / Very Good</option>
+              <option value="Distinction">⭐ Default: Distinction / Excellent</option>
+              <option value="Credit">👍 Default: Credit / Good</option>
+              <option value="Pass">✅ Default: Pass</option>
+            </select>
+
+            <button type="submit" class="btn btn-sm btn-primary font-weight-bold shadow-sm" onclick="return confirm('Issue official certificates to all checked students?');">
+              <i class="fas fa-award mr-1"></i> Issue Certificates in Bulk
+            </button>
+          </div>
+        </div>
+
+        <div class="table-card table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+              <tr class="text-muted small text-uppercase font-weight-bold">
+                <th style="width: 40px;"></th>
+                <th>Student</th>
+                <th>Course Track</th>
+                <th>Cohort / Batch</th>
+                <th>Weekly Performance Avg</th>
+                <th>Certificate Status</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+                <tr>
+                  <td>
+                    <input type="checkbox" name="selected_students" value="{{ s.user.id }}" class="student-checkbox" style="transform: scale(1.2);">
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm rounded-circle bg-indigo text-white d-flex align-items-center justify-content-center font-weight-bold mr-3" style="width: 38px; height: 38px; background: #4f46e5;">
+                        {{ s.user.first_name|first|default:s.user.username|first|upper }}
+                      </div>
+                      <div>
+                        <div class="font-weight-bold text-dark">
+                          {{ s.user.get_full_name|default:s.user.username }}
+                        </div>
+                        <small class="text-muted">{{ s.user.email }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="font-weight-semibold text-dark">{{ s.course.name|default:"General Academy" }}</span>
+                  </td>
+                  <td>
+                    {% if s.batch %}
+                      <span class="badge badge-light border text-dark">{{ s.batch.name }}</span>
+                    {% else %}
+                      <span class="text-muted small">Standard Term</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if s.avg_assignment_score %}
+                      <div class="font-weight-bold text-dark">
+                        {{ s.avg_assignment_score }}%
+                      </div>
+                      <small class="text-muted">
+                        Suggested: <span class="font-weight-bold text-indigo">{{ s.recommended_grade }}</span>
+                      </small>
+                    {% else %}
+                      <span class="text-muted small">No graded submissions yet</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if s.cert %}
+                      <span class="badge {% if s.cert.grade == 'Distinction' %}badge-distinction{% elif s.cert.grade == 'Merit' %}badge-merit{% elif s.cert.grade == 'Credit' %}badge-credit{% else %}badge-pass{% endif %} px-2 py-1">
+                        <i class="fas fa-check-circle mr-1"></i> {{ s.cert.grade }}
+                      </span>
+                    {% else %}
+                      <span class="badge badge-light border text-muted px-2 py-1">
+                        Not Yet Issued
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="text-right">
+                    {% if s.cert %}
+                      <div class="btn-group">
+                        <a href="{% url 'view_certificate' s.cert.id %}" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold">
+                          <i class="fas fa-external-link-alt mr-1"></i> View
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#issueModal{{ s.user.id }}">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                      </div>
+                    {% else %}
+                      <button type="button" class="btn btn-warning btn-sm font-weight-bold shadow-sm" data-toggle="modal" data-target="#issueModal{{ s.user.id }}">
+                        <i class="fas fa-award mr-1"></i> 🎓 Complete with Grade
+                      </button>
+                    {% endif %}
+                  </td>
+                </tr>
+
+                <!-- MODAL FOR ISSUING / UPDATING CERTIFICATE -->
+                <div class="modal fade text-left" id="issueModal{{ s.user.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content" style="border-radius: 16px;">
+                      <div class="modal-header bg-dark text-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                        <h5 class="modal-title font-weight-bold">
+                          <i class="fas fa-award text-warning mr-2"></i> Issue Certificate: {{ s.user.get_full_name|default:s.user.username }}
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                      </div>
+                      <form action="{% url 'admin_issue_certificate' %}" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="student_id" value="{{ s.user.id }}">
+                        <input type="hidden" name="course_id" value="{{ s.course.id }}">
+                        <input type="hidden" name="batch_id" value="{{ s.batch.id }}">
+
+                        <div class="modal-body p-4">
+                          <!-- Program Track -->
+                          <div class="form-group mb-3">
+                            <label class="font-weight-bold text-dark">Certificate Program Title</label>
+                            <input type="text" name="title" class="form-control font-weight-bold" 
+                              value="{% if s.cert %}{{ s.cert.title }}{% else %}Certificate of Completion - {{ s.course.name|default:'Software Engineering' }}{% endif %}" required>
+                          </div>
+
+                          <!-- Grade Selection -->
+                          <div class="form-group mb-3">
+                            <label class="font-weight-bold text-dark">
+                              Official Professional Grade
+                              {% if s.avg_assignment_score %}
+                                <span class="badge badge-info ml-2">Avg: {{ s.avg_assignment_score }}%</span>
+                              {% endif %}
+                            </label>
+                            <select name="grade" class="form-control font-weight-bold">
+                              <option value="Distinction" {% if s.cert.grade == 'Distinction' or not s.cert and s.recommended_grade == 'Distinction' %}selected{% endif %}>
+                                ⭐ Distinction / Excellent (Outstanding Honors)
+                              </option>
+                              <option value="Merit" {% if s.cert.grade == 'Merit' or not s.cert and s.recommended_grade == 'Merit' %}selected{% endif %}>
+                                ✨ Merit / Very Good (High Competency)
+                              </option>
+                              <option value="Credit" {% if s.cert.grade == 'Credit' or not s.cert and s.recommended_grade == 'Credit' %}selected{% endif %}>
+                                👍 Credit / Good
+                              </option>
+                              <option value="Pass" {% if s.cert.grade == 'Pass' or not s.cert and s.recommended_grade == 'Pass' %}selected{% endif %}>
+                                ✅ Pass (Requirements Fulfilled)
+                              </option>
+                              <option value="Participation" {% if s.cert.grade == 'Participation' %}selected{% endif %}>
+                                🎖️ Certificate of Participation
+                              </option>
+                            </select>
+                          </div>
+
+                          <!-- Remarks -->
+                          <div class="form-group mb-3">
+                            <label class="font-weight-bold text-dark">Commendation / Remarks</label>
+                            <input type="text" name="remarks" class="form-control" 
+                              value="{% if s.cert %}{{ s.cert.remarks }}{% else %}Outstanding completion of all training modules and practical capstone projects.{% endif %}">
+                          </div>
+
+                          <!-- Mark as Completed Checkbox -->
+                          <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" id="completeCheck{{ s.user.id }}" name="mark_completed" checked>
+                            <label class="custom-control-label font-weight-bold text-success" for="completeCheck{{ s.user.id }}">
+                              Transition student status to "Completed / Graduated"
+                            </label>
+                          </div>
+
+                          <!-- Optional Custom PDF Upload -->
+                          <div class="form-group mb-0">
+                            <label class="font-weight-bold text-dark">Attach Custom Stamped PDF (Optional)</label>
+                            <input type="file" name="certificate_file" class="form-control-file border p-2 rounded" accept=".pdf">
+                            <small class="form-text text-muted">If uploaded, student downloads this exact file. Otherwise, system auto-generates verifiable branded certificate.</small>
+                          </div>
+                        </div>
+
+                        <div class="modal-footer bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                          <button type="submit" class="btn btn-warning font-weight-bold">
+                            <i class="fas fa-award mr-1"></i> Confirm & Issue Certificate
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+              {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center py-5 text-muted">
+                    <i class="fas fa-user-graduate fa-3x mb-3 text-secondary"></i>
+                    <p class="font-weight-bold mb-0">No eligible students found matching the selected filter.</p>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </form>
+    </div>
+
+    <!-- TAB 2: ISSUED CERTIFICATES REGISTRY -->
+    <div class="tab-pane fade" id="pills-issued" role="tabpanel">
+      <div class="table-card table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light">
+            <tr class="text-muted small text-uppercase font-weight-bold">
+              <th>Reference ID</th>
+              <th>Graduate Student</th>
+              <th>Curriculum Program</th>
+              <th>Grade Designation</th>
+              <th>Issue Date</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cert in issued_certificates %}
+              <tr>
+                <td>
+                  <code class="font-mono font-weight-bold text-purple" style="color: #6b21a8;">
+                    {{ cert.formatted_ref }}
+                  </code>
+                </td>
+                <td>
+                  <div class="font-weight-bold text-dark">
+                    {{ cert.student.get_full_name|default:cert.student.username }}
+                  </div>
+                  <small class="text-muted">{{ cert.student.email }}</small>
+                </td>
+                <td>
+                  <span class="font-weight-semibold text-dark">{{ cert.title }}</span>
+                </td>
+                <td>
+                  <span class="badge {% if cert.grade == 'Distinction' %}badge-distinction{% elif cert.grade == 'Merit' %}badge-merit{% elif cert.grade == 'Credit' %}badge-credit{% else %}badge-pass{% endif %} px-2 py-1">
+                    {{ cert.grade }}
+                  </span>
+                </td>
+                <td>{{ cert.issue_date|date:"M d, Y" }}</td>
+                <td>
+                  {% if cert.is_revoked %}
+                    <span class="badge badge-danger">Revoked</span>
+                  {% else %}
+                    <span class="badge badge-success"><i class="fas fa-check mr-1"></i> Valid</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <div class="btn-group">
+                    <a href="{% url 'view_certificate' cert.id %}" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold" title="View & Print Certificate">
+                      <i class="fas fa-eye mr-1"></i> Preview
+                    </a>
+                    <a href="{% url 'verify_certificate' cert.reference_id %}" target="_blank" class="btn btn-outline-info btn-sm" title="Public Verification Page">
+                      <i class="fas fa-qrcode"></i>
+                    </a>
+                    <form action="{% url 'admin_revoke_certificate' cert.id %}" method="POST" class="d-inline" onsubmit="return confirm('Toggle status for certificate {{ cert.formatted_ref }}?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-danger btn-sm" title="Toggle Revoke Status">
+                        <i class="fas fa-ban"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <i class="fas fa-certificate fa-3x mb-3 text-secondary"></i>
+                  <p class="font-weight-bold mb-0">No certificates have been issued yet.</p>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODAL: UPDATE DIRECTOR SIGNATURE -->
+<div class="modal fade" id="signatureModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content" style="border-radius: 16px;">
+      <div class="modal-header bg-primary text-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+        <h5 class="modal-title font-weight-bold">
+          <i class="fas fa-signature mr-2"></i> Authorized Director Signature
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <form action="{% url 'admin_update_director_signature' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="alert alert-info small mb-3">
+            <i class="fas fa-info-circle mr-1"></i>
+            This signature and title will dynamically appear on all <strong>Official Certificates of Completion</strong> and <strong>Tuition Receipts</strong>.
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark">Director / Signatory Full Name</label>
+            <input type="text" name="director_name" class="form-control font-weight-bold" 
+              value="{{ signatory.director_name|default:'Director of Academic Affairs' }}" required>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark">Official Designation / Title</label>
+            <input type="text" name="director_title" class="form-control font-weight-bold" 
+              value="{{ signatory.director_title|default:'Academic Director & Lead Instructor' }}" required>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="font-weight-bold text-dark">Upload Signature Image</label>
+            <input type="file" name="director_signature" class="form-control-file border p-2 rounded" accept=".png,.jpg,.jpeg">
+            <small class="form-text text-muted">Recommended: Transparent PNG image with dark ink signature.</small>
+          </div>
+
+          {% if signatory.director_signature_url %}
+            <div class="p-3 bg-light rounded text-center border">
+              <label class="small text-muted font-weight-bold d-block mb-1">Current Active Signature</label>
+              <img src="{{ signatory.director_signature_url }}" alt="Current Signature" style="max-height: 60px; object-fit: contain;">
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="modal-footer bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary font-weight-bold">
+            <i class="fas fa-save mr-1"></i> Save Signature & Title
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Select All Checkbox behavior
+  document.addEventListener("DOMContentLoaded", function() {
+    const selectAll = document.getElementById("selectAllCheckbox");
+    const checkboxes = document.querySelectorAll(".student-checkbox");
+
+    if (selectAll) {
+      selectAll.addEventListener("change", function() {
+        checkboxes.forEach(cb => {
+          cb.checked = selectAll.checked;
+        });
+      });
+    }
+  });
+</script>
+{% endblock content %}

@@ -63,4 +63,14 @@ urlpatterns = [
     path('student/certificate/', views.view_summer_certificate, name='view_summer_certificate'),
     path('student/certificate/<int:cert_id>/', views.view_summer_certificate, name='view_summer_certificate_by_id'),
     path('admin/certificates/upload/', views.admin_upload_certificate, name='admin_upload_certificate'),
+
+    # Official Certificates & Graduation Hub
+    path('admin/certificates/', views.admin_certificates_hub, name='admin_certificates_hub'),
+    path('admin/certificates/issue/', views.admin_issue_certificate, name='admin_issue_certificate'),
+    path('admin/certificates/bulk-issue/', views.admin_bulk_issue_certificates, name='admin_bulk_issue_certificates'),
+    path('admin/certificates/signature/', views.admin_update_director_signature, name='admin_update_director_signature'),
+    path('admin/certificates/<int:cert_id>/revoke/', views.admin_revoke_certificate, name='admin_revoke_certificate'),
+    path('student/certificates/', views.student_certificates, name='student_certificates'),
+    path('certificate/<int:cert_id>/', views.view_certificate, name='view_certificate'),
+    path('certificate/verify/<str:reference_id>/', views.verify_certificate, name='verify_certificate'),
 ]

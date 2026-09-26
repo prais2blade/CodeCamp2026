@@ -1,0 +1,109 @@
+{% extends "layouts/student_base.html" %}
+{% load static %}
+
+{% block title %}My Certificates | CodeCamp Student Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Header Banner -->
+  <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4338ca 100%); border-radius: 16px;">
+    <div class="card-body p-4 p-md-5">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1 mb-2 text-uppercase" style="letter-spacing: 0.05em;">
+            <i class="fas fa-award mr-1"></i> Official Credentials
+          </span>
+          <h2 class="font-weight-extrabold text-white mb-1">My Certificates of Completion</h2>
+          <p class="text-white-50 mb-0">
+            Official verifiable credentials signed by the Academic Director. Download, print, or share your verified credentials with employers and sponsors.
+          </p>
+        </div>
+        <div class="mt-3 mt-md-0">
+          <a href="{% url 'student_dashboard' %}" class="btn btn-outline-light font-weight-bold">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificates Grid -->
+  <div class="row">
+    {% for cert in certificates %}
+      <div class="col-lg-6 mb-4">
+        <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-start">
+            <div>
+              <span class="badge {% if cert.grade == 'Distinction' %}badge-warning text-dark{% elif cert.grade == 'Merit' %}badge-primary{% elif cert.grade == 'Credit' %}badge-info{% else %}badge-secondary{% endif %} font-weight-bold px-2 py-1 text-uppercase">
+                {% if cert.grade == 'Distinction' %}⭐ Distinction / Excellent
+                {% elif cert.grade == 'Merit' %}✨ Merit / Very Good
+                {% elif cert.grade == 'Credit' %}👍 Credit / Good
+                {% else %}✅ {{ cert.grade }}
+                {% endif %}
+              </span>
+            </div>
+            <small class="text-muted font-weight-bold">
+              Issued: {{ cert.issue_date|date:"F d, Y" }}
+            </small>
+          </div>
+
+          <div class="card-body px-4 py-3">
+            <h4 class="font-weight-bold text-dark mb-2">{{ cert.title }}</h4>
+            <p class="text-muted small mb-3">
+              {{ cert.remarks|default:"Awarded in recognition of meeting all curriculum requirements, technical assignments, and capstone project benchmarks." }}
+            </p>
+
+            <div class="p-3 bg-light rounded d-flex justify-content-between align-items-center mb-3 border">
+              <div>
+                <small class="text-muted d-block">Verification ID</small>
+                <code class="font-weight-bold text-primary">{{ cert.formatted_ref }}</code>
+              </div>
+              <div>
+                <span class="badge badge-success px-2 py-1">
+                  <i class="fas fa-check-circle mr-1"></i> Verified & Active
+                </span>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center text-muted small">
+              <i class="fas fa-signature mr-2 text-primary"></i>
+              <span>Authorized Signatory: <strong>{{ signatory.director_name|default:"Academic Director" }}</strong></span>
+            </div>
+          </div>
+
+          <div class="card-footer bg-light border-0 px-4 py-3 d-flex justify-content-between">
+            <a href="{% url 'view_certificate' cert.id %}" target="_blank" class="btn btn-primary font-weight-bold shadow-sm">
+              <i class="fas fa-eye mr-1"></i> View & Print Certificate
+            </a>
+
+            <a href="{% url 'view_certificate' cert.id %}?download=pdf" class="btn btn-outline-dark font-weight-bold">
+              <i class="fas fa-file-pdf mr-1 text-danger"></i> Download PDF
+            </a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="card border-0 shadow-sm text-center py-5 px-4" style="border-radius: 16px;">
+          <div class="mb-3">
+            <div class="d-inline-flex align-items-center justify-content-center bg-light text-warning rounded-circle" style="width: 80px; height: 80px; font-size: 2.5rem;">
+              <i class="fas fa-award"></i>
+            </div>
+          </div>
+          <h4 class="font-weight-bold text-dark mb-1">No Certificates Issued Yet</h4>
+          <p class="text-muted mx-auto mb-4" style="max-width: 480px;">
+            Your official Certificate of Completion will be generated and signed by the Academic Director once you complete your training program and submit your final assignments.
+          </p>
+          <div>
+            <a href="{% url 'student_weekly_gradebook' %}" class="btn btn-primary font-weight-bold px-4">
+              <i class="fas fa-tasks mr-1"></i> View My Assignments & Progress
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

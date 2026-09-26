@@ -20,11 +20,35 @@
           </a>
         </li>
 
+        <!-- My Certificates -->
+        <li class="nav-item">
+          <a href="{% url 'student_certificates' %}" class="nav-link {% if request.resolver_match.url_name in 'student_certificates,view_certificate' %}active{% endif %}">
+            <i class="nav-icon fas fa-award text-warning"></i>
+            <p>My Certificates</p>
+          </a>
+        </li>
+
+        <!-- Weekly Assignments & Progress -->
+        <li class="nav-item">
+          <a href="{% url 'student_weekly_gradebook' %}" class="nav-link {% if request.resolver_match.url_name in 'student_weekly_gradebook,student_assignments,submit_assignment' %}active{% endif %}">
+            <i class="nav-icon fas fa-tasks text-info"></i>
+            <p>Assignments & Progress</p>
+          </a>
+        </li>
+
+        <!-- Practical Assessments & Code Defense -->
+        <li class="nav-item">
+          <a href="{% url 'assessments:student_hub' %}" class="nav-link {% if request.resolver_match.app_name == 'assessments' %}active{% endif %}">
+            <i class="nav-icon fas fa-code text-success"></i>
+            <p>Code Defense & Exams</p>
+          </a>
+        </li>
+
         <!-- Summer Hub & Certificate -->
         <li class="nav-item">
           <a href="{% url 'student_summer_hub' %}" class="nav-link {% if request.resolver_match.url_name in 'student_summer_hub,view_summer_certificate,student_continue_registration' %}active{% endif %}">
-            <i class="nav-icon fas fa-award text-warning"></i>
-            <p>Summer Hub & Cert</p>
+            <i class="nav-icon fas fa-sun text-warning"></i>
+            <p>Summer Hub</p>
           </a>
         </li>
 

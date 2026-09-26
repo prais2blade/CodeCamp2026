@@ -30,3 +30,26 @@ def get_next_onboarding_url(profile):
 def get_dashboard_url_name(profile):
     role = getattr(profile, "role", "student")
     return ROLE_DASHBOARD_URLS.get(role, "student_dashboard")
+
+
+def generate_qr_code_data_uri(url):
+    """Generates a PNG base64 Data URI for embedding in HTML & PDF templates."""
+    try:
+        import qrcode
+        from io import BytesIO
+        import base64
+        qr = qrcode.QRCode(
+            version=1,
+            box_size=4,
+            border=1,
+        )
+        qr.add_data(url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return f"data:image/png;base64,{b64}"
+    except Exception:
+        return None
+

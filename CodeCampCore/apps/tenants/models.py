@@ -29,6 +29,11 @@ class Tenant(models.Model):
     theme_color = models.CharField(max_length=20, default='#1E3A8A', help_text="Primary brand color (hex)")
     portal_title = models.CharField(max_length=150, blank=True, help_text="Custom brand header title")
     
+    # Official Authorized Signatory for Certificates & Receipts
+    director_name = models.CharField(max_length=150, default='Director of Academic Affairs', help_text="Name of director/signatory on official documents")
+    director_title = models.CharField(max_length=150, default='Academic Director & Lead Instructor', help_text="Title shown below director signature")
+    director_signature = models.ImageField(upload_to='tenants/signatures/', blank=True, null=True, help_text="Official director signature image for certificates and receipts")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

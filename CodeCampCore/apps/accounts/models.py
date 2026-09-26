@@ -25,6 +25,7 @@ class Profile(models.Model):
 
     STUDENT_STATUS_CHOICES = [
         ('active', 'Active Student'),
+        ('completed', 'Completed / Graduated'),
         ('summer_alumni', 'Summer Alumni (Inactive)'),
         ('withdrawn', 'Withdrawn'),
     ]
@@ -215,3 +216,70 @@ class SummerCertificate(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.title}"
+
+
+class Certificate(models.Model):
+    GRADE_CHOICES = [
+        ('Distinction', 'Distinction / Excellent'),
+        ('Merit', 'Merit / Very Good'),
+        ('Credit', 'Credit / Good'),
+        ('Pass', 'Pass'),
+        ('Participation', 'Certificate of Participation'),
+    ]
+
+    tenant = models.ForeignKey(
+        'tenants.Tenant',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certificates'
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='certificates'
+    )
+    course = models.ForeignKey(
+        'courses.Course',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certificates'
+    )
+    batch = models.ForeignKey(
+        'scheduling.Batch',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certificates'
+    )
+    title = models.CharField(max_length=255, default='Certificate of Completion')
+    grade = models.CharField(max_length=50, choices=GRADE_CHOICES, default='Merit')
+    certificate_file = models.FileField(upload_to='certificates/official/', null=True, blank=True)
+    issue_date = models.DateField(default=timezone.localdate)
+    completion_date = models.DateField(default=timezone.localdate)
+    reference_id = models.CharField(max_length=60, unique=True, default=uuid.uuid4)
+    remarks = models.CharField(max_length=255, blank=True, default='Outstanding completion of all training modules and practical benchmarks.')
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='issued_official_certificates'
+    )
+    is_revoked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Certificate'
+        verbose_name_plural = 'Certificates'
+        ordering = ['-issue_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.student.username} - {self.title} ({self.grade})"
+
+    @property
+    def formatted_ref(self):
+        return f"CC-{str(self.reference_id)[:8].upper()}"
+

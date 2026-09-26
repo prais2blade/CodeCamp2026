@@ -38,6 +38,15 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{% url 'admin_certificates_hub' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_certificates_hub' %}active{% endif %}">
+                            <i class="nav-icon fas fa-award text-warning"></i>
+                            <p>
+                                Certificates & Honors
+                                <span class="badge badge-warning right font-weight-bold text-dark">Hub</span>
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{% url 'accountant_dashboard' %}" class="nav-link">
                             <i class="nav-icon fas fa-wallet text-success"></i>
                             <p>Finance Command</p>
@@ -105,6 +114,21 @@
                         <a href="{% url 'manage_batches' %}" class="nav-link">
                             <i class="nav-icon fas fa-calendar-week text-primary"></i>
                             <p>Batch Timetables</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'instructor_assignments' %}" class="nav-link {% if 'assignments' in request.path %}active{% endif %}">
+                            <i class="nav-icon fas fa-tasks text-cyan"></i>
+                            <p>Weekly Assignments</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'assessments:tutor_queue' %}" class="nav-link {% if request.resolver_match.url_name == 'tutor_queue' %}active{% endif %}">
+                            <i class="nav-icon fas fa-shield-alt text-success"></i>
+                            <p>
+                                Code Defense Queue
+                                <span class="badge badge-success right font-weight-bold">Live</span>
+                            </p>
                         </a>
                     </li>
                     <li class="nav-item">

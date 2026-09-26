@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.utils import timezone
 
-from .models import Attendance, Profile, SummerCertificate
+from .models import Attendance, Profile, SummerCertificate, Certificate
 from apps.payments.models import Payment
 from apps.scheduling.models import Batch
 
@@ -217,3 +217,33 @@ class SummerCertificateAdmin(admin.ModelAdmin):
     def has_file(self, obj):
         return bool(obj.certificate_file)
     has_file.boolean = True
+
+
+@admin.register(Certificate)
+class CertificateAdmin(admin.ModelAdmin):
+    list_display = (
+        'student',
+        'title',
+        'course',
+        'batch',
+        'grade',
+        'issue_date',
+        'reference_id',
+        'has_file',
+        'is_revoked',
+        'issued_by',
+    )
+    list_filter = ('course', 'batch', 'grade', 'is_revoked', 'issue_date')
+    search_fields = (
+        'student__username',
+        'student__email',
+        'student__first_name',
+        'student__last_name',
+        'reference_id',
+        'title',
+    )
+
+    def has_file(self, obj):
+        return bool(obj.certificate_file)
+    has_file.boolean = True
+

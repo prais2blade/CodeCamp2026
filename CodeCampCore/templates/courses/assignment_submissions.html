@@ -1,0 +1,300 @@
+{% extends "layouts/admin_base.html" %}
+{% load static humanize %}
+
+{% block title %}Evaluate Submissions: {{ assignment.title }} | CodeCamp Faculty{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-2">
+
+  <!-- Header -->
+  <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4338ca 100%); border-radius: 16px;">
+    <div class="card-body p-4 p-md-5">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+        <div>
+          <span class="badge badge-warning text-dark font-weight-bold px-3 py-1 mb-2 text-uppercase">
+            <i class="fas fa-tasks mr-1"></i> Week {{ assignment.week_number }} Assessment
+          </span>
+          <h2 class="font-weight-extrabold text-white mb-1">{{ assignment.title }}</h2>
+          <p class="text-white-50 mb-0">
+            {{ assignment.subject.name }} &bull; {{ assignment.subject.course.name }}
+            {% if assignment.batch %}&bull; Cohort: {{ assignment.batch.name }}{% endif %}
+            &bull; Due: {{ assignment.due_date|date:"F d, Y" }}
+          </p>
+        </div>
+
+        <div class="mt-3 mt-md-0 d-flex gap-2">
+          <a href="{% url 'instructor_assignments' %}" class="btn btn-outline-light font-weight-bold">
+            <i class="fas fa-arrow-left mr-1"></i> All Assignments
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rubric Guidelines Overview -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 14px; background: #ffffff;">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center mb-2">
+        <i class="fas fa-balance-scale text-primary mr-2"></i>
+        <h6 class="font-weight-bold text-dark mb-0">Official 4-Pillar Marking Rubric</h6>
+      </div>
+      <div class="row text-muted small">
+        <div class="col-md-3">
+          <strong>1. Functionality & Logic (40 pts):</strong> Correct execution, handles edge cases, zero fatal crashes.
+        </div>
+        <div class="col-md-3">
+          <strong>2. Code Quality (25 pts):</strong> Modularity, readable variable naming, adherence to clean code rules.
+        </div>
+        <div class="col-md-3">
+          <strong>3. UI/UX & Output (20 pts):</strong> Clean aesthetics, layout responsiveness, clear documentation.
+        </div>
+        <div class="col-md-3">
+          <strong>4. Timeliness & Best Practices (15 pts):</strong> Git commit hygiene, punctual submission.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submissions Table Card -->
+  <div class="card border-0 shadow-sm" style="border-radius: 16px; overflow: hidden;">
+    <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+      <h5 class="font-weight-bold text-dark mb-0">Student Submissions ({{ submissions|length }})</h5>
+      <span class="text-muted small">Select a submission to evaluate against the rubric</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+          <tr class="text-muted small text-uppercase font-weight-bold">
+            <th>Student</th>
+            <th>Submission Date</th>
+            <th>Deliverables & Links</th>
+            <th>Score & Grade</th>
+            <th>Status</th>
+            <th>Evaluated By</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in submissions %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="rounded-circle bg-indigo text-white d-flex align-items-center justify-content-center font-weight-bold mr-3" style="width: 38px; height: 38px; background: #4f46e5;">
+                    {{ sub.student.first_name|first|default:sub.student.username|first|upper }}
+                  </div>
+                  <div>
+                    <div class="font-weight-bold text-dark">
+                      {{ sub.student.get_full_name|default:sub.student.username }}
+                    </div>
+                    <small class="text-muted">{{ sub.student.email }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="font-weight-bold text-dark">{{ sub.submitted_at|date:"M d, Y" }}</span>
+                <small class="text-muted d-block">{{ sub.submitted_at|date:"h:i A" }}</small>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1" style="gap: 6px;">
+                  {% if sub.file %}
+                    <a href="{{ sub.file.url }}" target="_blank" class="btn btn-xs btn-outline-primary" style="padding: 2px 8px; font-size: 0.75rem;">
+                      <i class="fas fa-file-archive mr-1"></i> File
+                    </a>
+                  {% endif %}
+                  {% if sub.repo_url %}
+                    <a href="{{ sub.repo_url }}" target="_blank" class="btn btn-xs btn-outline-dark" style="padding: 2px 8px; font-size: 0.75rem;">
+                      <i class="fab fa-github mr-1"></i> GitHub
+                    </a>
+                  {% endif %}
+                  {% if sub.live_demo_url %}
+                    <a href="{{ sub.live_demo_url }}" target="_blank" class="btn btn-xs btn-outline-success" style="padding: 2px 8px; font-size: 0.75rem;">
+                      <i class="fas fa-globe mr-1"></i> Demo
+                    </a>
+                  {% endif %}
+                </div>
+                {% if sub.notes %}
+                  <div class="text-muted small mt-1 text-truncate" style="max-width: 250px;" title="{{ sub.notes }}">
+                    <i class="far fa-comment-alt mr-1"></i> {{ sub.notes }}
+                  </div>
+                {% endif %}
+              </td>
+              <td>
+                {% if sub.total_score is not None %}
+                  <div class="font-weight-bold text-dark" style="font-size: 1rem;">
+                    {{ sub.total_score|floatformat:1 }}%
+                  </div>
+                  <span class="badge {% if sub.letter_grade == 'Distinction' %}badge-warning text-dark{% elif sub.letter_grade == 'Merit' %}badge-primary{% elif sub.letter_grade == 'Credit' %}badge-info{% elif sub.letter_grade == 'Pass' %}badge-secondary{% else %}badge-danger{% endif %} font-weight-bold">
+                    {{ sub.letter_grade }}
+                  </span>
+                {% else %}
+                  <span class="text-muted small">Not graded</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if sub.status == 'graded' %}
+                  <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i> Graded</span>
+                {% elif sub.status == 'revision_requested' %}
+                  <span class="badge badge-danger px-2 py-1"><i class="fas fa-redo mr-1"></i> Revision</span>
+                {% else %}
+                  <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-clock mr-1"></i> Needs Review</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if sub.graded_by %}
+                  <small class="font-weight-bold text-dark">{{ sub.graded_by.get_full_name|default:sub.graded_by.username }}</small>
+                  <small class="text-muted d-block">{{ sub.graded_at|date:"M d, Y" }}</small>
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+              <td class="text-right">
+                <button type="button" class="btn btn-primary btn-sm font-weight-bold shadow-sm" data-toggle="modal" data-target="#gradeModal{{ sub.id }}">
+                  <i class="fas fa-edit mr-1"></i> Evaluate Rubric
+                </button>
+              </td>
+            </tr>
+
+            <!-- RUBRIC GRADING MODAL FOR THIS SUBMISSION -->
+            <div class="modal fade text-left" id="gradeModal{{ sub.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content" style="border-radius: 16px;">
+                  <div class="modal-header bg-dark text-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                    <h5 class="modal-title font-weight-bold">
+                      <i class="fas fa-balance-scale text-warning mr-2"></i> Rubric Evaluation: {{ sub.student.get_full_name|default:sub.student.username }}
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                  </div>
+
+                  <form action="{% url 'grade_submission' sub.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                      
+                      <!-- Live Grade Score Summary Box -->
+                      <div class="p-3 rounded-xl mb-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #ffffff; border-radius: 12px;">
+                        <div>
+                          <div class="text-uppercase small font-weight-bold text-white-50">Calculated Evaluation Total</div>
+                          <div class="h2 font-weight-extrabold mb-0 text-warning" id="totalScoreDisplay{{ sub.id }}">
+                            {{ sub.total_score|default:"0" }}%
+                          </div>
+                        </div>
+                        <div class="text-right">
+                          <span class="badge badge-warning px-3 py-1 font-weight-bold text-uppercase" id="gradeBadgeDisplay{{ sub.id }}" style="font-size: 0.95rem;">
+                            {{ sub.letter_grade|default:"Needs Evaluation" }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- 4 Rubric Criteria Inputs -->
+                      <div class="row">
+                        <!-- 1. Functionality -->
+                        <div class="col-md-6 form-group mb-3">
+                          <div class="d-flex justify-content-between">
+                            <label class="font-weight-bold text-dark">1. Functionality & Logic</label>
+                            <span class="text-muted small">Max: 40 pts</span>
+                          </div>
+                          <input type="number" step="0.5" min="0" max="40" name="rubric_functionality" class="form-control font-weight-bold rubric-input-{{ sub.id }}" 
+                            value="{{ sub.rubric_scores.functionality|default:35 }}" required oninput="calcTotal('{{ sub.id }}')">
+                          <small class="text-muted">Handles requirements, correct logic, zero fatal bugs.</small>
+                        </div>
+
+                        <!-- 2. Code Quality -->
+                        <div class="col-md-6 form-group mb-3">
+                          <div class="d-flex justify-content-between">
+                            <label class="font-weight-bold text-dark">2. Code Quality & Architecture</label>
+                            <span class="text-muted small">Max: 25 pts</span>
+                          </div>
+                          <input type="number" step="0.5" min="0" max="25" name="rubric_code_quality" class="form-control font-weight-bold rubric-input-{{ sub.id }}" 
+                            value="{{ sub.rubric_scores.code_quality|default:22 }}" required oninput="calcTotal('{{ sub.id }}')">
+                          <small class="text-muted">Modularity, readable naming, clean structure.</small>
+                        </div>
+
+                        <!-- 3. UI/UX -->
+                        <div class="col-md-6 form-group mb-3">
+                          <div class="d-flex justify-content-between">
+                            <label class="font-weight-bold text-dark">3. UI/UX & Output Presentation</label>
+                            <span class="text-muted small">Max: 20 pts</span>
+                          </div>
+                          <input type="number" step="0.5" min="0" max="20" name="rubric_ui_ux" class="form-control font-weight-bold rubric-input-{{ sub.id }}" 
+                            value="{{ sub.rubric_scores.ui_ux|default:18 }}" required oninput="calcTotal('{{ sub.id }}')">
+                          <small class="text-muted">Aesthetics, usability, responsiveness, documentation.</small>
+                        </div>
+
+                        <!-- 4. Timeliness -->
+                        <div class="col-md-6 form-group mb-3">
+                          <div class="d-flex justify-content-between">
+                            <label class="font-weight-bold text-dark">4. Timeliness & Best Practices</label>
+                            <span class="text-muted small">Max: 15 pts</span>
+                          </div>
+                          <input type="number" step="0.5" min="0" max="15" name="rubric_best_practices" class="form-control font-weight-bold rubric-input-{{ sub.id }}" 
+                            value="{{ sub.rubric_scores.best_practices|default:15 }}" required oninput="calcTotal('{{ sub.id }}')">
+                          <small class="text-muted">Git commits, problem-solving, submitted on time.</small>
+                        </div>
+                      </div>
+
+                      <!-- Feedback & Status -->
+                      <div class="form-group mb-3">
+                        <label class="font-weight-bold text-dark">Tutor Remarks & Constructive Feedback</label>
+                        <textarea name="feedback" class="form-control" rows="3" placeholder="Provide clear feedback on what was done exceptionally and areas for growth...">{{ sub.feedback }}</textarea>
+                      </div>
+
+                      <div class="form-group mb-0">
+                        <label class="font-weight-bold text-dark">Evaluation Status</label>
+                        <select name="status" class="form-control font-weight-bold">
+                          <option value="graded" {% if sub.status == 'graded' or not sub.status %}selected{% endif %}>✅ Graded (Approved)</option>
+                          <option value="revision_requested" {% if sub.status == 'revision_requested' %}selected{% endif %}>⚠️ Revision Requested (Allow Student to Resubmit)</option>
+                        </select>
+                      </div>
+
+                    </div>
+
+                    <div class="modal-footer bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                      <button type="submit" class="btn btn-primary font-weight-bold">
+                        <i class="fas fa-save mr-1"></i> Save Rubric Evaluation
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+          {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <i class="fas fa-inbox fa-3x mb-3 text-secondary"></i>
+                <p class="font-weight-bold mb-0">No submissions uploaded for this assignment yet.</p>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function calcTotal(subId) {
+    const inputs = document.querySelectorAll('.rubric-input-' + subId);
+    let sum = 0;
+    inputs.forEach(input => {
+      sum += parseFloat(input.value || 0);
+    });
+    sum = Math.min(100, Math.max(0, sum));
+
+    const scoreDisplay = document.getElementById('totalScoreDisplay' + subId);
+    const badgeDisplay = document.getElementById('gradeBadgeDisplay' + subId);
+
+    if (scoreDisplay) scoreDisplay.textContent = sum.toFixed(1) + '%';
+    
+    let grade = 'Needs Revision';
+    if (sum >= 90) grade = 'Distinction / Excellent';
+    else if (sum >= 75) grade = 'Merit / Very Good';
+    else if (sum >= 60) grade = 'Credit / Good';
+    else if (sum >= 50) grade = 'Pass';
+
+    if (badgeDisplay) badgeDisplay.textContent = grade;
+  }
+</script>
+{% endblock %}
