@@ -29,6 +29,7 @@ urlpatterns = [
     path('admin/students/summer-bulk-deactivate/', views.admin_summer_bulk_deactivate, name='admin_summer_bulk_deactivate'),
     path('admin/students/summer-bulk-activate/', views.admin_summer_bulk_activate, name='admin_summer_bulk_activate'),
     path('admin/students/<int:profile_id>/batch/', views.admin_student_update_batch, name='admin_student_update_batch'),
+    path('admin/sync-attendance/', views.admin_sync_attendance, name='admin_sync_attendance'),
     path('admin/students/<int:profile_id>/toggle-status/', views.admin_student_toggle_status, name='admin_student_toggle_status'),
     path('admin/students/<int:profile_id>/toggle-summer-status/', views.admin_student_toggle_summer_status, name='admin_student_toggle_summer_status'),
     path('admin/courses/create/', views.admin_course_create, name='admin_course_create'),

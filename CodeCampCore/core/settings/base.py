@@ -84,6 +84,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.competition.context_processors.current_edition',
+                'apps.accounts.context_processors.system_urls',
             ],
         },
     },
@@ -108,6 +109,8 @@ CORE_API_KEY = env("CORE_API_KEY", default="")
 REGISTRATION_API_KEY = env("REGISTRATION_API_KEY", default="")
 ATTENDANCE_API_URL = env("ATTENDANCE_API_URL", default="")
 REGISTRATION_API_URL = env("REGISTRATION_API_URL", default="")
+ATTENDANCE_SYSTEM_URL = env("ATTENDANCE_SYSTEM_URL", default="https://attendance.codecamp.com.ng")
+CORE_PORTAL_URL = env("CORE_PORTAL_URL", default="https://www.codecamp.com.ng")
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Lagos'

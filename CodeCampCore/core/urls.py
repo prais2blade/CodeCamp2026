@@ -2,11 +2,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from apps.accounts.attendance_api import sync_attendance
 from .views import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('backoffice/', RedirectView.as_view(url='/account/admin/dashboard/', permanent=False), name='backoffice_redirect'),
     path('health/', health_check, name='health_check'),
     path('api/v1/', include('api.urls')),
     path('integrations/attendance/', sync_attendance, name='attendance_sync'),

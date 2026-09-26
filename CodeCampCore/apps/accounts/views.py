@@ -1247,6 +1247,32 @@ def admin_student_update_batch(request, profile_id):
 
 
 @login_required
+def admin_sync_attendance(request):
+    """Triggers on-demand synchronization with the Attendance System."""
+    if not (request.user.is_superuser or getattr(request.user, 'profile', None) and request.user.profile.role in ['hod', 'accountant']):
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+        res = AttendanceSyncService.sync_all()
+        if res.get("success"):
+            s_matched = res.get("students", {}).get("students_matched", 0)
+            t_total = res.get("tutors", {}).get("tutors_total", 0)
+            messages.success(
+                request,
+                f"Successfully synchronized {s_matched} student IDs and {t_total} faculty tutors from the Attendance System."
+            )
+        else:
+            messages.warning(
+                request,
+                f"Attendance sync: {res.get('students', {}).get('error') or res.get('tutors', {}).get('error') or 'Checked database.'}"
+            )
+
+    return redirect('/account/admin/dashboard/#students')
+
+
+@login_required
 def admin_bulk_update_students(request):
     """Bulk update start date, assign course, align batch, and recalculate billing for selected students."""
     if not request.user.is_superuser:
