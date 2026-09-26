@@ -950,10 +950,11 @@ def admin_dashboard(request):
         .order_by('-user__date_joined')
     )
     student_user_ids = [s.user_id for s in students]
-    payments_map = {
-        p.student_id: p
-        for p in Payment.objects.filter(student_id__in=student_user_ids).select_related('course', 'batch')
-    }
+    payments_map = {}
+    for p in Payment.objects.filter(student_id__in=student_user_ids).order_by('payment_date').select_related('course', 'batch'):
+        if p.student_id not in payments_map or p.billing_month == 'September 2026':
+            payments_map[p.student_id] = p
+
     certs_map = {
         c.student_id: c
         for c in SummerCertificate.objects.filter(student_id__in=student_user_ids)
@@ -994,7 +995,21 @@ def admin_dashboard(request):
         b.occupancy_pct = min(100, round((b.enrolled_count / b.max_students) * 100, 1)) if b.max_students > 0 else 0
 
     # Payments & Receipts
-    payments = Payment.objects.all().select_related('student', 'course', 'batch').order_by('-payment_date')[:100]
+    billing_month_filter = request.GET.get('billing_month')
+    if billing_month_filter is None:
+        billing_month_filter = 'September 2026'
+    else:
+        billing_month_filter = billing_month_filter.strip()
+
+    payments_qs = Payment.objects.all().select_related('student', 'course', 'batch').order_by('-payment_date')
+    if billing_month_filter:
+        payments = payments_qs.filter(billing_month=billing_month_filter)[:100]
+    else:
+        payments = payments_qs[:100]
+
+    available_billing_months = list(Payment.objects.values_list('billing_month', flat=True).distinct().order_by('-billing_month'))
+    if 'September 2026' not in available_billing_months:
+        available_billing_months.insert(0, 'September 2026')
     recent_receipts = Receipt.objects.all().select_related('payment__student', 'payment__course').order_by('-issued_date')[:25]
 
     # Live Attendance Log
@@ -1078,6 +1093,8 @@ def admin_dashboard(request):
         "courses": courses,
         "batches": batches,
         "payments": payments,
+        "billing_month_filter": billing_month_filter,
+        "available_billing_months": available_billing_months,
         "recent_receipts": recent_receipts,
         "attendance_records": attendance_records,
         "staff_members": staff_members,

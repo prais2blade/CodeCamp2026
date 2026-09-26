@@ -1103,7 +1103,15 @@
             </h3>
             <p class="text-muted small mb-0">Record payments directly, issue automated receipts, and audit balances.</p>
           </div>
-          <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form method="GET" class="d-inline-flex align-items-center mr-2">
+              <select name="billing_month" class="form-control form-control-sm font-weight-bold shadow-sm" style="height: 38px; border-radius: 0.5rem; min-width: 190px;" onchange="this.form.submit()">
+                <option value="" {% if not billing_month_filter %}selected{% endif %}>📅 All Billing Months</option>
+                {% for m in available_billing_months %}
+                  <option value="{{ m }}" {% if billing_month_filter == m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+              </select>
+            </form>
             <button class="btn btn-success font-weight-bold" data-toggle="modal" data-target="#recordPaymentModal">
               <i class="fas fa-plus-circle mr-1"></i> Record Payment / Installment
             </button>
@@ -1115,6 +1123,7 @@
             <thead>
               <tr>
                 <th>Student</th>
+                <th>Billing Month</th>
                 <th>Course / Cohort</th>
                 <th>Amount Due</th>
                 <th>Amount Paid</th>
@@ -1129,6 +1138,11 @@
                 <td>
                   <strong class="text-dark">{{ p.student.get_full_name|default:p.student.username }}</strong>
                   <div class="small text-muted">{{ p.student.email }}</div>
+                </td>
+                <td>
+                  <span class="badge badge-info font-weight-bold px-2 py-1" style="font-size: 0.8rem;">
+                    <i class="fas fa-calendar-alt mr-1"></i> {{ p.billing_month }}
+                  </span>
                 </td>
                 <td>
                   <span class="badge badge-light border font-weight-bold text-dark">
@@ -1158,7 +1172,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
+                <td colspan="8" class="text-center py-5 text-muted">
                   <h5>No payment records logged yet.</h5>
                 </td>
               </tr>

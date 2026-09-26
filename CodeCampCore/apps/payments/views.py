@@ -151,7 +151,11 @@ def debtors_ledger(request):
     status_filter = request.GET.get('status', 'all')  # all, debtors, partial, unpaid, paid
     course_filter = request.GET.get('course_id')
     batch_filter = request.GET.get('batch_id')
-    month_filter = request.GET.get('month', '')
+    month_filter = request.GET.get('month')
+    if month_filter is None:
+        month_filter = 'September 2026'
+    else:
+        month_filter = month_filter.strip()
     query = request.GET.get('q', '').strip()
 
     payments_qs = Payment.objects.select_related(
@@ -651,7 +655,11 @@ def manage_payments(request):
     """Payment Approvals and Tuition Management Console."""
     status_filter = request.GET.get('status', 'all')
     course_filter = request.GET.get('course_id')
-    month_filter = request.GET.get('month', '')
+    month_filter = request.GET.get('month')
+    if month_filter is None:
+        month_filter = 'September 2026'
+    else:
+        month_filter = month_filter.strip()
     query = request.GET.get('q', '').strip()
 
     payments_qs = Payment.objects.select_related('student', 'course', 'batch', 'verified_by').prefetch_related('receipts').order_by('-payment_date')
