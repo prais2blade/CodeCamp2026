@@ -1079,27 +1079,40 @@ def view_receipt(request, receipt_id):
         else:
             months_elapsed = 1
 
-    # 5. Accrued Tuition Due to Date (ONLY up to date of payment, never full scary course total)
-    if months_elapsed > 1:
-        total_due_to_date = Decimal(months_elapsed) * monthly_rate
-    else:
-        total_due_to_date = monthly_rate
+    # 5. Prior payments made strictly before this payment
+    prior_paid = Payment.objects.filter(
+        student=payment.student,
+        is_approved=True,
+        payment_date__lt=payment.payment_date
+    ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
 
-    # 6. Cumulative Total Paid to Date up to this payment
+    # Total accrued tuition from start date up to this payment date
+    if months_elapsed > 1:
+        accrued_tuition = Decimal(months_elapsed) * monthly_rate
+    else:
+        accrued_tuition = monthly_rate
+
+    # Total due entering this billing period (Expected amount = Arrears + Current Month)
+    due_before_this_payment = accrued_tuition - prior_paid
+    if due_before_this_payment < payment.amount_paid:
+        total_due_for_period = payment.amount_paid
+    else:
+        total_due_for_period = max(monthly_rate, due_before_this_payment)
+
+    # 6. Amount paid on this receipt
+    amount_paid_this_receipt = receipt.amount or payment.amount_paid
+
+    # 7. Remaining Outstanding Balance as at Date of Payment
+    outstanding_to_date = max(Decimal('0.00'), total_due_for_period - amount_paid_this_receipt)
+
+    # Cumulative Total Paid to Date up to this payment
     total_paid_to_date = Payment.objects.filter(
         student=payment.student,
         is_approved=True,
         payment_date__lte=payment.payment_date
     ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
-
     if total_paid_to_date < payment.amount_paid:
         total_paid_to_date = payment.amount_paid
-
-    if total_due_to_date < total_paid_to_date:
-        total_due_to_date = total_paid_to_date
-
-    # 7. Outstanding Balance as at Date of Payment
-    outstanding_to_date = max(Decimal('0.00'), total_due_to_date - total_paid_to_date)
 
     logo_data_uri = None
     try:
@@ -1119,8 +1132,10 @@ def view_receipt(request, receipt_id):
         'months_elapsed': months_elapsed,
         'period_label': period_label,
         'monthly_rate': monthly_rate,
-        'total_due_to_date': total_due_to_date,
+        'total_due_for_period': total_due_for_period,
+        'total_due_to_date': total_due_for_period,
         'total_paid_to_date': total_paid_to_date,
+        'amount_paid_this_receipt': amount_paid_this_receipt,
         'outstanding_to_date': outstanding_to_date,
         'logo_data_uri': logo_data_uri,
         'request': request,

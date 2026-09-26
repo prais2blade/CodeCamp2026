@@ -72,6 +72,29 @@ class Profile(models.Model):
         null=True,
         blank=True
     )
+    assigned_tutor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tutored_students',
+        limit_choices_to={'profile__role__in': ['instructor', 'hod']},
+        help_text="Assigned teacher or tutor for this student."
+    )
+
+    @property
+    def tutor_display(self):
+        if self.assigned_tutor:
+            return self.assigned_tutor.get_full_name() or self.assigned_tutor.username
+        if self.batch:
+            session_inst = self.batch.sessions.filter(instructor__isnull=False).select_related('instructor').first()
+            if session_inst and session_inst.instructor:
+                return session_inst.instructor.get_full_name() or session_inst.instructor.username
+        if self.course:
+            subj_inst = self.course.subjects.filter(instructor__isnull=False).select_related('instructor').first()
+            if subj_inst and subj_inst.instructor:
+                return subj_inst.instructor.get_full_name() or subj_inst.instructor.username
+        return None
 
     onboarding_stage = models.CharField(
         max_length=30,

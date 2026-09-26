@@ -180,19 +180,19 @@
       </div>
     </div>
 
-    <!-- Discounts Granted -->
+    <!-- Expected Net Invoiced -->
     <div class="col-xl-3 col-md-6 mb-3 mb-xl-0">
       <div class="kpi-card">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <div class="kpi-label">Discounts / Concessions</div>
-            <div class="kpi-value text-primary">₦{{ total_discounts|floatformat:0 }}</div>
+            <div class="kpi-label">Expected Net Due</div>
+            <div class="kpi-value text-primary">₦{{ net_expected|floatformat:0 }}</div>
             <div class="small text-muted mt-1 font-weight-bold">
-              <i class="fas fa-percent text-primary mr-1"></i> Concessions deducted from standard fee
+              <i class="fas fa-file-invoice-dollar text-primary mr-1"></i> Total expected for billing period
             </div>
           </div>
           <div class="kpi-icon-wrap" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">
-            <i class="fas fa-tags"></i>
+            <i class="fas fa-file-invoice"></i>
           </div>
         </div>
       </div>
@@ -203,10 +203,10 @@
       <div class="kpi-card">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <div class="kpi-label">Agreed Net Balance Due</div>
+            <div class="kpi-label">Outstanding Balance Due</div>
             <div class="kpi-value text-danger">₦{{ outstanding_balance|floatformat:0 }}</div>
             <div class="small text-muted mt-1 font-weight-bold">
-              Net expected: ₦{{ net_expected|floatformat:0 }}
+              Unpaid tuition balance
             </div>
           </div>
           <div class="kpi-icon-wrap" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
@@ -295,15 +295,12 @@
               <input type="checkbox" id="selectAllPaymentsCb" style="transform: scale(1.2); cursor: pointer;" title="Select All Visible">
             </th>
             <th>Student</th>
+            <th>Programme & Schedule</th>
             <th>Billing Month</th>
             <th>Bank Payment Date</th>
             <th>Bank Receipt Proof</th>
-            <th>Programme & Schedule</th>
-            <th>Standard Fee</th>
-            <th>Discount</th>
-            <th>Expected Net Due</th>
+            <th>Expected Amount Due</th>
             <th>Amount Paid</th>
-            <th>Agreed Balance</th>
             <th>Approval Status</th>
             <th class="text-right">Actions</th>
           </tr>
@@ -331,6 +328,20 @@
               </div>
             </td>
             <td>
+              <div class="font-weight-bold text-dark">
+                {{ p.course.name|default:"General / Innovation Hub" }}
+              </div>
+              <div class="small text-muted font-weight-bold mt-1">
+                {% if p.batch %}
+                  <span class="badge badge-light border text-dark">
+                    🗓️ {{ p.batch.schedule_display }}
+                  </span>
+                {% else %}
+                  <span class="badge badge-secondary">No cohort scheduled</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
               <span class="badge badge-info px-2 py-1 font-weight-bold" style="font-size: 0.82rem;">
                 <i class="fas fa-calendar-alt mr-1"></i> {{ p.billing_month }}
               </span>
@@ -346,40 +357,11 @@
             </td>
             <td>
               {% if p.payment_proof %}
-                <a href="{{ p.payment_proof.url }}" target="_blank" class="btn btn-xs btn-outline-info font-weight-bold py-1 px-2" title="Inspect Bank Slip">
+                <a href="{{ p.payment_proof.url }}" target="_blank" class="btn btn-xs btn-outline-info font-weight-bold py-1 px-2 shadow-2xs" title="Inspect Bank Slip (PDF/Image)">
                   <i class="fas fa-file-invoice text-info mr-1"></i> View Bank Slip
                 </a>
               {% else %}
                 <span class="text-muted small"><i class="fas fa-minus-circle mr-1"></i> None</span>
-              {% endif %}
-            </td>
-            <td>
-              <div class="font-weight-bold text-dark">
-                {{ p.course.name|default:"General / Innovation Hub" }}
-              </div>
-              <div class="small text-muted font-weight-bold mt-1">
-                {% if p.batch %}
-                  <span class="badge badge-light border text-dark">
-                    🗓️ {{ p.batch.schedule_display }}
-                  </span>
-                {% else %}
-                  <span class="badge badge-secondary">No cohort scheduled</span>
-                {% endif %}
-              </div>
-            </td>
-            <td class="font-weight-bold text-muted">
-              ₦{{ p.amount_due|floatformat:0 }}
-            </td>
-            <td>
-              {% if p.discount > 0 %}
-                <span class="badge badge-success px-2 py-1 font-weight-bold" style="font-size: 0.85rem;">
-                  -₦{{ p.discount|floatformat:0 }}
-                </span>
-                {% if p.discount_reason %}
-                  <div class="small text-muted font-italic" style="font-size: 0.75rem;">{{ p.discount_reason }}</div>
-                {% endif %}
-              {% else %}
-                <span class="text-muted small">None</span>
               {% endif %}
             </td>
             <td class="font-weight-bold text-dark" style="font-size: 0.95rem;">
@@ -389,15 +371,6 @@
               <span class="font-weight-bold {% if p.amount_paid > 0 %}text-success{% else %}text-muted{% endif %}">
                 ₦{{ p.amount_paid|floatformat:0 }}
               </span>
-            </td>
-            <td>
-              {% if p.remaining_balance > 0 %}
-                <span class="font-weight-bold text-danger">₦{{ p.remaining_balance|floatformat:0 }}</span>
-              {% else %}
-                <span class="badge badge-success px-2 py-1 font-weight-bold">
-                  <i class="fas fa-check mr-1"></i> Paid in Full
-                </span>
-              {% endif %}
             </td>
             <td>
               {% if p.is_approved %}
@@ -457,9 +430,9 @@
                           </div>
                         </div>
                         <div class="text-right">
-                          <span class="text-muted small">Standard Course Fee:</span>
+                          <span class="text-muted small">Expected Net Due ({{ p.billing_month }}):</span>
                           <div class="font-weight-bold text-dark" style="font-size: 1.15rem;">
-                            ₦{{ p.amount_due|floatformat:2 }}
+                            ₦{{ p.net_amount_due|floatformat:2 }}
                           </div>
                         </div>
                       </div>

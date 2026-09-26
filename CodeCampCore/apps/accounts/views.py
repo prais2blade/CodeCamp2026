@@ -946,7 +946,7 @@ def admin_dashboard(request):
     # Students
     students = (
         Profile.objects.filter(role='student')
-        .select_related('user', 'course', 'batch', 'tenant')
+        .select_related('user', 'course', 'batch', 'tenant', 'assigned_tutor')
         .order_by('-user__date_joined')
     )
     student_user_ids = [s.user_id for s in students]
@@ -1022,6 +1022,7 @@ def admin_dashboard(request):
     all_courses = Course.objects.all().order_by('name')
     all_batches = Batch.objects.all().select_related('course').order_by('course__name', 'name')
     all_subjects = Subject.objects.all().select_related('course').order_by('course__name', 'name')
+    all_tutors = User.objects.filter(profile__role__in=['instructor', 'hod']).order_by('first_name', 'username')
 
     # ========================
     # 3. CHARTS DATA
@@ -1105,6 +1106,7 @@ def admin_dashboard(request):
         "all_courses": all_courses,
         "all_batches": all_batches,
         "all_subjects": all_subjects,
+        "all_tutors": all_tutors,
 
         # Charts
         "user_labels": user_labels,
@@ -1220,7 +1222,15 @@ def admin_student_update_batch(request, profile_id):
 
         new_batch = Batch.objects.filter(id=batch_id).first() if batch_id else None
         profile.batch = new_batch
-        profile.save(update_fields=['batch'])
+        update_fields = ['batch']
+
+        tutor_id = request.POST.get('tutor_id')
+        if tutor_id is not None:
+            new_tutor = User.objects.filter(id=tutor_id).first() if tutor_id else None
+            profile.assigned_tutor = new_tutor
+            update_fields.append('assigned_tutor')
+
+        profile.save(update_fields=update_fields)
 
         # Keep payment record in sync
         Payment.objects.filter(student=profile.user).update(batch=new_batch)
@@ -1230,7 +1240,7 @@ def admin_student_update_batch(request, profile_id):
         if new_batch:
             new_batch.check_capacity()
 
-        messages.success(request, f"Cohort updated for {profile.user.username}: {new_batch.name if new_batch else 'None'}.")
+        messages.success(request, f"Cohort & Tutor updated for {profile.user.username}.")
         return redirect('/account/admin/dashboard/#students')
 
     return redirect('admin_dashboard')

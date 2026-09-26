@@ -1,7 +1,9 @@
+import datetime
 from decimal import Decimal
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 from apps.courses.models import Course
 from apps.scheduling.models import Batch
 from apps.payments.models import Payment, Receipt
@@ -204,4 +206,81 @@ class PaymentApprovalsAndDiscountsTestCase(TestCase):
         self.assertContains(resp, "60,000")
         self.assertContains(resp, "6 Months")
         self.assertContains(resp, "Current Outstanding Balance")
+
+    def test_monthly_expected_receipt_calculation_arrears_and_consistent(self):
+        """
+        User scenario:
+        If I am owing 60k, and in this month total due is 60k and paid 20k, balance is 40k.
+        If consistent, total due is that month payment (20k), paid 20k, balance is 0.
+        """
+        profile = self.student_user.profile
+        profile.start_date = datetime.date(2026, 2, 1)
+        profile.save()
+
+        # Step 1: Prior backlog payment of 60k made in August (so 60k was owing entering September)
+        Payment.objects.create(
+            student=self.student_user,
+            course=self.course,
+            amount_due=Decimal('35000.00'),
+            discount=Decimal('15000.00'),  # 20k/month
+            amount_paid=Decimal('60000.00'),
+            billing_month='August 2026',
+            bank_payment_date=datetime.date(2026, 8, 15),
+            payment_date=timezone.make_aware(datetime.datetime(2026, 8, 15, 12, 0, 0)),
+            is_approved=True
+        )
+
+        # Step 2: In September (Month 7, total accrued 140k minus prior 60k paid = 80k, or say student was owing 60k):
+        # Student makes a 20k payment
+        sept_payment = Payment.objects.create(
+            student=self.student_user,
+            course=self.course,
+            amount_due=Decimal('35000.00'),
+            discount=Decimal('15000.00'),
+            amount_paid=Decimal('20000.00'),
+            billing_month='September 2026',
+            bank_payment_date=datetime.date(2026, 9, 10),
+            payment_date=timezone.make_aware(datetime.datetime(2026, 9, 10, 12, 0, 0)),
+            is_approved=True
+        )
+        sept_receipt = Receipt.objects.create(
+            payment=sept_payment,
+            amount=Decimal('20000.00'),
+            billing_month='September 2026',
+            bank_payment_date=datetime.date(2026, 9, 10)
+        )
+
+        self.client.login(username='adminuser', password='password123')
+        url = reverse('view_receipt', kwargs={'receipt_id': sept_receipt.id})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        # Total Due for Period is what is expected at this billing cycle
+        self.assertEqual(resp.context['amount_paid_this_receipt'], Decimal('20000.00'))
+        self.assertGreater(resp.context['total_due_for_period'], Decimal('20000.00'))
+        self.assertEqual(resp.context['outstanding_to_date'], resp.context['total_due_for_period'] - Decimal('20000.00'))
+        self.assertContains(resp, "Total Due for Period")
+        self.assertContains(resp, "Amount Paid on this Receipt")
+
+    def test_payment_approvals_and_student_directory_presentation(self):
+        """Verify Student Directory has no money columns and Payment Approvals has Expected Amount Due."""
+        self.client.login(username='adminuser', password='password123')
+
+        # Check manage_payments console
+        resp = self.client.get(reverse('manage_payments'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Expected Amount Due")
+        self.assertContains(resp, "Bank Receipt Proof")
+        # Ensure 'Standard Fee' is removed from table header
+        self.assertNotContains(resp, "<th>Standard Fee</th>")
+        self.assertNotContains(resp, "<th>Discount</th>")
+
+        # Check admin dashboard
+        resp = self.client.get('/account/admin/dashboard/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Assigned Teacher / Tutor")
+        self.assertContains(resp, "Student ID")
+        # Ensure 'Tuition Status' is removed from student table
+        self.assertNotContains(resp, "<th>Tuition Status</th>")
+
 
