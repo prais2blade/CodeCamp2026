@@ -459,7 +459,7 @@
           <div class="detail text-muted">Standard Academy Term</div>
         {% endif %}
         <div class="detail" style="font-size: 0.82rem; color: var(--cc-purple-deep); margin-top: 4px;">
-          Billing Coverage: <strong>{{ period_label }}</strong> &bull; Rate: <strong>₦{{ monthly_rate|floatformat:2 }}/month</strong>
+          Billing Coverage: <strong>{{ period_label }}</strong>
         </div>
       </div>
     </div>
@@ -469,9 +469,8 @@
       <thead>
         <tr>
           <th>Description</th>
-          <th style="width: 190px; text-align: center;">Billing Period</th>
-          <th style="width: 140px; text-align: right;">Monthly Rate</th>
-          <th style="width: 160px; text-align: right;">Accrued Due To Date</th>
+          <th style="width: 220px; text-align: center;">Billing Period</th>
+          <th style="width: 180px; text-align: right;">Total Due To Date</th>
         </tr>
       </thead>
       <tbody>
@@ -485,10 +484,7 @@
           <td style="text-align: center; font-weight: 700; color: var(--cc-purple-primary);">
             {{ period_label }}
           </td>
-          <td style="text-align: right; font-weight: 600;">
-            ₦{{ monthly_rate|floatformat:2|intcomma }}
-          </td>
-          <td style="text-align: right; font-weight: 700; color: var(--cc-purple-deep);">
+          <td style="text-align: right; font-weight: 700; color: var(--cc-purple-deep); font-size: 1rem;">
             ₦{{ total_due_to_date|floatformat:2|intcomma }}
           </td>
         </tr>
