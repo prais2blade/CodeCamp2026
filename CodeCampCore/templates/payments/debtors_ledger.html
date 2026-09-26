@@ -394,6 +394,7 @@
                             data-target="#recordPaymentModal"
                             data-payment-id="{{ p.id }}"
                             data-student-name="{{ p.student.get_full_name|default:p.student.username }}"
+                            data-billing-month="{{ p.billing_month }}"
                             data-balance="{{ p.remaining_balance|floatformat:2 }}"
                             onclick="populatePaymentModal(this)">
                       <i class="fas fa-credit-card mr-1"></i> Add Pay
@@ -541,10 +542,16 @@ function populatePaymentModal(btn) {
   var paymentId = btn.getAttribute('data-payment-id');
   var studentName = btn.getAttribute('data-student-name');
   var balance = btn.getAttribute('data-balance');
+  var billingMonth = btn.getAttribute('data-billing-month');
 
   document.getElementById('modalPaymentId').value = paymentId;
   document.getElementById('modalStudentName').textContent = studentName;
   document.getElementById('modalBalance').textContent = '₦' + balance;
+
+  if (billingMonth) {
+    var monthInput = document.querySelector('#recordPaymentModal input[name="billing_month"]');
+    if (monthInput) monthInput.value = billingMonth;
+  }
 
   var selectWrapper = document.getElementById('studentSelectWrapper');
   if (selectWrapper) {
