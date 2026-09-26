@@ -1043,7 +1043,63 @@ def view_receipt(request, receipt_id):
 
     import base64
     import os
+    import datetime
+    from decimal import Decimal
+    from django.db.models import Sum
     from django.conf import settings
+
+    # 1. Student Start Date
+    student_profile = getattr(payment.student, 'profile', None)
+    start_date = getattr(student_profile, 'start_date', None) or payment.billing_start_date
+    if not start_date and payment.batch and payment.batch.start_date:
+        start_date = payment.batch.start_date
+
+    # 2. Payment Effective Date (bank payment date or receipt issued date)
+    payment_effective_date = receipt.bank_payment_date or payment.bank_payment_date
+    if not payment_effective_date and receipt.issued_date:
+        payment_effective_date = receipt.issued_date.date()
+    elif not payment_effective_date:
+        payment_effective_date = timezone.localdate()
+
+    # 3. Agreed Monthly Rate (not full course total)
+    monthly_rate = payment.net_amount_due
+    if not monthly_rate or monthly_rate <= Decimal('0.00'):
+        monthly_rate = payment.monthly_payment if (payment.monthly_payment and payment.monthly_payment > Decimal('0.00')) else (getattr(payment.course, 'fee', Decimal('35000.00')) or Decimal('35000.00'))
+
+    # 4. Months elapsed from start date to payment date
+    months_elapsed = 1
+    period_label = receipt.billing_month or payment.billing_month or "Current Billing Cycle"
+    if start_date and payment_effective_date and payment_effective_date >= start_date:
+        diff_months = (payment_effective_date.year - start_date.year) * 12 + (payment_effective_date.month - start_date.month)
+        if diff_months >= 1:
+            months_elapsed = diff_months
+            start_str = start_date.strftime("%b %Y")
+            end_str = payment_effective_date.strftime("%b %Y")
+            period_label = f"{start_str} – {end_str} ({months_elapsed} Months)"
+        else:
+            months_elapsed = 1
+
+    # 5. Accrued Tuition Due to Date (ONLY up to date of payment, never full scary course total)
+    if months_elapsed > 1:
+        total_due_to_date = Decimal(months_elapsed) * monthly_rate
+    else:
+        total_due_to_date = monthly_rate
+
+    # 6. Cumulative Total Paid to Date up to this payment
+    total_paid_to_date = Payment.objects.filter(
+        student=payment.student,
+        is_approved=True,
+        payment_date__lte=payment.payment_date
+    ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
+
+    if total_paid_to_date < payment.amount_paid:
+        total_paid_to_date = payment.amount_paid
+
+    if total_due_to_date < total_paid_to_date:
+        total_due_to_date = total_paid_to_date
+
+    # 7. Outstanding Balance as at Date of Payment
+    outstanding_to_date = max(Decimal('0.00'), total_due_to_date - total_paid_to_date)
 
     logo_data_uri = None
     try:
@@ -1058,6 +1114,14 @@ def view_receipt(request, receipt_id):
     context = {
         'receipt': receipt,
         'payment': payment,
+        'start_date': start_date,
+        'payment_effective_date': payment_effective_date,
+        'months_elapsed': months_elapsed,
+        'period_label': period_label,
+        'monthly_rate': monthly_rate,
+        'total_due_to_date': total_due_to_date,
+        'total_paid_to_date': total_paid_to_date,
+        'outstanding_to_date': outstanding_to_date,
         'logo_data_uri': logo_data_uri,
         'request': request,
     }

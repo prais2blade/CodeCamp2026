@@ -155,3 +155,53 @@ class PaymentApprovalsAndDiscountsTestCase(TestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "September")
+
+    def test_progressive_receipt_calculation_feb_to_august(self):
+        """
+        If agreed monthly rate is 20k and student started in Feb, by August (6 months):
+        Total due to date: 120k. Amount paid: 60k. Outstanding to date: 60k.
+        Full scary course fee is not shown.
+        """
+        import datetime
+        from apps.accounts.models import Profile
+
+        profile, _ = Profile.objects.get_or_create(user=self.student_user)
+        profile.start_date = datetime.date(2026, 2, 1)
+        profile.save()
+
+        # Monthly payment with agreed rate of ₦20,000 (standard 35k minus 15k discount or net 20k)
+        payment = Payment.objects.create(
+            student=self.student_user,
+            course=self.course,
+            amount_due=Decimal('35000.00'),
+            discount=Decimal('15000.00'),  # net_amount_due = 20000
+            amount_paid=Decimal('60000.00'),
+            billing_month='August 2026 (Summer Lump Sum)',
+            bank_payment_date=datetime.date(2026, 8, 15),
+            is_approved=True
+        )
+        receipt = Receipt.objects.create(
+            payment=payment,
+            amount=Decimal('60000.00'),
+            billing_month='August 2026 (Summer Lump Sum)',
+            bank_payment_date=datetime.date(2026, 8, 15)
+        )
+
+        self.client.login(username='adminuser', password='password123')
+        url = reverse('view_receipt', kwargs={'receipt_id': receipt.id})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        # Context checks
+        self.assertEqual(resp.context['months_elapsed'], 6)
+        self.assertEqual(resp.context['monthly_rate'], Decimal('20000.00'))
+        self.assertEqual(resp.context['total_due_to_date'], Decimal('120000.00'))
+        self.assertEqual(resp.context['total_paid_to_date'], Decimal('60000.00'))
+        self.assertEqual(resp.context['outstanding_to_date'], Decimal('60000.00'))
+
+        # Template HTML checks
+        self.assertContains(resp, "120,000")
+        self.assertContains(resp, "60,000")
+        self.assertContains(resp, "6 Months")
+        self.assertContains(resp, "Current Outstanding Balance")
+
