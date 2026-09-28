@@ -132,11 +132,14 @@ class Command(BaseCommand):
         db_conn = None
         db_description = None
 
+        resolved_db_path = None
+
         # 1. Custom path
         if custom_db_path:
             c, count = self._try_sqlite(custom_db_path)
             if c:
                 db_conn = c
+                resolved_db_path = os.path.abspath(custom_db_path)
                 db_description = f"Custom SQLite ({custom_db_path}) with {count} students"
 
         # 2. Candidate paths
@@ -156,7 +159,8 @@ class Command(BaseCommand):
                 c, count = self._try_sqlite(path)
                 if c:
                     db_conn = c
-                    db_description = f"SQLite ({os.path.abspath(path)}) with {count} students"
+                    resolved_db_path = os.path.abspath(path)
+                    db_description = f"SQLite ({resolved_db_path}) with {count} students"
                     break
 
         # 3. PostgreSQL
@@ -185,26 +189,41 @@ class Command(BaseCommand):
 
         if dry_run:
             with transaction.atomic():
-                res_parents = AttendanceSyncService.sync_parents(connection=db_conn)
-                res_id_cards = AttendanceSyncService.sync_id_cards_and_photos(connection=db_conn)
+                res_parents = AttendanceSyncService.sync_parents(db_path=resolved_db_path, connection=db_conn)
+                res_id_cards = AttendanceSyncService.sync_id_cards_and_photos(db_path=resolved_db_path, connection=db_conn)
                 transaction.set_rollback(True)
         else:
-            res_parents = AttendanceSyncService.sync_parents(connection=db_conn)
-            res_id_cards = AttendanceSyncService.sync_id_cards_and_photos(connection=db_conn)
+            res_parents = AttendanceSyncService.sync_parents(db_path=resolved_db_path, connection=db_conn)
+            res_id_cards = AttendanceSyncService.sync_id_cards_and_photos(db_path=resolved_db_path, connection=db_conn)
 
         if not res_parents.get("success"):
             self.stderr.write(self.style.ERROR(f"[ERROR] Parent sync failed: {res_parents.get('error')}"))
             return
 
+        # Map photos to student roster
+        photo_map = {}
+        for s_info in res_id_cards.get("synced_students", []):
+            sid = s_info.get("student_id")
+            if sid:
+                photo_map[sid] = s_info
+
         roster = res_parents.get("updated_roster", [])
-        self.stdout.write(f"\n{'Student ID':<15} | {'Student Name':<25} | {'Parent / Sponsor':<25} | {'Relationship':<12} | {'Phone':<15}")
-        self.stdout.write("-" * 95)
+        self.stdout.write(f"\n{'Student ID':<14} | {'Student Name':<24} | {'Parent / Sponsor':<22} | {'Phone':<14} | {'Photo / ID Status':<22}")
+        self.stdout.write("-" * 105)
         for item in roster:
+            sid = item['student_id']
+            p_info = photo_map.get(sid, {})
+            has_photo = p_info.get("photo_synced", False)
+            if has_photo:
+                photo_status = "[OK] ID Card Ready"
+            else:
+                photo_status = "[!] Missing Photo"
+
             self.stdout.write(
-                f"{item['student_id']:<15} | {item['student_name']:<25} | {item['parent_name']:<25} | {item['relationship']:<12} | {item['parent_phone']:<15}"
+                f"{sid:<14} | {item['student_name']:<24} | {item['parent_name']:<22} | {item['parent_phone']:<14} | {photo_status:<22}"
             )
 
-        self.stdout.write("\n" + "=" * 55)
+        self.stdout.write("\n" + "=" * 60)
         self.stdout.write(self.style.SUCCESS(
             f"[OK] PARENT & ID CARD SYNC COMPLETED SUCCESSFULLY:\n"
             f" - Attendance Students Scanned: {res_parents.get('attendance_students_count', 0)}\n"
@@ -212,7 +231,7 @@ class Command(BaseCommand):
             f" - New Parents Created:          {res_parents.get('parents_created', 0)}\n"
             f" - Student Profiles Linked:       {res_parents.get('parents_linked', 0)}\n"
             f" - Student Photos Synced:        {res_id_cards.get('photos_synced', 0)}\n"
-            f" - Official ID Cards Approved:    {res_id_cards.get('approved_count', 0)}\n"
+            f" - Official ID Cards Ready:      {res_id_cards.get('approved_count', 0)}\n"
             f" - Date of Birth Synced:         {res_id_cards.get('dob_synced', 0)}"
         ))
-        self.stdout.write("=" * 55 + "\n")
+        self.stdout.write("=" * 60 + "\n")

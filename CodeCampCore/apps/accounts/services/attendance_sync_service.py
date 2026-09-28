@@ -50,28 +50,246 @@ class AttendanceSyncService:
 
     @classmethod
     def get_attendance_media_path(cls, db_path=None):
-        """Locates the media directory of the attendance system containing photos and QR codes."""
+        """Locates the primary media directory of the attendance system containing photos and QR codes."""
+        dirs = cls.get_all_attendance_media_dirs(db_path)
+        return dirs[0] if dirs else None
+
+    @classmethod
+    def get_all_attendance_media_dirs(cls, db_path=None):
+        """Returns all potential media directories for the attendance system in priority order."""
+        dirs = []
         env_media = getattr(settings, "ATTENDANCE_MEDIA_PATH", os.getenv("ATTENDANCE_MEDIA_PATH", ""))
         if env_media and os.path.exists(env_media):
-            return env_media
+            dirs.append(env_media)
 
         if db_path:
-            candidate = os.path.join(os.path.dirname(db_path), "media")
-            if os.path.exists(candidate):
-                return candidate
+            cand = os.path.join(os.path.dirname(db_path), "media")
+            if os.path.exists(cand) and cand not in dirs:
+                dirs.append(cand)
+            cand2 = os.path.join(os.path.dirname(os.path.dirname(db_path)), "media")
+            if os.path.exists(cand2) and cand2 not in dirs:
+                dirs.append(cand2)
 
         candidates = [
             "/var/www/codecamp2026/attendance-system/backend/media",
+            "/var/www/codecamp2026/attendance-system/media",
             "/var/www/attendance-system/backend/media",
+            "/var/www/attendance-system/media",
             "/var/www/attendance/backend/media",
+            "/var/www/attendance/media",
+            "/var/www/codecamp/attendance-system/backend/media",
+            "/var/www/codecamp2026/media",
             "C:/Projects/attendance-system/backend/media",
             "c:/Projects/attendance-system/backend/media",
+            "C:/Projects/codecamp2026/attendance-system/backend/media",
+            "c:/Projects/codecamp2026/attendance-system/backend/media",
             os.path.join(settings.BASE_DIR.parent, "attendance-system", "backend", "media"),
+            os.path.join(settings.BASE_DIR.parent, "attendance-system", "media"),
+            str(settings.BASE_DIR / "media"),
         ]
         for p in candidates:
-            if os.path.exists(p):
-                return p
+            if os.path.exists(p) and p not in dirs:
+                dirs.append(p)
+        return dirs
+
+    @classmethod
+    def find_student_photo_file(cls, student_id, first_name=None, last_name=None, db_photo=None, db_path=None):
+        """
+        Exhaustively scans all attendance media directories for the student's passport photo.
+        Checks:
+        1. Explicit DB photo path (if non-empty)
+        2. Exact student_id file (CDCP_000001.jpeg/png/jpg, CDCP-000001.jpg)
+        3. Numeric student suffix (000001.jpg, 1.jpeg)
+        4. Student full name (first_last.jpg)
+        5. Student first name (Diamond.jpeg, Favour.jpeg, Anuoluwapo.jpeg)
+        6. Student last name
+        """
+        clean_sid = (student_id or "").replace("-", "_").strip()
+        sid_num = clean_sid.split("_")[-1] if "_" in clean_sid else ""
+        fn = (first_name or "").strip().lower()
+        ln = (last_name or "").strip().lower()
+
+        media_roots = cls.get_all_attendance_media_dirs(db_path)
+
+        for m_root in media_roots:
+            # 1. Direct db_photo lookup
+            if db_photo:
+                rel = db_photo.lstrip("/").replace("\\", "/")
+                for candidate in [
+                    os.path.join(m_root, rel),
+                    os.path.join(m_root, "students", "photos", os.path.basename(rel)),
+                    os.path.join(m_root, "photos", os.path.basename(rel)),
+                    os.path.join(m_root, os.path.basename(rel)),
+                ]:
+                    if os.path.isfile(candidate):
+                        return candidate
+
+            search_subdirs = [
+                os.path.join(m_root, "students", "photos"),
+                os.path.join(m_root, "photos"),
+                os.path.join(m_root, "students"),
+                m_root,
+            ]
+
+            for s_dir in search_subdirs:
+                if not os.path.isdir(s_dir):
+                    continue
+                try:
+                    for fname in os.listdir(s_dir):
+                        f_path = os.path.join(s_dir, fname)
+                        if not os.path.isfile(f_path):
+                            continue
+                        name_no_ext = os.path.splitext(fname)[0]
+                        name_lower = name_no_ext.lower()
+
+                        # ID match (e.g. CDCP_000001 or CDCP-000001)
+                        if clean_sid and (name_lower == clean_sid.lower() or name_lower == (student_id or "").lower().replace("-", "")):
+                            return f_path
+                        # Number suffix match (e.g. 000001 or 1)
+                        if sid_num and (name_no_ext == sid_num or (sid_num.isdigit() and name_no_ext == str(int(sid_num)))):
+                            return f_path
+                        # Full name match (first_last)
+                        if fn and ln and (name_lower == f"{fn}_{ln}" or name_lower == f"{fn}{ln}"):
+                            return f_path
+                        # First name match (e.g. Diamond, Favour, Anuoluwapo)
+                        if fn and len(fn) > 2 and name_lower == fn:
+                            return f_path
+                        # Last name match
+                        if ln and len(ln) > 2 and name_lower == ln:
+                            return f_path
+                except Exception:
+                    continue
+
         return None
+
+    @classmethod
+    def _get_or_create_student_profile(cls, student_id, first_name, last_name, class_name=None, email=None, phone=None):
+        """
+        Locates or creates a CodeCampCore Profile (and User) for a student from attendance-system.
+        Guarantees that all 55 students exist in CodeCampCore with role='student' and official CDCP- ID.
+        """
+        from django.utils.text import slugify
+        from apps.courses.models import Course
+        from apps.scheduling.models import Batch
+        from apps.tenants.models import Tenant
+
+        fn = (first_name or "").strip()
+        ln = (last_name or "").strip()
+        student_id = (student_id or "").strip()
+        q = Profile.objects.filter(role="student")
+        profile = None
+
+        # 1. Match by external_attendance_id
+        if student_id:
+            profile = q.filter(external_attendance_id__iexact=student_id).first()
+            if not profile:
+                clean_sid = student_id.replace("-", "").upper()
+                for p_check in q.exclude(external_attendance_id=""):
+                    if p_check.external_attendance_id and p_check.external_attendance_id.replace("-", "").upper() == clean_sid:
+                        profile = p_check
+                        break
+
+        # 2. Match by exact first and last name
+        if not profile and fn and ln:
+            profile = q.filter(user__first_name__iexact=fn, user__last_name__iexact=ln).first()
+
+        # 3. Match by normalized username
+        if not profile and fn and ln:
+            clean_first = slugify(fn).replace("-", "")
+            clean_last = slugify(ln).replace("-", "")
+            if clean_first and clean_last:
+                profile = q.filter(user__username__in=[f"{clean_first}.{clean_last}", f"{clean_first}{clean_last}"]).first()
+
+        # 4. Partial name match
+        if not profile and fn:
+            for s in q.select_related("user"):
+                full_name = s.user.get_full_name().lower()
+                if fn.lower() in full_name and (not ln or ln.lower() in full_name):
+                    profile = s
+                    break
+
+        if profile:
+            updated = False
+            if student_id and profile.external_attendance_id != student_id:
+                profile.external_attendance_id = student_id
+                updated = True
+            if fn and not profile.user.first_name:
+                profile.user.first_name = fn
+                profile.user.save(update_fields=['first_name'])
+            if ln and not profile.user.last_name:
+                profile.user.last_name = ln
+                profile.user.save(update_fields=['last_name'])
+            if updated:
+                profile.save(update_fields=['external_attendance_id'])
+            return profile, False
+
+        # Create new student User + Profile
+        clean_first = slugify(fn).replace("-", "")
+        clean_last = slugify(ln).replace("-", "")
+        if clean_first and clean_last:
+            username_candidate = f"{clean_first}.{clean_last}"
+        elif clean_first:
+            username_candidate = clean_first
+        else:
+            clean_sid = student_id.lower().replace("-", "")
+            username_candidate = f"student_{clean_sid}"
+
+        unique_username = username_candidate
+        counter = 1
+        while User.objects.filter(username__iexact=unique_username).exists():
+            unique_username = f"{username_candidate}{counter}"
+            counter += 1
+
+        clean_sid = student_id.lower().replace("-", "")
+        final_email = email
+        if not final_email or User.objects.filter(email__iexact=final_email).exists():
+            final_email = f"{clean_sid}@student.codecamp.com.ng"
+
+        user = User.objects.create_user(
+            username=unique_username,
+            email=final_email,
+            password="CodeCamp@2026",
+            first_name=fn,
+            last_name=ln,
+        )
+
+        tenant = Tenant.objects.filter(is_default=True).first() or Tenant.objects.first()
+
+        # Resolve Course
+        target_course = None
+        c_name = (class_name or "").lower()
+        if "summer" in c_name or "innovator" in c_name or "teen" in c_name or "young" in c_name or "beginner" in c_name:
+            target_course = Course.objects.filter(name__icontains="innovator").first()
+        elif "python" in c_name or "advance" in c_name:
+            target_course = Course.objects.filter(name__icontains="python").first()
+        elif "data" in c_name:
+            target_course = Course.objects.filter(name__icontains="data").first()
+        elif "web" in c_name:
+            target_course = Course.objects.filter(name__icontains="web").first()
+
+        if not target_course:
+            target_course = Course.objects.filter(is_published=True).first() or Course.objects.first()
+
+        target_batch = None
+        if target_course:
+            target_batch = Batch.objects.filter(course=target_course, is_published=True).first()
+
+        profile, _ = Profile.objects.get_or_create(
+            user=user,
+            defaults={
+                'role': 'student',
+                'external_attendance_id': student_id,
+                'phone': phone or "",
+                'tenant': tenant,
+                'course': target_course,
+                'batch': target_batch,
+                'is_verified': True,
+                'is_approved': True,
+                'onboarding_stage': 'finished',
+            }
+        )
+
+        return profile, True
 
     _api_failed = False
 
@@ -860,7 +1078,13 @@ class AttendanceSyncService:
                             break
 
                 if not profile:
-                    continue
+                    profile, _ = cls._get_or_create_student_profile(
+                        student_id=student_id,
+                        first_name=fn,
+                        last_name=ln,
+                        email=p_email,
+                        phone=p_phone
+                    )
 
                 students_matched += 1
 
@@ -1038,7 +1262,11 @@ class AttendanceSyncService:
                             break
 
                 if not profile:
-                    continue
+                    profile, _ = cls._get_or_create_student_profile(
+                        student_id=student_id,
+                        first_name=fn,
+                        last_name=ln,
+                    )
 
                 students_matched += 1
                 updated_fields = []
@@ -1059,34 +1287,41 @@ class AttendanceSyncService:
                         profile.gender = g_clean
                         updated_fields.append("gender")
 
-                # 3. Sync Photo
+                # 3. Smart Photo Discovery & Sync
+                photo_file = cls.find_student_photo_file(
+                    student_id=student_id,
+                    first_name=fn,
+                    last_name=ln,
+                    db_photo=photo,
+                    db_path=db_path
+                )
                 photo_copied = False
-                if photo and media_dir:
-                    rel_path = photo.lstrip("/").replace("\\", "/")
-                    src_path = os.path.join(media_dir, rel_path)
-                    if not os.path.exists(src_path):
-                        src_path = os.path.join(media_dir, "students", "photos", os.path.basename(rel_path))
+                if photo_file and os.path.isfile(photo_file):
+                    clean_sid = (profile.external_attendance_id or student_id or f"student_{profile.user.id}").replace("-", "_")
+                    base_fname = os.path.basename(photo_file)
+                    dest_name = f"{clean_sid}_{base_fname}"
+                    dest_full = os.path.join(avatars_target_dir, dest_name)
 
-                    if os.path.exists(src_path):
-                        clean_sid = (profile.external_attendance_id or f"student_{profile.user.id}").replace("-", "_")
-                        base_fname = os.path.basename(src_path)
-                        dest_name = f"{clean_sid}_{base_fname}"
-                        dest_full = os.path.join(avatars_target_dir, dest_name)
-
-                        try:
-                            shutil.copy2(src_path, dest_full)
-                            profile.avatar = f"avatars/{dest_name}"
-                            updated_fields.append("avatar")
-                            photos_synced += 1
-                            photo_copied = True
-                        except Exception as copy_err:
-                            logger.warning(f"Error copying student photo for {student_id}: {copy_err}")
-
-                # 4. Approve ID card
-                if not profile.id_card_approved:
-                    profile.id_card_approved = True
-                    updated_fields.append("id_card_approved")
-                    approved_count += 1
+                    try:
+                        shutil.copy2(photo_file, dest_full)
+                        profile.avatar = f"avatars/{dest_name}"
+                        if not profile.id_card_approved:
+                            profile.id_card_approved = True
+                            approved_count += 1
+                        updated_fields.extend(["avatar", "id_card_approved"])
+                        photos_synced += 1
+                        photo_copied = True
+                    except Exception as copy_err:
+                        logger.warning(f"Error copying student photo for {student_id}: {copy_err}")
+                elif profile.has_custom_avatar:
+                    if not profile.id_card_approved:
+                        profile.id_card_approved = True
+                        updated_fields.append("id_card_approved")
+                        approved_count += 1
+                else:
+                    if profile.id_card_approved:
+                        profile.id_card_approved = False
+                        updated_fields.append("id_card_approved")
 
                 if updated_fields:
                     profile.save(update_fields=list(set(updated_fields)))
@@ -1095,6 +1330,7 @@ class AttendanceSyncService:
                     "student_id": profile.external_attendance_id or student_id,
                     "name": profile.user.get_full_name() or profile.user.username,
                     "photo_synced": photo_copied or profile.has_custom_avatar,
+                    "photo_file": os.path.basename(photo_file) if photo_file else None,
                     "id_card_approved": profile.id_card_approved,
                     "date_of_birth": profile.date_of_birth,
                     "gender": profile.gender,
