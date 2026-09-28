@@ -19,8 +19,8 @@ from django.utils import timezone
 @role_required('student')
 def choose_course(request):
     """
-    Allows a student to select a course track, curriculum subjects (compulsory vs selective),
-    and automatically joins an active cohort. Locks details unless 'change' is requested.
+    Allows a student to select or request a change for their course track.
+    All student course selections require Administrator approval before enrollment is confirmed.
     """
     profile = request.user.profile
     action = request.GET.get('action', '')
@@ -31,43 +31,21 @@ def choose_course(request):
 
         if course_id:
             course = get_object_or_404(Course, id=course_id)
-            profile.course = course
+            batch = Batch.objects.filter(course=course, mode=delivery_mode, is_published=True).first()
+            if not batch:
+                batch = Batch.objects.filter(course=course, is_published=True).first()
 
-            # Auto-join active cohort for this course if not already assigned to a batch in this course
-            if not profile.batch or profile.batch.course_id != course.id:
-                batch = Batch.objects.filter(course=course, mode=delivery_mode, is_published=True).first()
-                if not batch:
-                    batch = Batch.objects.filter(course=course, is_published=True).first()
-                if batch:
-                    profile.batch = batch
-
+            profile.pending_course = course
+            profile.pending_batch = batch
+            profile.course_approval_status = 'pending'
+            profile.course_change_requested_at = timezone.now()
             profile.save()
 
-            # Enroll in subjects: compulsory subjects are always auto-enrolled by model
-            selected_subjs = request.POST.getlist('subject_ids')
-            profile.enroll_in_course_subjects(selected_subjs if selected_subjs else None)
-
-            # Sync updated course and details with Attendance System
-            try:
-                from apps.accounts.services.attendance_sync_service import AttendanceSyncService
-                AttendanceSyncService.sync_or_register_student(profile)
-            except Exception:
-                pass
-
-            # Auto create or update pending payment invoice if fee applies
-            Payment.objects.get_or_create(
-                student=request.user,
-                course=course,
-                defaults={
-                    'batch': profile.batch,
-                    'amount_due': course.fee,
-                    'amount_paid': Decimal('0.00'),
-                    'monthly_payment': Decimal('35000.00') if course.fee >= 35000 else course.fee,
-                    'status': 'pending'
-                }
+            messages.info(
+                request,
+                f"📝 Your enrollment / course request for '{course.name}' has been submitted for administrator review. "
+                "Once approved, your timetable and class portal will be activated."
             )
-
-            messages.success(request, f"🎉 You have successfully enrolled in '{course.name}'! Your cohort and curriculum modules are now locked.")
             return redirect('choose_course')
 
     courses = Course.objects.filter(is_published=True).prefetch_related('subjects')
@@ -77,6 +55,8 @@ def choose_course(request):
         'profile': profile,
         'courses': courses,
         'current_course': profile.course,
+        'pending_course': profile.pending_course,
+        'course_approval_status': profile.course_approval_status,
         'current_batch': profile.batch,
         'current_enrolled_subject_ids': current_enrolled_subject_ids,
         'is_locked': bool(profile.course and action != 'change'),

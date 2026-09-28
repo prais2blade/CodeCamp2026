@@ -159,7 +159,9 @@ def debtors_ledger(request):
         month_filter = month_filter.strip()
     query = request.GET.get('q', '').strip()
 
-    payments_qs = Payment.objects.select_related(
+    payments_qs = Payment.objects.filter(
+        student__profile__student_status='active'
+    ).select_related(
         'student', 'student__profile', 'course', 'batch', 'verified_by'
     ).prefetch_related('receipts').order_by('-payment_date')
 

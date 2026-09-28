@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import uuid
 from django.conf import settings
+from decimal import Decimal
 from apps.courses.models import Subject
 
 ONBOARDING_STAGES = [
@@ -64,9 +65,11 @@ class Profile(models.Model):
     ]
 
     STUDENT_STATUS_CHOICES = [
+        ('inactive', 'Inactive / Pending Start'),
         ('active', 'Active Student'),
+        ('alumni', 'Alumni / Completed'),
         ('completed', 'Completed / Graduated'),
-        ('summer_alumni', 'Summer Alumni (Inactive)'),
+        ('summer_alumni', 'Summer Alumni (Archived)'),
         ('withdrawn', 'Withdrawn'),
     ]
 
@@ -75,8 +78,8 @@ class Profile(models.Model):
     student_status = models.CharField(
         max_length=20,
         choices=STUDENT_STATUS_CHOICES,
-        default='active',
-        help_text="Active vs Summer Alumni (Restricted to certificate/report until re-enrolled)."
+        default='inactive',
+        help_text="Student lifecycle status: Inactive, Active, or Alumni."
     )
     phone = models.CharField(max_length=20, blank=True)
     external_attendance_id = models.CharField(
@@ -107,11 +110,55 @@ class Profile(models.Model):
         null=True,
         blank=True
     )
+    pending_course = models.ForeignKey(
+        'courses.Course',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pending_students',
+        help_text="Course selected or requested by student awaiting admin approval."
+    )
     batch = models.ForeignKey(
         'scheduling.Batch',
         on_delete=models.SET_NULL,
         null=True,
         blank=True
+    )
+    pending_batch = models.ForeignKey(
+        'scheduling.Batch',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pending_students',
+        help_text="Cohort requested by student awaiting admin approval."
+    )
+    course_approval_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('none', 'None'),
+            ('pending', 'Pending Approval'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
+        ],
+        default='none',
+        help_text="Status of student course enrollment or change request."
+    )
+    course_change_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of latest course selection/change request."
+    )
+    discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Agreed tuition concession or scholarship discount."
+    )
+    discount_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Reason for discount e.g. Sibling, Early Bird, Staff Child."
     )
     assigned_tutor = models.ForeignKey(
         User,

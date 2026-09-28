@@ -1494,8 +1494,8 @@ def admin_dashboard(request):
     total_courses = Course.objects.count()
     total_batches = Batch.objects.count()
 
-    # Financials
-    fin_agg = Payment.objects.aggregate(
+    # Financials (strictly active students)
+    fin_agg = Payment.objects.filter(student__profile__student_status='active').aggregate(
         invoiced=Sum('amount_due'),
         collected=Sum('amount_paid')
     )
@@ -1520,7 +1520,7 @@ def admin_dashboard(request):
     # Students
     students = (
         Profile.objects.filter(role='student')
-        .select_related('user', 'course', 'batch', 'tenant', 'assigned_tutor', 'parent')
+        .select_related('user', 'course', 'batch', 'tenant', 'assigned_tutor', 'parent', 'pending_course', 'pending_batch')
         .order_by('-user__date_joined')
     )
     student_user_ids = [s.user_id for s in students]
@@ -1541,22 +1541,21 @@ def admin_dashboard(request):
         else:
             s.payment_pct = 0
 
-    total_summer_alumni = Profile.objects.filter(role='student', student_status='summer_alumni').count()
     total_active_students = Profile.objects.filter(role='student', student_status='active').count()
+    total_inactive_students = Profile.objects.filter(role='student', student_status__in=['inactive', 'pending']).count()
+    total_alumni_students = Profile.objects.filter(role='student', student_status__in=['alumni', 'summer_alumni', 'completed']).count()
+    total_pending_course_requests = Profile.objects.filter(role='student', course_approval_status='pending').count()
+    pending_approval_students = [s for s in students if s.course_approval_status == 'pending']
+    unassigned_students = [s for s in students if not s.course]
+    alumni_students = [s for s in students if s.student_status in ['alumni', 'summer_alumni', 'completed']]
 
     # Courses
     courses = Course.objects.all().prefetch_related('subjects', 'batches').order_by('name')
-    course_students_counts = {
-        item['course_id']: item['count']
-        for item in Profile.objects.filter(role='student', course__isnull=False).values('course_id').annotate(count=Count('id'))
-    }
-    course_cohort_counts = {
-        item['course_id']: item['count']
-        for item in Batch.objects.values('course_id').annotate(count=Count('id'))
-    }
     for c in courses:
-        c.student_count = course_students_counts.get(c.id, 0)
-        c.cohort_count = course_cohort_counts.get(c.id, 0)
+        c.student_list = [s for s in students if s.course_id == c.id]
+        c.student_count = len(c.student_list)
+        c.active_student_count = len([s for s in c.student_list if s.student_status == 'active'])
+        c.cohort_count = c.batches.count()
 
     # Batches / Cohorts
     batches = Batch.objects.all().select_related('course').order_by('course__name', 'mode', 'session_period')
@@ -1568,14 +1567,16 @@ def admin_dashboard(request):
         b.enrolled_count = batch_enrollment_counts.get(b.id, 0)
         b.occupancy_pct = min(100, round((b.enrolled_count / b.max_students) * 100, 1)) if b.max_students > 0 else 0
 
-    # Payments & Receipts
+    # Payments & Receipts (only active students)
     billing_month_filter = request.GET.get('billing_month')
     if billing_month_filter is None:
         billing_month_filter = 'September 2026'
     else:
         billing_month_filter = billing_month_filter.strip()
 
-    payments_qs = Payment.objects.all().select_related('student', 'course', 'batch').order_by('-payment_date')
+    payments_qs = Payment.objects.filter(
+        student__profile__student_status='active'
+    ).select_related('student', 'course', 'batch').order_by('-payment_date')
     if billing_month_filter:
         payments = payments_qs.filter(billing_month=billing_month_filter)[:100]
     else:
@@ -1667,6 +1668,13 @@ def admin_dashboard(request):
 
         # Datasets
         "students": students,
+        "total_active_students": total_active_students,
+        "total_inactive_students": total_inactive_students,
+        "total_alumni_students": total_alumni_students,
+        "total_pending_course_requests": total_pending_course_requests,
+        "pending_approval_students": pending_approval_students,
+        "unassigned_students": unassigned_students,
+        "alumni_students": alumni_students,
         "courses": courses,
         "batches": batches,
         "payments": payments,
@@ -1971,6 +1979,248 @@ def admin_student_update_batch(request, profile_id):
             new_batch.check_capacity()
 
         messages.success(request, f"Cohort & Tutor updated for {profile.user.username}.")
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+
+
+@login_required
+def admin_edit_student_profile(request, profile_id):
+    """
+    Comprehensive administrator editor for any student profile.
+    Allows changing course, cohort, tutor, status, start date, discount, and personal info.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    profile = get_object_or_404(Profile, id=profile_id)
+    user = profile.user
+
+    if request.method == "POST":
+        # 1. User basic details
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if email and email.lower() != user.email.lower():
+            if not User.objects.filter(email__iexact=email).exclude(id=user.id).exists():
+                user.email = email
+            else:
+                messages.warning(request, f"Email '{email}' is already in use by another account.")
+        user.save()
+
+        # 2. Profile Details
+        phone = request.POST.get('phone', '').strip()
+        gender = request.POST.get('gender', '').strip()
+        dob_raw = request.POST.get('date_of_birth', '').strip()
+        student_status = request.POST.get('student_status', profile.student_status).strip()
+        start_date_raw = request.POST.get('start_date', '').strip()
+        discount_raw = request.POST.get('discount', '0').strip()
+        discount_reason = request.POST.get('discount_reason', '').strip()
+
+        profile.phone = phone
+        if gender in ['Male', 'Female', 'Other']:
+            profile.gender = gender
+
+        if dob_raw:
+            try:
+                import datetime
+                profile.date_of_birth = datetime.date.fromisoformat(dob_raw)
+            except ValueError:
+                pass
+
+        if start_date_raw:
+            try:
+                import datetime
+                profile.start_date = datetime.date.fromisoformat(start_date_raw)
+            except ValueError:
+                pass
+
+        try:
+            profile.discount = Decimal(discount_raw) if discount_raw else Decimal('0.00')
+        except Exception:
+            pass
+        profile.discount_reason = discount_reason
+
+        # 3. Course Assignment
+        course_id = request.POST.get('course_id')
+        new_course = Course.objects.filter(id=course_id).first() if course_id else None
+        profile.course = new_course
+        if new_course:
+            profile.course_approval_status = 'approved'
+            profile.pending_course = None
+            profile.pending_batch = None
+            profile.enroll_in_course_subjects()
+
+        # 4. Batch & Tutor Assignment
+        batch_id = request.POST.get('batch_id')
+        new_batch = Batch.objects.filter(id=batch_id).first() if batch_id else None
+        profile.batch = new_batch
+
+        tutor_id = request.POST.get('assigned_tutor_id')
+        profile.assigned_tutor = User.objects.filter(id=tutor_id).first() if tutor_id else None
+
+        # 5. Lifecycle Status
+        if student_status in ['active', 'inactive', 'alumni', 'summer_alumni', 'completed', 'withdrawn']:
+            profile.student_status = student_status
+
+        profile.save()
+
+        # 6. Automatic Tuition Invoice when student is active and has an approved course
+        if profile.student_status == 'active' and profile.course:
+            course_fee = profile.course.fee
+            net_due = max(Decimal('0.00'), course_fee - profile.discount)
+            current_month = 'September 2026'
+            payment, created = Payment.objects.get_or_create(
+                student=user,
+                billing_month=current_month,
+                defaults={
+                    'course': profile.course,
+                    'batch': profile.batch,
+                    'amount_due': net_due,
+                    'discount': profile.discount,
+                    'discount_reason': profile.discount_reason,
+                    'amount_paid': Decimal('0.00'),
+                    'status': 'pending',
+                }
+            )
+            if not created:
+                payment.course = profile.course
+                payment.batch = profile.batch
+                payment.amount_due = course_fee
+                payment.discount = profile.discount
+                payment.discount_reason = profile.discount_reason
+                payment.update_status()
+
+        # 7. Sync with attendance system if ID exists
+        if profile.external_attendance_id:
+            try:
+                from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+                AttendanceSyncService.sync_or_register_student(profile)
+            except Exception:
+                pass
+
+        messages.success(request, f"Updated profile for {user.get_full_name() or user.username} successfully.")
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+
+
+@login_required
+def admin_approve_course_change(request, profile_id):
+    """Admin one-click approval for a student's pending course enrollment or change."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    profile = get_object_or_404(Profile, id=profile_id)
+    if profile.pending_course:
+        target_course = profile.pending_course
+        profile.course = target_course
+        if profile.pending_batch:
+            profile.batch = profile.pending_batch
+        elif not profile.batch or profile.batch.course_id != target_course.id:
+            profile.batch = Batch.objects.filter(course=target_course, is_published=True).first()
+
+        profile.pending_course = None
+        profile.pending_batch = None
+        profile.course_approval_status = 'approved'
+
+        # If student was inactive or alumni, activate them upon course approval
+        activate = request.POST.get('activate', '1') in ['1', 'true', 'on']
+        if activate:
+            profile.student_status = 'active'
+
+        profile.enroll_in_course_subjects()
+        profile.save()
+
+        # Generate / update current tuition invoice
+        if profile.student_status == 'active' and profile.course:
+            net_due = max(Decimal('0.00'), profile.course.fee - profile.discount)
+            payment, created = Payment.objects.get_or_create(
+                student=profile.user,
+                billing_month='September 2026',
+                defaults={
+                    'course': profile.course,
+                    'batch': profile.batch,
+                    'amount_due': net_due,
+                    'discount': profile.discount,
+                    'discount_reason': profile.discount_reason,
+                    'amount_paid': Decimal('0.00'),
+                    'status': 'pending',
+                }
+            )
+            if not created:
+                payment.course = profile.course
+                payment.batch = profile.batch
+                payment.amount_due = profile.course.fee
+                payment.discount = profile.discount
+                payment.update_status()
+
+        messages.success(request, f"Approved course '{target_course.name}' for {profile.user.get_full_name() or profile.user.username} (Status: {profile.get_student_status_display()}).")
+    else:
+        messages.info(request, "No pending course selection found for this student.")
+
+    return redirect('/account/admin/dashboard/#students')
+
+
+@login_required
+def admin_reject_course_change(request, profile_id):
+    """Admin rejection for a student's pending course request."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    profile = get_object_or_404(Profile, id=profile_id)
+    req_name = profile.pending_course.name if profile.pending_course else 'requested course'
+    profile.pending_course = None
+    profile.pending_batch = None
+    profile.course_approval_status = 'rejected'
+    profile.save(update_fields=['pending_course', 'pending_batch', 'course_approval_status'])
+
+    messages.warning(request, f"Declined course request for '{req_name}' by {profile.user.get_full_name() or profile.user.username}.")
+    return redirect('/account/admin/dashboard/#students')
+
+
+@login_required
+def admin_reset_session(request):
+    """
+    Clears all previous payments/receipts, resets student financial balances to 0,
+    and sets all students to 'inactive' status so the admin can activate them fresh.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        confirm_text = request.POST.get('confirm_text', '').strip()
+        if confirm_text != 'RESET':
+            messages.error(request, "Confirmation phrase did not match 'RESET'. Operation aborted.")
+            return redirect('/account/admin/dashboard/#billing')
+
+        # 1. Delete all payments & receipts
+        num_receipts, _ = Receipt.objects.all().delete()
+        num_payments, _ = Payment.objects.all().delete()
+
+        # 2. Reset all student profiles to inactive and 0 balance
+        updated_count = Profile.objects.filter(role='student').update(
+            student_status='inactive',
+            paid_amount=Decimal('0.00'),
+            has_paid=False,
+            tuition_paid=False,
+            course_approval_status='none',
+            pending_course=None,
+            pending_batch=None
+        )
+
+        messages.success(
+            request,
+            f"Fresh Session Reset Complete! Cleared {num_payments} payment records, {num_receipts} receipts, and set {updated_count} students to Inactive. You can now activate students one by one as they start."
+        )
         return redirect('/account/admin/dashboard/#students')
 
     return redirect('admin_dashboard')

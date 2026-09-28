@@ -21,6 +21,48 @@ Program Track & Enrollment
   </div>
   {% endif %}
 
+  {% if pending_course and course_approval_status == 'pending' %}
+  <!-- Course Request Pending Admin Approval Banner -->
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 6px solid #f59e0b !important;">
+    <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="d-flex align-items-center">
+        <div class="mr-3 p-3 rounded-circle bg-warning text-dark font-weight-bold shadow-2xs">
+          <i class="fas fa-hourglass-half fa-2x"></i>
+        </div>
+        <div>
+          <span class="badge badge-warning text-dark font-weight-bold px-2 py-1 text-uppercase mb-1" style="font-size: 0.75rem;">
+            Awaiting Admin Review
+          </span>
+          <h4 class="font-weight-bold text-dark mb-1">
+            Enrollment Request: <span class="text-primary">{{ pending_course.name }}</span>
+          </h4>
+          <p class="text-muted small mb-0">
+            You requested enrollment in <strong>{{ pending_course.name }}</strong>. Your course assignment is currently pending administrator verification.
+            Once approved by the Academy, your official timetable, subjects, and classroom dashboard will unlock automatically.
+          </p>
+        </div>
+      </div>
+      <div>
+        <span class="badge badge-warning text-dark px-3 py-2 font-weight-bold shadow-2xs" style="font-size: 0.92rem; border-radius: 20px;">
+          <i class="fas fa-clock mr-1"></i> Pending Approval
+        </span>
+      </div>
+    </div>
+  </div>
+  {% elif course_approval_status == 'rejected' %}
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: #fef2f2; border-left: 6px solid #ef4444 !important;">
+    <div class="card-body p-3 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-exclamation-circle text-danger fa-2x mr-3"></i>
+        <div>
+          <h6 class="font-weight-bold text-dark mb-0">Previous Course Change Request Not Approved</h6>
+          <p class="text-muted small mb-0">Your previous course request was not approved. Please choose another program track below or contact the hub administrator.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Header Banner -->
   <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4338ca 100%); border-radius: 16px;">
     <div class="card-body p-4 p-md-5">
