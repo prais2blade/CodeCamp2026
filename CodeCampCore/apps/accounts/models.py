@@ -132,14 +132,15 @@ class Profile(models.Model):
         related_name='pending_students',
         help_text="Cohort requested by student awaiting admin approval."
     )
+    COURSE_APPROVAL_CHOICES = [
+        ('none', 'None'),
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
     course_approval_status = models.CharField(
         max_length=20,
-        choices=[
-            ('none', 'None'),
-            ('pending', 'Pending Approval'),
-            ('approved', 'Approved'),
-            ('rejected', 'Rejected'),
-        ],
+        choices=COURSE_APPROVAL_CHOICES,
         default='none',
         help_text="Status of student course enrollment or change request."
     )
