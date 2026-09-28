@@ -185,16 +185,18 @@ class Command(BaseCommand):
 
         if dry_run:
             with transaction.atomic():
-                res = AttendanceSyncService.sync_parents(connection=db_conn)
+                res_parents = AttendanceSyncService.sync_parents(connection=db_conn)
+                res_id_cards = AttendanceSyncService.sync_id_cards_and_photos(connection=db_conn)
                 transaction.set_rollback(True)
         else:
-            res = AttendanceSyncService.sync_parents(connection=db_conn)
+            res_parents = AttendanceSyncService.sync_parents(connection=db_conn)
+            res_id_cards = AttendanceSyncService.sync_id_cards_and_photos(connection=db_conn)
 
-        if not res.get("success"):
-            self.stderr.write(self.style.ERROR(f"[ERROR] Parent sync failed: {res.get('error')}"))
+        if not res_parents.get("success"):
+            self.stderr.write(self.style.ERROR(f"[ERROR] Parent sync failed: {res_parents.get('error')}"))
             return
 
-        roster = res.get("updated_roster", [])
+        roster = res_parents.get("updated_roster", [])
         self.stdout.write(f"\n{'Student ID':<15} | {'Student Name':<25} | {'Parent / Sponsor':<25} | {'Relationship':<12} | {'Phone':<15}")
         self.stdout.write("-" * 95)
         for item in roster:
@@ -202,12 +204,15 @@ class Command(BaseCommand):
                 f"{item['student_id']:<15} | {item['student_name']:<25} | {item['parent_name']:<25} | {item['relationship']:<12} | {item['parent_phone']:<15}"
             )
 
-        self.stdout.write("\n" + "=" * 50)
+        self.stdout.write("\n" + "=" * 55)
         self.stdout.write(self.style.SUCCESS(
-            f"[OK] PARENT SYNC COMPLETED SUCCESSFULLY:\n"
-            f" - Attendance Students Scanned: {res.get('attendance_students_count', 0)}\n"
-            f" - Matched CodeCampCore Profiles: {res.get('students_matched', 0)}\n"
-            f" - New Parents Created:          {res.get('parents_created', 0)}\n"
-            f" - Student Profiles Linked:       {res.get('parents_linked', 0)}"
+            f"[OK] PARENT & ID CARD SYNC COMPLETED SUCCESSFULLY:\n"
+            f" - Attendance Students Scanned: {res_parents.get('attendance_students_count', 0)}\n"
+            f" - Matched CodeCampCore Profiles: {res_parents.get('students_matched', 0)}\n"
+            f" - New Parents Created:          {res_parents.get('parents_created', 0)}\n"
+            f" - Student Profiles Linked:       {res_parents.get('parents_linked', 0)}\n"
+            f" - Student Photos Synced:        {res_id_cards.get('photos_synced', 0)}\n"
+            f" - Official ID Cards Approved:    {res_id_cards.get('approved_count', 0)}\n"
+            f" - Date of Birth Synced:         {res_id_cards.get('dob_synced', 0)}"
         ))
-        self.stdout.write("=" * 50 + "\n")
+        self.stdout.write("=" * 55 + "\n")

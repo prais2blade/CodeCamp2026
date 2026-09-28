@@ -1,4 +1,5 @@
 import os
+import shutil
 import sqlite3
 import logging
 import json
@@ -37,6 +38,7 @@ class AttendanceSyncService:
             "c:/Projects/attendance-system/backend/db.sqlite3",
             os.path.join(settings.BASE_DIR.parent, "attendance-system", "backend", "db.sqlite3"),
             # Linux VPS Production paths
+            "/var/www/codecamp2026/attendance-system/backend/db.sqlite3",
             "/var/www/attendance-system/backend/db.sqlite3",
             "/var/www/attendance/backend/db.sqlite3",
             "/var/www/codecamp2026/attendance/backend/db.sqlite3",
@@ -44,6 +46,31 @@ class AttendanceSyncService:
         for path in candidates:
             if os.path.exists(path):
                 return path
+        return None
+
+    @classmethod
+    def get_attendance_media_path(cls, db_path=None):
+        """Locates the media directory of the attendance system containing photos and QR codes."""
+        env_media = getattr(settings, "ATTENDANCE_MEDIA_PATH", os.getenv("ATTENDANCE_MEDIA_PATH", ""))
+        if env_media and os.path.exists(env_media):
+            return env_media
+
+        if db_path:
+            candidate = os.path.join(os.path.dirname(db_path), "media")
+            if os.path.exists(candidate):
+                return candidate
+
+        candidates = [
+            "/var/www/codecamp2026/attendance-system/backend/media",
+            "/var/www/attendance-system/backend/media",
+            "/var/www/attendance/backend/media",
+            "C:/Projects/attendance-system/backend/media",
+            "c:/Projects/attendance-system/backend/media",
+            os.path.join(settings.BASE_DIR.parent, "attendance-system", "backend", "media"),
+        ]
+        for p in candidates:
+            if os.path.exists(p):
+                return p
         return None
 
     _api_failed = False
@@ -935,19 +962,179 @@ class AttendanceSyncService:
                     pass
 
     @classmethod
+    def sync_id_cards_and_photos(cls, db_path=None, connection=None):
+        """
+        Pulls student passport photographs, date of birth, and gender from the
+        attendance system into CodeCampCore profiles, and marks
+        profile.id_card_approved = True so their official CodeCamp ID Card is ready.
+        """
+        should_close = False
+        conn = connection
+        if conn is None:
+            db_path = db_path or cls.get_attendance_db_path()
+            if not db_path or not os.path.exists(db_path):
+                return {"count": 0, "error": "Attendance database not found"}
+            try:
+                conn = sqlite3.connect(db_path, timeout=5)
+                should_close = True
+            except Exception as exc:
+                return {"count": 0, "error": str(exc)}
+
+        media_dir = cls.get_attendance_media_path(db_path)
+        avatars_target_dir = os.path.join(settings.MEDIA_ROOT, "avatars")
+        os.makedirs(avatars_target_dir, exist_ok=True)
+
+        photos_synced = 0
+        dob_synced = 0
+        approved_count = 0
+        students_matched = 0
+        synced_students = []
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                SELECT student_id, first_name, last_name, photo, qr_code, date_of_birth, gender
+                FROM students_student
+                ORDER BY id ASC
+            """
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            for row in rows:
+                if isinstance(row, dict):
+                    student_id = row.get("student_id")
+                    fn = row.get("first_name")
+                    ln = row.get("last_name")
+                    photo = row.get("photo")
+                    qr_code = row.get("qr_code")
+                    dob = row.get("date_of_birth")
+                    gender = row.get("gender")
+                else:
+                    student_id, fn, ln, photo, qr_code, dob, gender = row
+
+                fn = (fn or "").strip()
+                ln = (ln or "").strip()
+                student_id = (student_id or "").strip()
+
+                q = Profile.objects.filter(role="student")
+                profile = None
+
+                if student_id:
+                    profile = q.filter(external_attendance_id__iexact=student_id).first()
+
+                if not profile and fn and ln:
+                    profile = q.filter(user__first_name__iexact=fn, user__last_name__iexact=ln).first()
+
+                if not profile and fn and ln:
+                    normalized_user = f"{fn.lower()}.{ln.lower()}"
+                    combo_user = f"{fn.lower()}{ln.lower()}"
+                    profile = q.filter(user__username__in=[normalized_user, combo_user]).first()
+
+                if not profile and fn:
+                    for s in q.select_related("user"):
+                        full_name = s.user.get_full_name().lower()
+                        if fn.lower() in full_name and (not ln or ln.lower() in full_name):
+                            profile = s
+                            break
+
+                if not profile:
+                    continue
+
+                students_matched += 1
+                updated_fields = []
+
+                # 1. Sync Date of Birth
+                if dob and not profile.date_of_birth:
+                    try:
+                        profile.date_of_birth = dob
+                        updated_fields.append("date_of_birth")
+                        dob_synced += 1
+                    except Exception:
+                        pass
+
+                # 2. Sync Gender
+                if gender and not profile.gender:
+                    g_clean = gender.strip().capitalize()
+                    if g_clean in ["Male", "Female"]:
+                        profile.gender = g_clean
+                        updated_fields.append("gender")
+
+                # 3. Sync Photo
+                photo_copied = False
+                if photo and media_dir:
+                    rel_path = photo.lstrip("/").replace("\\", "/")
+                    src_path = os.path.join(media_dir, rel_path)
+                    if not os.path.exists(src_path):
+                        src_path = os.path.join(media_dir, "students", "photos", os.path.basename(rel_path))
+
+                    if os.path.exists(src_path):
+                        clean_sid = (profile.external_attendance_id or f"student_{profile.user.id}").replace("-", "_")
+                        base_fname = os.path.basename(src_path)
+                        dest_name = f"{clean_sid}_{base_fname}"
+                        dest_full = os.path.join(avatars_target_dir, dest_name)
+
+                        try:
+                            shutil.copy2(src_path, dest_full)
+                            profile.avatar = f"avatars/{dest_name}"
+                            updated_fields.append("avatar")
+                            photos_synced += 1
+                            photo_copied = True
+                        except Exception as copy_err:
+                            logger.warning(f"Error copying student photo for {student_id}: {copy_err}")
+
+                # 4. Approve ID card
+                if not profile.id_card_approved:
+                    profile.id_card_approved = True
+                    updated_fields.append("id_card_approved")
+                    approved_count += 1
+
+                if updated_fields:
+                    profile.save(update_fields=list(set(updated_fields)))
+
+                synced_students.append({
+                    "student_id": profile.external_attendance_id or student_id,
+                    "name": profile.user.get_full_name() or profile.user.username,
+                    "photo_synced": photo_copied or profile.has_custom_avatar,
+                    "id_card_approved": profile.id_card_approved,
+                    "date_of_birth": profile.date_of_birth,
+                    "gender": profile.gender,
+                })
+
+            return {
+                "success": True,
+                "attendance_students_count": len(rows),
+                "students_matched": students_matched,
+                "photos_synced": photos_synced,
+                "approved_count": approved_count,
+                "dob_synced": dob_synced,
+                "synced_students": synced_students,
+            }
+        except Exception as exc:
+            logger.error(f"Error syncing ID cards/photos: {exc}")
+            return {"success": False, "error": str(exc)}
+        finally:
+            if should_close and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+    @classmethod
     def sync_all(cls):
         """
         Runs comprehensive two-way synchronization:
         1. Syncs faculty tutors.
         2. Pulls official student IDs from attendance system into CodeCampCore.
         3. Pulls parent/guardian records and links them to students in CodeCampCore.
-        4. Pushes/registers any students in CodeCampCore missing CDCP- IDs into the attendance system.
-        5. Updates class/active status details across both systems.
+        4. Pulls student passport photos and enables ID cards.
+        5. Pushes/registers any students in CodeCampCore missing CDCP- IDs into the attendance system.
+        6. Updates class/active status details across both systems.
         """
         db_path = cls.get_attendance_db_path()
         tutor_res = cls.sync_tutors(db_path)
         pull_student_res = cls.sync_student_ids(db_path)
         parent_res = cls.sync_parents(db_path)
+        id_card_res = cls.sync_id_cards_and_photos(db_path)
 
         # Push / Backfill sync: ensure every single CodeCampCore student has an official CDCP- ID and attendance record
         pushed_count = 0
@@ -965,5 +1152,6 @@ class AttendanceSyncService:
             "tutors": tutor_res,
             "students": pull_student_res,
             "parents": parent_res,
+            "id_cards": id_card_res,
             "pushed_students_count": pushed_count,
         }
