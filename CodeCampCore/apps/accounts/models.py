@@ -167,7 +167,34 @@ class Profile(models.Model):
 
     @property
     def has_custom_avatar(self):
-        return bool(self.avatar and self.avatar.name and not self.avatar.name.endswith('default.png'))
+        if bool(self.avatar and self.avatar.name and not self.avatar.name.endswith('default.png')):
+            return True
+        # Automatic fallback: if staff took photo on attendance system, link it automatically
+        if self.external_attendance_id:
+            try:
+                from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+                photo_file = AttendanceSyncService.find_student_photo_file(
+                    student_id=self.external_attendance_id,
+                    first_name=self.user.first_name if self.user else None,
+                    last_name=self.user.last_name if self.user else None,
+                )
+                if photo_file and os.path.isfile(photo_file):
+                    import shutil
+                    avatars_target_dir = os.path.join(settings.MEDIA_ROOT, "avatars")
+                    os.makedirs(avatars_target_dir, exist_ok=True)
+                    clean_sid = self.external_attendance_id.replace("-", "_")
+                    base_fname = os.path.basename(photo_file)
+                    dest_name = f"{clean_sid}_{base_fname}"
+                    dest_full = os.path.join(avatars_target_dir, dest_name)
+                    if not os.path.exists(dest_full):
+                        shutil.copy2(photo_file, dest_full)
+                    self.avatar = f"avatars/{dest_name}"
+                    self.id_card_approved = True
+                    self.save(update_fields=['avatar', 'id_card_approved'])
+                    return True
+            except Exception:
+                pass
+        return False
 
     @property
     def parent_display(self):

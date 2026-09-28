@@ -125,7 +125,21 @@ class StudentAdapter:
     def photo(self):
         if hasattr(self.profile, 'avatar') and self.profile.avatar:
             return self.profile.avatar
-        return getattr(self.profile, 'photo', None)
+        photo_attr = getattr(self.profile, 'photo', None)
+        if photo_attr:
+            return photo_attr
+        sid = getattr(self, 'student_id', None)
+        if sid:
+            try:
+                from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+                return AttendanceSyncService.find_student_photo_file(
+                    student_id=sid,
+                    first_name=self.first_name,
+                    last_name=self.last_name,
+                )
+            except Exception:
+                pass
+        return None
 
     @property
     def qr_code(self):
