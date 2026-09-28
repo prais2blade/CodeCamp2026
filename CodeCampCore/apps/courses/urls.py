@@ -11,8 +11,9 @@ urlpatterns = [
     path('create/', views.course_create, name='course_create'),
     path('edit/<int:pk>/', views.course_edit, name='course_edit'),
 
-    # Existing toggle
+    # Existing toggle & delete
     path('toggle/<int:course_id>/', views.toggle_course_status, name='toggle_course_status'),
+    path('delete/<int:course_id>/', views.course_delete, name='course_delete'),
     
     # SUBJECT MANAGEMENT
     path('subjects/<int:course_id>/', views.manage_subjects, name='manage_subjects'),

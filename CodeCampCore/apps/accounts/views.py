@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
+from django.db import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -105,6 +106,54 @@ def register_view(request):
             if not batch:
                 batch = Batch.objects.filter(course=course, is_published=True).first()
 
+        # Parent / Guardian details & Multi-child linking
+        applicant_type = request.POST.get('applicant_type', 'parent')
+        date_of_birth = request.POST.get('date_of_birth', '').strip() or None
+        gender = request.POST.get('gender', '').strip()
+        avatar = request.FILES.get('avatar')
+        parent_title = request.POST.get('parent_title', 'Mr').strip()
+        parent_name = request.POST.get('parent_name', '').strip()
+        parent_phone = request.POST.get('parent_phone', '').strip()
+        parent_email = request.POST.get('parent_email', '').strip()
+        relationship = request.POST.get('relationship', 'Guardian').strip()
+
+        if applicant_type == 'self':
+            parent_name = full_name
+            parent_phone = phone
+            parent_email = email
+            relationship = 'Self'
+
+        parent = None
+        target_phone = parent_phone or phone
+        if target_phone:
+            from apps.accounts.models import Parent
+            parent = Parent.objects.filter(phone_number=target_phone).first()
+            if not parent and parent_email:
+                parent = Parent.objects.filter(email=parent_email).first()
+
+            if parent:
+                if parent_name and parent.full_name != parent_name:
+                    parent.full_name = parent_name
+                if parent_email and not parent.email:
+                    parent.email = parent_email
+                parent.save()
+            else:
+                parent = Parent.objects.create(
+                    title=parent_title,
+                    full_name=parent_name or full_name,
+                    phone_number=target_phone,
+                    whatsapp_number=target_phone,
+                    email=parent_email,
+                )
+
+            # Store in session for easy sibling/multi-child enrollment
+            request.session['last_registered_parent'] = {
+                'title': parent.title,
+                'name': parent.full_name,
+                'phone': parent.phone_number,
+                'email': parent.email,
+            }
+
         # 🔒 Ensure profile exists and is correct
         profile, created = Profile.objects.get_or_create(
             user=user,
@@ -116,18 +165,35 @@ def register_view(request):
                 'is_verified': False,
                 'onboarding_stage': 'email_pending',
                 'total_fee': course.fee if course else Decimal('35000.00'),
+                'parent': parent,
+                'relationship_to_parent': relationship,
+                'date_of_birth': date_of_birth,
+                'gender': gender,
             }
         )
-        if not created:
-            profile.phone = phone
-            profile.course = course
-            profile.batch = batch
-            profile.save()
+        profile.phone = phone
+        profile.course = course
+        profile.batch = batch
+        profile.parent = parent
+        profile.relationship_to_parent = relationship
+        profile.date_of_birth = date_of_birth
+        profile.gender = gender
+        if avatar:
+            profile.avatar = avatar
+            profile.id_card_approved = False
+        profile.save()
 
         # Enroll in course curriculum subjects
         if course:
             selected_subjs = request.POST.getlist('subject_ids')
             profile.enroll_in_course_subjects(selected_subjs if selected_subjs else None)
+
+        # Synchronize with Attendance System immediately to acquire official CDCP- student ID
+        try:
+            from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+            AttendanceSyncService.sync_or_register_student(profile)
+        except Exception:
+            pass
 
         # Initialize Payment Record
         if course:
@@ -166,15 +232,20 @@ def register_view(request):
         except Exception:
             pass
 
+        # Store user ID in session to support cross-device auto-redirection on the waiting screen
+        request.session['pending_verification_user_id'] = user.id
+
         messages.success(
             request,
             "Application created successfully! Please check your email to verify your account."
         )
         return redirect('verify_email_sent')
 
+    last_parent = request.session.get('last_registered_parent', {})
     return render(request, 'accounts/register.html', {
         'courses': courses,
         'selected_course_slug': selected_course_slug,
+        'last_parent': last_parent,
     })
 
 
@@ -328,24 +399,26 @@ def verify_email(request, token):
     try:
         profile = Profile.objects.get(verification_token=token)
 
-        # Prevent double verification
+        # Handle already verified accounts
         if profile.is_verified:
-            messages.info(request, "Your email is already verified. Please log in.")
-            return redirect('login')
+            if not request.user.is_authenticated:
+                login(request, profile.user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.info(request, "Your email is verified. Welcome to your student dashboard!")
+            return redirect('student_dashboard')
 
         # Mark email as verified
         profile.is_verified = True
-
-        # ✅ Correct onboarding transition
-        profile.onboarding_stage = 'welcome'
-
+        profile.onboarding_stage = 'finished'
         profile.save()
+
+        # ✅ Auto-login user on whichever device opened this verification link
+        login(request, profile.user, backend='django.contrib.auth.backends.ModelBackend')
 
         messages.success(
             request,
-            "Your email has been verified successfully. Please log in to continue."
+            f"🎉 Congratulations {profile.user.first_name or profile.user.username}! Your email has been verified. Welcome to CodeCamp Innovation Hub!"
         )
-        return redirect('login')
+        return redirect('student_dashboard')
 
     except Profile.DoesNotExist:
         messages.error(
@@ -354,6 +427,27 @@ def verify_email(request, token):
         )
         return redirect('login')
 
+
+def check_verification_status(request):
+    """
+    AJAX endpoint polled by verify_email_sent.
+    If the student verified their email on a mobile device or other browser,
+    this automatically logs them in on the waiting screen and redirects to their dashboard.
+    """
+    user_id = request.session.get('pending_verification_user_id')
+    if not user_id:
+        return JsonResponse({'verified': False})
+
+    profile = Profile.objects.filter(user_id=user_id).first()
+    if profile and profile.is_verified:
+        login(request, profile.user, backend='django.contrib.auth.backends.ModelBackend')
+        request.session.pop('pending_verification_user_id', None)
+        return JsonResponse({
+            'verified': True,
+            'redirect_url': reverse('student_dashboard')
+        })
+
+    return JsonResponse({'verified': False})
 
 
 def verify_email_sent(request):
@@ -453,6 +547,8 @@ def student_dashboard(request):
 
     context = {
         "summary": summary,
+        "profile": profile,
+        "enrolled_subjects": profile.enrolled_subjects.all().order_by('-is_compulsory', 'name') if profile.course else [],
         "subject_name": json.dumps(subject_names),
         "data_present": json.dumps(data_present),
         "data_absent": json.dumps(data_absent),
@@ -541,6 +637,13 @@ def student_continue_registration(request):
         if batch:
             profile.batch = batch
         profile.save(update_fields=['course', 'batch'])
+
+        # Synchronize course change with Attendance System
+        try:
+            from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+            AttendanceSyncService.sync_or_register_student(profile)
+        except Exception:
+            pass
 
         # Create new term Payment invoice
         payment, created = Payment.objects.get_or_create(
@@ -1274,9 +1377,64 @@ def student_profile(request):
 def edit_profile(request):
     profile = request.user.profile
     if request.method == 'POST':
-        profile.phone = request.POST.get('phone')
+        profile.phone = request.POST.get('phone', profile.phone)
+        dob = request.POST.get('date_of_birth')
+        if dob:
+            profile.date_of_birth = dob
+        gender = request.POST.get('gender')
+        if gender in ['male', 'female', 'other']:
+            profile.gender = gender
+
+        # Avatar / Passport photo upload
+        photo_uploaded = False
+        if 'avatar' in request.FILES:
+            profile.avatar = request.FILES['avatar']
+            profile.id_card_approved = True
+            photo_uploaded = True
+
+        # Parent / Guardian details update
+        parent_name = request.POST.get('parent_name', '').strip()
+        parent_phone = request.POST.get('parent_phone', '').strip()
+        parent_email = request.POST.get('parent_email', '').strip()
+        relationship = request.POST.get('relationship_to_parent', '').strip()
+
+        if parent_phone or parent_name:
+            if not profile.parent:
+                from apps.accounts.models import Parent
+                parent, _ = Parent.objects.get_or_create(
+                    phone_number=parent_phone or f"P-{profile.user.id}",
+                    defaults={
+                        'full_name': parent_name or f"Parent of {profile.user.get_full_name() or profile.user.username}",
+                        'email': parent_email,
+                    }
+                )
+                profile.parent = parent
+            else:
+                if parent_name:
+                    profile.parent.full_name = parent_name
+                if parent_phone:
+                    profile.parent.phone_number = parent_phone
+                if parent_email:
+                    profile.parent.email = parent_email
+                profile.parent.save()
+
+            if relationship:
+                profile.relationship_to_parent = relationship
+            profile.parent_name = parent_name
+            profile.parent_phone = parent_phone
+
         profile.save()
-        messages.success(request, "Profile updated.")
+
+        # Two-way sync to attendance system
+        try:
+            from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+            if photo_uploaded:
+                AttendanceSyncService.sync_photo_to_attendance(profile)
+            AttendanceSyncService.sync_or_register_student(profile)
+        except Exception:
+            pass
+
+        messages.success(request, "Profile updated successfully! Official Student ID and Attendance records synchronized.")
         return redirect('student_profile')
 
     return render(request, 'accounts/edit_profile.html', {'profile': profile})
@@ -1362,7 +1520,7 @@ def admin_dashboard(request):
     # Students
     students = (
         Profile.objects.filter(role='student')
-        .select_related('user', 'course', 'batch', 'tenant', 'assigned_tutor')
+        .select_related('user', 'course', 'batch', 'tenant', 'assigned_tutor', 'parent')
         .order_by('-user__date_joined')
     )
     student_user_ids = [s.user_id for s in students]
@@ -1580,6 +1738,36 @@ def admin_student_create(request):
         course = Course.objects.filter(id=course_id).first() if course_id else None
         batch = Batch.objects.filter(id=batch_id).first() if batch_id else None
 
+        # Parent details & Student Bio
+        parent_name = request.POST.get('parent_name', '').strip()
+        parent_phone = request.POST.get('parent_phone', '').strip()
+        parent_email = request.POST.get('parent_email', '').strip()
+        parent_title = request.POST.get('parent_title', 'Mr').strip()
+        relationship = request.POST.get('relationship', 'Guardian').strip()
+        date_of_birth = request.POST.get('date_of_birth', '').strip() or None
+        gender = request.POST.get('gender', '').strip()
+        avatar = request.FILES.get('avatar')
+
+        parent = None
+        if parent_phone:
+            from apps.accounts.models import Parent
+            parent = Parent.objects.filter(phone_number=parent_phone).first()
+            if not parent and parent_email:
+                parent = Parent.objects.filter(email=parent_email).first()
+
+            if parent:
+                if parent_name and parent.full_name != parent_name:
+                    parent.full_name = parent_name
+                parent.save()
+            else:
+                parent = Parent.objects.create(
+                    title=parent_title,
+                    full_name=parent_name or f"{first_name} {last_name} Guardian",
+                    phone_number=parent_phone,
+                    whatsapp_number=parent_phone,
+                    email=parent_email,
+                )
+
         profile, _ = Profile.objects.get_or_create(
             user=user,
             defaults={
@@ -1587,19 +1775,36 @@ def admin_student_create(request):
                 'phone': phone,
                 'course': course,
                 'batch': batch,
+                'parent': parent,
+                'relationship_to_parent': relationship,
+                'date_of_birth': date_of_birth,
+                'gender': gender,
                 'is_verified': True,
                 'is_approved': True,
                 'onboarding_stage': 'finished',
             }
         )
-        if not _:
-            profile.phone = phone
-            profile.course = course
-            profile.batch = batch
-            profile.is_verified = True
-            profile.is_approved = True
-            profile.onboarding_stage = 'finished'
-            profile.save()
+        profile.phone = phone
+        profile.course = course
+        profile.batch = batch
+        profile.parent = parent
+        profile.relationship_to_parent = relationship
+        profile.date_of_birth = date_of_birth
+        profile.gender = gender
+        profile.is_verified = True
+        profile.is_approved = True
+        profile.onboarding_stage = 'finished'
+        if avatar:
+            profile.avatar = avatar
+            profile.id_card_approved = True
+        profile.save()
+
+        # Synchronize with Attendance System immediately to acquire official CDCP- student ID
+        try:
+            from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+            AttendanceSyncService.sync_or_register_student(profile)
+        except Exception:
+            pass
 
         # Initialize Payment Record
         if course:
@@ -1622,6 +1827,82 @@ def admin_student_create(request):
         return redirect('/account/admin/dashboard/#students')
 
     return redirect('admin_dashboard')
+
+
+@login_required
+def admin_upload_student_passport(request, profile_id):
+    """Allows administrators to upload or update a student's passport photo and sync to attendance system."""
+    if not (request.user.is_superuser or getattr(request.user, 'profile', None) and request.user.profile.role in ['hod', 'accountant']):
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    profile = get_object_or_404(Profile, id=profile_id)
+    if request.method == "POST":
+        avatar = request.FILES.get('avatar')
+        if avatar:
+            profile.avatar = avatar
+            profile.id_card_approved = True
+            profile.save(update_fields=['avatar', 'id_card_approved'])
+
+            # Sync photo to Attendance System
+            try:
+                from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+                AttendanceSyncService.sync_photo_to_attendance(profile)
+            except Exception:
+                pass
+
+            messages.success(request, f"Passport photograph uploaded and synced for {profile.user.get_full_name() or profile.user.username}!")
+        else:
+            messages.warning(request, "No photograph was selected for upload.")
+
+    return redirect('/account/admin/dashboard/#students')
+
+
+@login_required
+def admin_download_student_id_card(request, profile_id):
+    """Allows administrators to download the official print-ready ID Card PDF for any student."""
+    if not (request.user.is_superuser or getattr(request.user, 'profile', None) and request.user.profile.role in ['hod', 'accountant']):
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    profile = get_object_or_404(Profile, id=profile_id)
+
+    # Ensure student has an official CDCP- ID
+    if not profile.external_attendance_id or not profile.external_attendance_id.startswith('CDCP-'):
+        try:
+            from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+            AttendanceSyncService.sync_or_register_student(profile)
+            profile.refresh_from_db()
+        except Exception:
+            pass
+
+    from apps.accounts.services.id_card_service import IDCardService
+    pdf_buffer = IDCardService.generate_student_id_card_pdf(profile)
+    filename = f"CodeCamp_ID_{profile.external_attendance_id or profile.user.id}.pdf"
+    return FileResponse(pdf_buffer, as_attachment=True, filename=filename, content_type='application/pdf')
+
+
+@login_required
+def student_download_id_card(request):
+    """Allows logged-in students to download their official ID Card PDF."""
+    profile = getattr(request.user, 'profile', None)
+    if not profile or profile.role != 'student':
+        messages.error(request, "Access restricted to enrolled students.")
+        return redirect('home')
+
+    # Ensure student has an official CDCP- ID
+    if not profile.external_attendance_id or not profile.external_attendance_id.startswith('CDCP-'):
+        try:
+            from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+            AttendanceSyncService.sync_or_register_student(profile)
+            profile.refresh_from_db()
+        except Exception:
+            pass
+
+    from apps.accounts.services.id_card_service import IDCardService
+    pdf_buffer = IDCardService.generate_student_id_card_pdf(profile)
+    filename = f"CodeCamp_ID_{profile.external_attendance_id or profile.user.username}.pdf"
+    return FileResponse(pdf_buffer, as_attachment=True, filename=filename, content_type='application/pdf')
 
 
 @login_required
@@ -1675,9 +1956,10 @@ def admin_sync_attendance(request):
         if res.get("success"):
             s_matched = res.get("students", {}).get("students_matched", 0)
             t_total = res.get("tutors", {}).get("tutors_total", 0)
+            p_total = res.get("pushed_students_count", 0)
             messages.success(
                 request,
-                f"Successfully synchronized {s_matched} student IDs and {t_total} faculty tutors from the Attendance System."
+                f"Successfully synchronized {s_matched} student IDs, assigned/updated {p_total} students, and synchronized {t_total} faculty tutors across systems."
             )
         else:
             messages.warning(
@@ -1906,26 +2188,66 @@ def admin_course_create(request):
         name = request.POST.get('name', '').strip()
         short_desc = request.POST.get('short_description', '').strip()
         description = request.POST.get('description', '').strip()
-        duration_weeks = int(request.POST.get('duration_weeks') or 12)
-        fee = Decimal(request.POST.get('fee') or '35000.00')
+        
+        try:
+            duration_weeks = int(request.POST.get('duration_weeks') or 12)
+        except (ValueError, TypeError):
+            duration_weeks = 12
+
+        try:
+            fee = Decimal(request.POST.get('fee') or '35000.00')
+        except Exception:
+            fee = Decimal('35000.00')
+
         is_published = request.POST.get('is_published') == 'on'
 
         if not name:
             messages.error(request, "Course name is required.")
             return redirect('/account/admin/dashboard/#courses')
 
-        Course.objects.create(
-            name=name,
-            short_description=short_desc,
-            description=description,
-            duration_weeks=duration_weeks,
-            fee=fee,
-            is_published=is_published,
-        )
-        messages.success(request, f"Programme '{name}' created successfully!")
+        if Course.objects.filter(name__iexact=name).exists():
+            messages.error(request, f"A course with the name '{name}' already exists.")
+            return redirect('/account/admin/dashboard/#courses')
+
+        try:
+            Course.objects.create(
+                name=name,
+                short_description=short_desc,
+                description=description,
+                duration_weeks=duration_weeks,
+                fee=fee,
+                is_published=is_published,
+            )
+            messages.success(request, f"Programme '{name}' created successfully!")
+        except IntegrityError as e:
+            messages.error(request, f"Unable to create course: A programme with this name or URL slug already exists.")
+        except Exception as e:
+            messages.error(request, f"Error creating course: {str(e)}")
+
         return redirect('/account/admin/dashboard/#courses')
 
     return redirect('admin_dashboard')
+
+
+@login_required
+def admin_course_delete(request, course_id):
+    """Deletes an Innovation Hub course directly from the admin dashboard."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        course = get_object_or_404(Course, id=course_id)
+        name = course.name
+        enrolled_count = course.profiles.count()
+        if enrolled_count > 0:
+            course.profiles.update(course=None, batch=None)
+            messages.warning(request, f"Course '{name}' had {enrolled_count} enrolled student(s) unlinked before deletion.")
+        course.delete()
+        messages.success(request, f"Programme '{name}' has been deleted successfully.")
+        return redirect('/account/admin/dashboard/#courses')
+
+    return redirect('/account/admin/dashboard/#courses')
 
 
 @login_required

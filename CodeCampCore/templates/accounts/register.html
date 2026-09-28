@@ -39,18 +39,18 @@
 
     /* Register Card */
     .auth-card {
-        background: rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
 
         border-radius: 24px;
         padding: 40px 45px;
         color: #1e105a;
-        max-width: 580px;
+        max-width: 680px;
         width: 100%;
         animation: fadeInUp 0.8s ease forwards;
 
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.45);
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35),
                     0 0 30px rgba(168, 85, 247, 0.45);
     }
@@ -62,11 +62,11 @@
 
     .auth-card input,
     .auth-card select {
-        background: rgba(255, 255, 255, 0.65) !important;
+        background: rgba(255, 255, 255, 0.75) !important;
         color: #1c0f57 !important;
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        padding: 12px 16px;
-        font-size: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        padding: 11px 15px;
+        font-size: 14.5px;
         border-radius: 10px;
         font-weight: 500;
         transition: all 0.2s ease;
@@ -86,8 +86,8 @@
     .auth-card label {
         color: #1a0b50;
         font-weight: 700;
-        font-size: 14px;
-        margin-bottom: 6px;
+        font-size: 13.5px;
+        margin-bottom: 5px;
         display: block;
     }
 
@@ -96,7 +96,7 @@
         color: #6b21a8;
         position: absolute;
         right: 14px;
-        top: 38px;
+        top: 36px;
     }
 
     .badge-pill-header {
@@ -110,6 +110,23 @@
         border-radius: 20px;
         display: inline-block;
         box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+    }
+
+    .section-divider {
+        background: rgba(255, 255, 255, 0.45);
+        border: 1px solid rgba(147, 51, 234, 0.2);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        font-weight: 800;
+        font-size: 15px;
+        color: #1e105a;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
     }
 </style>
 
@@ -139,81 +156,198 @@
         </div>
         {% endif %}
 
-        <form method="post" action="{% url 'register' %}">
+        <form method="post" action="{% url 'register' %}" enctype="multipart/form-data">
             {% csrf_token %}
 
-            <!-- Program Track -->
-            <div class="form-group mb-3">
-                <label><i class="fas fa-graduation-cap mr-1 text-primary"></i> Innovation Hub Track *</label>
-                <select name="course_id" id="registerCourseSelect" class="form-control" required onchange="loadCourseCurriculum(this.value)">
-                    <option value="">-- Choose Your Track (₦35,000 / month) --</option>
-                    {% for c in courses %}
-                    <option value="{{ c.id }}" {% if selected_course_slug == c.slug %}selected{% endif %}>
-                        {{ c.name }} — ₦35,000/mo ({{ c.duration_weeks }} Weeks)
-                    </option>
-                    {% empty %}
-                    <option value="">Full Stack Web Development (₦35,000/mo)</option>
-                    <option value="">Python & Data Science (₦35,000/mo)</option>
-                    <option value="">UI/UX Product Design (₦35,000/mo)</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Dynamic Curriculum Subjects Preview -->
-            <div id="courseSubjectsPreview" class="p-3 mb-3 border rounded shadow-xs" style="display: none; background: rgba(255, 255, 255, 0.85); border-radius: 10px;">
-                <div class="font-weight-bold text-dark text-xs text-uppercase mb-2">
-                    <i class="fas fa-layer-group text-primary mr-1"></i> Included Curriculum Modules & Subjects:
+            <!-- Category / Applicant Type Switcher -->
+            <div class="mb-3 p-2 text-center" style="background: rgba(255,255,255,0.7); border: 1px solid rgba(147, 51, 234, 0.3); border-radius: 12px;">
+                <div class="custom-control custom-radio custom-control-inline">
+                    <input type="radio" id="typeParent" name="applicant_type" value="parent" class="custom-control-input" checked onchange="toggleApplicantType('parent')">
+                    <label class="custom-control-label font-weight-bold text-dark" for="typeParent" style="cursor: pointer; font-size: 13.5px;">
+                        <i class="fas fa-user-shield text-primary mr-1"></i> Parent / Guardian Enrolling a Child / Ward
+                    </label>
                 </div>
-                <div id="subjectsListBadgeContainer" class="d-flex flex-wrap" style="gap: 6px;"></div>
-            </div>
-
-            <!-- Learning Mode -->
-            <div class="form-group mb-3">
-                <label><i class="fas fa-calendar-alt mr-1 text-primary"></i> Preferred Schedule / Mode *</label>
-                <select name="delivery_mode" class="form-control" required>
-                    <option value="onsite">Weekday Onsite Hub (Mon – Fri, Practical Lab)</option>
-                    <option value="onsite">Weekend Intensive Hub (Saturdays & Sundays)</option>
-                    <option value="online">Virtual / Online Live Cohort</option>
-                </select>
-            </div>
-
-            <!-- Full Name -->
-            <div class="form-group mb-3">
-                <label><i class="fas fa-user mr-1 text-primary"></i> Full Name *</label>
-                <input type="text" name="full_name" class="form-control" placeholder="e.g. Samuel Adekunle" required>
-            </div>
-
-            <div class="row">
-                <!-- Email -->
-                <div class="col-md-6 form-group mb-3">
-                    <label><i class="fas fa-envelope mr-1 text-primary"></i> Email Address *</label>
-                    <input type="email" name="email" class="form-control" placeholder="you@domain.com" required>
-                </div>
-                <!-- Phone -->
-                <div class="col-md-6 form-group mb-3">
-                    <label><i class="fas fa-phone mr-1 text-primary"></i> WhatsApp / Phone *</label>
-                    <input type="text" name="phone" class="form-control" placeholder="0803 123 4567" required>
+                <div class="custom-control custom-radio custom-control-inline ml-md-3 mt-1 mt-md-0">
+                    <input type="radio" id="typeSelf" name="applicant_type" value="self" class="custom-control-input" onchange="toggleApplicantType('self')">
+                    <label class="custom-control-label font-weight-bold text-dark" for="typeSelf" style="cursor: pointer; font-size: 13.5px;">
+                        <i class="fas fa-user-graduate text-success mr-1"></i> Independent Adult Student (Self-Sponsored)
+                    </label>
                 </div>
             </div>
 
-            <!-- Username -->
-            <div class="form-group mb-3">
-                <label><i class="fas fa-at mr-1 text-primary"></i> Portal Username *</label>
-                <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
+            <!-- SECTION 1: PROGRAM TRACK & SCHEDULE -->
+            <div class="section-divider">
+                <div class="section-title">
+                    <i class="fas fa-graduation-cap text-primary mr-2"></i> 1. Innovation Hub Track & Cohort
+                </div>
+
+                <!-- Program Track -->
+                <div class="form-group mb-3">
+                    <label>Innovation Hub Track *</label>
+                    <select name="course_id" id="registerCourseSelect" class="form-control" required onchange="loadCourseCurriculum(this.value)">
+                        <option value="">-- Choose Your Track (₦35,000 / month) --</option>
+                        {% for c in courses %}
+                        <option value="{{ c.id }}" {% if selected_course_slug == c.slug %}selected{% endif %}>
+                            {{ c.name }} — ₦35,000/mo ({{ c.duration_weeks }} Weeks)
+                        </option>
+                        {% empty %}
+                        <option value="">Full Stack Web Development (₦35,000/mo)</option>
+                        <option value="">Python & Data Science (₦35,000/mo)</option>
+                        <option value="">UI/UX Product Design (₦35,000/mo)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Dynamic Curriculum Subjects Preview -->
+                <div id="courseSubjectsPreview" class="p-3 mb-3 border rounded shadow-xs" style="display: none; background: rgba(255, 255, 255, 0.9); border-radius: 10px;">
+                    <div class="font-weight-bold text-dark text-xs text-uppercase mb-2">
+                        <i class="fas fa-layer-group text-primary mr-1"></i> Included Curriculum Modules & Subjects:
+                    </div>
+                    <div id="subjectsListBadgeContainer" class="d-flex flex-wrap" style="gap: 6px;"></div>
+                </div>
+
+                <!-- Learning Mode -->
+                <div class="form-group mb-0">
+                    <label><i class="fas fa-calendar-alt mr-1 text-primary"></i> Preferred Schedule / Mode *</label>
+                    <select name="delivery_mode" class="form-control" required>
+                        <option value="onsite">Weekday Onsite Hub (Mon – Fri, Practical Lab)</option>
+                        <option value="onsite">Weekend Intensive Hub (Saturdays & Sundays)</option>
+                        <option value="online">Virtual / Online Live Cohort</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="row">
-                <!-- Password -->
-                <div class="col-md-6 form-group mb-3 position-relative">
-                    <label><i class="fas fa-lock mr-1 text-primary"></i> Password *</label>
-                    <input type="password" name="password" class="form-control password-field" placeholder="At least 6 characters" required>
-                    <i class="fas fa-eye toggle-password"></i>
+            <!-- SECTION 2: STUDENT DETAILS -->
+            <div class="section-divider">
+                <div class="section-title">
+                    <i class="fas fa-user-graduate text-success mr-2"></i> 2. Student Personal Information
                 </div>
-                <!-- Confirm Password -->
-                <div class="col-md-6 form-group mb-4 position-relative">
-                    <label><i class="fas fa-lock mr-1 text-primary"></i> Confirm Password *</label>
-                    <input type="password" name="confirm_password" class="form-control password-field" placeholder="Re-enter password" required>
-                    <i class="fas fa-eye toggle-password"></i>
+
+                <!-- Full Name -->
+                <div class="form-group mb-3">
+                    <label>Student's Full Name (First & Last) *</label>
+                    <input type="text" name="full_name" class="form-control" placeholder="e.g. Samuel Adekunle" required>
+                </div>
+
+                <div class="row">
+                    <!-- Date of Birth -->
+                    <div class="col-md-6 form-group mb-3">
+                        <label><i class="far fa-calendar-alt mr-1 text-primary"></i> Date of Birth</label>
+                        <input type="date" name="date_of_birth" class="form-control">
+                    </div>
+                    <!-- Gender -->
+                    <div class="col-md-6 form-group mb-3">
+                        <label><i class="fas fa-venus-mars mr-1 text-primary"></i> Gender</label>
+                        <select name="gender" class="form-control">
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Prefer not to say</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Student Email -->
+                    <div class="col-md-6 form-group mb-3">
+                        <label><i class="fas fa-envelope mr-1 text-primary"></i> Student Email *</label>
+                        <input type="email" name="email" class="form-control" placeholder="student@example.com" required>
+                    </div>
+                    <!-- Student Phone -->
+                    <div class="col-md-6 form-group mb-3">
+                        <label><i class="fas fa-phone mr-1 text-primary"></i> Student Phone / WhatsApp</label>
+                        <input type="text" name="phone" class="form-control" placeholder="0803 123 4567">
+                    </div>
+                </div>
+
+                <!-- Passport Photograph -->
+                <div class="form-group mb-3">
+                    <label><i class="fas fa-camera mr-1 text-primary"></i> Passport Photograph <small class="text-muted">(Optional now — can be added later by Admin)</small></label>
+                    <input type="file" name="avatar" accept="image/*" class="form-control-file p-2 bg-white rounded border">
+                    <small class="text-muted d-block mt-1">Clear headshot photo for the official Student Identity Card & Attendance verification.</small>
+                </div>
+
+                <!-- Username -->
+                <div class="form-group mb-3">
+                    <label><i class="fas fa-at mr-1 text-primary"></i> Portal Username *</label>
+                    <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
+                </div>
+
+                <div class="row">
+                    <!-- Password -->
+                    <div class="col-md-6 form-group mb-3 position-relative">
+                        <label><i class="fas fa-lock mr-1 text-primary"></i> Password *</label>
+                        <input type="password" name="password" class="form-control password-field" placeholder="At least 6 characters" required>
+                        <i class="fas fa-eye toggle-password"></i>
+                    </div>
+                    <!-- Confirm Password -->
+                    <div class="col-md-6 form-group mb-0 position-relative">
+                        <label><i class="fas fa-lock mr-1 text-primary"></i> Confirm Password *</label>
+                        <input type="password" name="confirm_password" class="form-control password-field" placeholder="Re-enter password" required>
+                        <i class="fas fa-eye toggle-password"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: PARENT / GUARDIAN DETAILS -->
+            <div id="parentSection" class="section-divider">
+                <div class="section-title">
+                    <i class="fas fa-user-shield text-warning mr-2"></i> 3. Parent / Guardian Details (Family Linking & Alerts)
+                </div>
+
+                {% if last_parent.phone %}
+                <div class="alert alert-info py-2 px-3 mb-3 small font-weight-bold" style="border-radius: 8px;">
+                    <i class="fas fa-users mr-1"></i> Pre-filled with Parent details from your previous child registration ({{ last_parent.name }}). Multiple children will link automatically to this family account.
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <!-- Parent Title -->
+                    <div class="col-md-4 form-group mb-3">
+                        <label>Title</label>
+                        <select name="parent_title" class="form-control">
+                            <option value="Mr" {% if last_parent.title == 'Mr' %}selected{% endif %}>Mr.</option>
+                            <option value="Mrs" {% if last_parent.title == 'Mrs' %}selected{% endif %}>Mrs.</option>
+                            <option value="Ms" {% if last_parent.title == 'Ms' %}selected{% endif %}>Ms.</option>
+                            <option value="Dr" {% if last_parent.title == 'Dr' %}selected{% endif %}>Dr.</option>
+                            <option value="Engr" {% if last_parent.title == 'Engr' %}selected{% endif %}>Engr.</option>
+                            <option value="Chief" {% if last_parent.title == 'Chief' %}selected{% endif %}>Chief</option>
+                            <option value="Pastor" {% if last_parent.title == 'Pastor' %}selected{% endif %}>Pastor</option>
+                            <option value="Alhaji" {% if last_parent.title == 'Alhaji' %}selected{% endif %}>Alhaji</option>
+                            <option value="Hajiya" {% if last_parent.title == 'Hajiya' %}selected{% endif %}>Hajiya</option>
+                        </select>
+                    </div>
+                    <!-- Parent Full Name -->
+                    <div class="col-md-8 form-group mb-3">
+                        <label>Parent / Guardian Full Name *</label>
+                        <input type="text" name="parent_name" id="parentNameInput" class="form-control" placeholder="e.g. Bamidele Adekunle" value="{{ last_parent.name|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Parent Phone / WhatsApp -->
+                    <div class="col-md-6 form-group mb-3">
+                        <label><i class="fab fa-whatsapp mr-1 text-success"></i> Parent Phone / WhatsApp *</label>
+                        <input type="text" name="parent_phone" id="parentPhoneInput" class="form-control" placeholder="e.g. 0803 123 4567" value="{{ last_parent.phone|default:'' }}">
+                        <small class="text-muted">Primary identifier for family multi-child tracking & instant attendance arrival notifications.</small>
+                    </div>
+                    <!-- Parent Email -->
+                    <div class="col-md-6 form-group mb-3">
+                        <label><i class="far fa-envelope mr-1 text-primary"></i> Parent Email</label>
+                        <input type="email" name="parent_email" class="form-control" placeholder="parent@example.com" value="{{ last_parent.email|default:'' }}">
+                        <small class="text-muted">Receives billing invoices, receipts, and attendance reports.</small>
+                    </div>
+                </div>
+
+                <!-- Relationship -->
+                <div class="form-group mb-0">
+                    <label>Relationship to Student *</label>
+                    <select name="relationship" class="form-control">
+                        <option value="Father">Father</option>
+                        <option value="Mother">Mother</option>
+                        <option value="Guardian" selected>Guardian</option>
+                        <option value="Sponsor">Sponsor / Relative</option>
+                    </select>
                 </div>
             </div>
 
@@ -229,7 +363,7 @@
                 <a href="{% url 'login' %}" style="color: #431ba7 !important; text-decoration: underline; font-weight: 700;">Login to Student Portal</a>
             </p>
             <p class="mb-0 text-muted" style="font-size: 11px;">
-                Note: Summer Camp 2026 has concluded. Inquiries: <a href="mailto:info@codecamp.com.ng" style="color: #311584 !important;">info@codecamp.com.ng</a>
+                Note: Inquiries & admissions help: <a href="mailto:info@codecamp.com.ng" style="color: #311584 !important;">info@codecamp.com.ng</a>
             </p>
         </div>
 
@@ -237,6 +371,21 @@
 </div>
 
 <script>
+    // Toggle Parent Section visibility if student is self-sponsored adult
+    function toggleApplicantType(type) {
+        const parentSection = document.getElementById("parentSection");
+        const parentName = document.getElementById("parentNameInput");
+        const parentPhone = document.getElementById("parentPhoneInput");
+
+        if (type === 'self') {
+            parentSection.style.display = "none";
+            if (parentName) parentName.removeAttribute("required");
+            if (parentPhone) parentPhone.removeAttribute("required");
+        } else {
+            parentSection.style.display = "block";
+        }
+    }
+
     // Password toggle for both password fields
     document.querySelectorAll(".toggle-password").forEach(icon => {
         icon.addEventListener("click", function () {
@@ -262,9 +411,15 @@
                 if (data.subjects && data.subjects.length > 0) {
                     let html = '';
                     data.subjects.forEach(s => {
-                        html += `<span class="badge badge-primary px-2.5 py-1 font-weight-bold" style="font-size: 12px; border-radius: 6px;">
-                            <i class="fas fa-check-circle mr-1 text-warning"></i> ${s.name}
-                        </span>`;
+                        if (s.is_compulsory) {
+                            html += `<span class="badge badge-primary px-2.5 py-1 font-weight-bold" style="font-size: 12px; border-radius: 6px;" title="Compulsory foundation course">
+                                <i class="fas fa-lock mr-1 text-warning"></i> ${s.name} <small class="text-warning ml-1">(Compulsory)</small>
+                            </span>`;
+                        } else {
+                            html += `<span class="badge badge-info px-2.5 py-1 font-weight-bold" style="font-size: 12px; border-radius: 6px;" title="Selective elective course">
+                                <i class="fas fa-check-circle mr-1"></i> ${s.name} <small class="ml-1">(Selective)</small>
+                            </span>`;
+                        }
                     });
                     container.innerHTML = html;
                     previewBox.style.display = "block";

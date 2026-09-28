@@ -4,7 +4,20 @@
 {% block title %}My Curriculum Subjects | CodeCamp Student Portal{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 pb-5">
+
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show font-weight-bold shadow-sm" role="alert" style="border-radius: 10px;">
+      {{ message }}
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <!-- Header Banner -->
   <div class="card border-0 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #1e1b4b 0%, #31104b 60%, #4338ca 100%); border-radius: 16px;">
@@ -16,12 +29,25 @@
           </span>
           <h2 class="font-weight-extrabold text-white mb-1">{{ course.name }} — Enrolled Subjects</h2>
           <p class="text-white-50 mb-0">
-            Review the modules and subjects you are currently enrolled in. Weekly lab assignments and grades are tailored to these subjects.
+            {% if is_locked %}
+              Your curriculum subjects are currently locked. Compulsory core subjects are automatically enrolled.
+            {% else %}
+              Select your selective elective subjects below. Compulsory subjects are automatically assigned.
+            {% endif %}
           </p>
         </div>
-        <div class="mt-3 mt-md-0">
-          <a href="{% url 'student_weekly_gradebook' %}" class="btn btn-warning font-weight-bold shadow-sm">
-            <i class="fas fa-tasks mr-1"></i> My Gradebook
+        <div class="mt-3 mt-md-0 d-flex align-items-center" style="gap: 10px;">
+          {% if is_locked %}
+            <a href="?action=change" class="btn btn-warning font-weight-bold shadow-sm" style="border-radius: 8px;">
+              <i class="fas fa-edit mr-1"></i> Change Subjects
+            </a>
+          {% else %}
+            <a href="{% url 'student_enroll_subjects' %}" class="btn btn-outline-light font-weight-bold" style="border-radius: 8px;">
+              <i class="fas fa-times mr-1"></i> Cancel Edit
+            </a>
+          {% endif %}
+          <a href="{% url 'student_weekly_gradebook' %}" class="btn btn-light font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="fas fa-tasks mr-1 text-primary"></i> Gradebook
           </a>
         </div>
       </div>
@@ -30,9 +56,24 @@
 
   <!-- Subjects Form Card -->
   <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-    <div class="card-header bg-white border-0 pt-4 px-4">
-      <h5 class="font-weight-extrabold text-dark mb-1">Curriculum Subjects for {{ course.name }}</h5>
-      <p class="text-muted small mb-0">Check the subjects you are taking in your academic program track.</p>
+    <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="font-weight-extrabold text-dark mb-1">Curriculum Subjects for {{ course.name }}</h5>
+        <p class="text-muted small mb-0">
+          {% if is_locked %}
+            <span class="badge badge-success px-2.5 py-1 mr-2"><i class="fas fa-lock mr-1"></i> LOCKED</span>
+            To modify selective modules, click the <strong>Change Subjects</strong> button above.
+          {% else %}
+            <span class="badge badge-warning text-dark px-2.5 py-1 mr-2"><i class="fas fa-unlock mr-1"></i> EDITING</span>
+            Choose your selective modules. Foundation compulsory courses are fixed.
+          {% endif %}
+        </p>
+      </div>
+      {% if is_locked %}
+      <a href="?action=change" class="btn btn-sm btn-outline-warning text-dark font-weight-bold" style="border-radius: 6px;">
+        <i class="fas fa-pencil-alt mr-1"></i> Change
+      </a>
+      {% endif %}
     </div>
 
     <div class="card-body p-4">
@@ -42,22 +83,52 @@
         <div class="row">
           {% for subj in all_subjects %}
           <div class="col-md-6 mb-3">
-            <div class="p-3 border rounded h-100 d-flex align-items-start transition-card" style="background: #ffffff; border-color: #e2e8f0 !important; border-radius: 12px;">
+            <div class="p-3 border rounded h-100 d-flex align-items-start transition-card {% if subj.is_compulsory %}border-primary bg-light{% else %}bg-white{% endif %}"
+                 style="border-radius: 12px; border-width: 1.5px !important;">
+
               <div class="custom-control custom-checkbox mr-3 mt-1">
-                <input type="checkbox" name="subject_ids" value="{{ subj.id }}" class="custom-control-input" id="subjCheck{{ subj.id }}" {% if subj.id in enrolled_ids or not enrolled_ids %}checked{% endif %}>
-                <label class="custom-control-label" for="subjCheck{{ subj.id }}"></label>
+                {% if is_locked %}
+                  <!-- Locked view: read-only checkbox display -->
+                  <input type="checkbox" class="custom-control-input" id="subjCheck{{ subj.id }}"
+                         {% if subj.is_compulsory or subj.id in enrolled_ids %}checked{% endif %} disabled>
+                  <label class="custom-control-label" for="subjCheck{{ subj.id }}"></label>
+                {% else %}
+                  <!-- Editable view -->
+                  {% if subj.is_compulsory %}
+                    <input type="checkbox" name="subject_ids" value="{{ subj.id }}" class="custom-control-input" id="subjCheck{{ subj.id }}" checked disabled>
+                    <label class="custom-control-label" for="subjCheck{{ subj.id }}"></label>
+                    <input type="hidden" name="subject_ids" value="{{ subj.id }}">
+                  {% else %}
+                    <input type="checkbox" name="subject_ids" value="{{ subj.id }}" class="custom-control-input" id="subjCheck{{ subj.id }}"
+                           {% if subj.id in enrolled_ids %}checked{% endif %}>
+                    <label class="custom-control-label" for="subjCheck{{ subj.id }}"></label>
+                  {% endif %}
+                {% endif %}
               </div>
 
               <div class="flex-grow-1">
-                <label for="subjCheck{{ subj.id }}" class="h6 font-weight-bold text-dark mb-1 cursor-pointer">
-                  {{ subj.name }}
-                </label>
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                  <label for="subjCheck{{ subj.id }}" class="h6 font-weight-bold text-dark mb-0 cursor-pointer">
+                    {{ subj.name }}
+                  </label>
+                  {% if subj.is_compulsory %}
+                    <span class="badge badge-primary font-weight-bold px-2 py-1 text-xs" title="Required core curriculum module">
+                      <i class="fas fa-lock mr-1"></i> COMPULSORY
+                    </span>
+                  {% else %}
+                    <span class="badge badge-info font-weight-bold px-2 py-1 text-xs" title="Elective specialization module">
+                      <i class="fas fa-check-square mr-1"></i> SELECTIVE
+                    </span>
+                  {% endif %}
+                </div>
+
                 <p class="text-muted small mb-2">
                   {{ subj.description|default:"Core curriculum module for this course track." }}
                 </p>
+
                 <div class="d-flex align-items-center">
-                  <span class="badge badge-light-primary text-primary font-weight-bold px-2 py-1 text-xs">
-                    <i class="fas fa-chalkboard-teacher mr-1"></i> Tutor: {{ subj.instructor.get_full_name|default:subj.instructor.username|default:"Department Faculty" }}
+                  <span class="badge badge-light text-muted font-weight-bold px-2 py-1 text-xs border">
+                    <i class="fas fa-chalkboard-teacher mr-1 text-primary"></i> Tutor: {{ subj.instructor.get_full_name|default:subj.instructor.username|default:"Department Faculty" }}
                   </span>
                 </div>
               </div>
@@ -70,14 +141,25 @@
           {% endfor %}
         </div>
 
+        {% if not is_locked %}
         <div class="pt-3 border-top d-flex justify-content-between align-items-center">
           <span class="text-muted small">
-            <i class="fas fa-check-circle text-success mr-1"></i> Selecting all subjects ensures you receive all course assignments.
+            <i class="fas fa-check-circle text-success mr-1"></i> All compulsory subjects are permanently included in your curriculum.
           </span>
-          <button type="submit" class="btn btn-primary font-weight-bold px-4 shadow-sm" style="border-radius: 8px;">
-            <i class="fas fa-save mr-1"></i> Save Subject Enrollment
+          <button type="submit" class="btn btn-success font-weight-bold px-4 shadow-sm" style="border-radius: 8px;">
+            <i class="fas fa-save mr-1"></i> Save & Lock Subjects
           </button>
         </div>
+        {% else %}
+        <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+          <span class="text-muted small">
+            <i class="fas fa-lock text-muted mr-1"></i> Enrollment is locked. Click "Change Subjects" to edit.
+          </span>
+          <a href="?action=change" class="btn btn-warning font-weight-bold px-4 shadow-sm" style="border-radius: 8px;">
+            <i class="fas fa-edit mr-1"></i> Change Subjects
+          </a>
+        </div>
+        {% endif %}
       </form>
     </div>
   </div>

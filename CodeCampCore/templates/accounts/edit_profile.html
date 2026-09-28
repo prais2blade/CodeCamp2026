@@ -1,35 +1,129 @@
 {% extends 'layouts/student_base.html' %}
+{% load static %}
 
-{% block page_title %}Edit Profile{% endblock page_title %}
+{% block page_title %}Edit Profile & Passport Photo | CodeCamp Innovation Hub{% endblock page_title %}
 
 {% block main_content %}
 <section class="content">
   <div class="container-fluid">
-    <div class="card card-outline card-primary">
-      <div class="card-header">
-        <h3 class="card-title">Profile Details</h3>
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="card shadow-sm border-0" style="border-radius: 16px;">
+          <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h4 class="card-title font-weight-bold text-dark mb-0">
+              <i class="fas fa-user-edit text-primary mr-2"></i> Update Profile & ID Card Passport
+            </h4>
+            <a href="{% url 'student_profile' %}" class="btn btn-sm btn-outline-secondary font-weight-bold" style="border-radius: 8px;">
+              <i class="fas fa-times mr-1"></i> Cancel
+            </a>
+          </div>
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="card-body p-4 pt-2">
+
+              <!-- Passport Photo Upload Box -->
+              <div class="alert alert-light border p-3 mb-4" style="border-radius: 14px; background: #f8fafc;">
+                <div class="d-flex align-items-center flex-wrap">
+                  <div class="mr-3 mb-2 mb-md-0 text-center">
+                    {% if profile.has_custom_avatar %}
+                      <img src="{{ profile.avatar.url }}" alt="Passport" class="rounded-circle shadow-sm" style="width: 80px; height: 80px; object-fit: cover; border: 3px solid #4f46e5;">
+                    {% else %}
+                      <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm font-weight-bold"
+                           style="width: 80px; height: 80px; background: linear-gradient(135deg, #4f46e5, #06b6d4); font-size: 1.8rem; color: #fff;">
+                        {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="flex-grow-1">
+                    <label class="font-weight-bold text-dark mb-1">
+                      <i class="fas fa-camera text-primary mr-1"></i> Official Student Passport Photograph
+                    </label>
+                    <input type="file" name="avatar" class="form-control-file border p-2 rounded bg-white" accept="image/*">
+                    <small class="form-text text-muted">
+                      Upload a clear, front-facing passport photograph (JPG/PNG). This will instantly sync with the physical attendance system kiosk and be printed on your official Student ID card.
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <!-- Personal Information -->
+                <div class="col-12 mb-2">
+                  <h6 class="font-weight-bold text-primary mb-2">
+                    <i class="fas fa-user mr-1"></i> Personal Contact Details
+                  </h6>
+                </div>
+                <div class="col-md-4 form-group">
+                  <label class="font-weight-bold">Phone Number</label>
+                  <input id="id_phone" name="phone" class="form-control" value="{{ profile.phone|default:'' }}" placeholder="+234 800 000 0000">
+                </div>
+                <div class="col-md-4 form-group">
+                  <label class="font-weight-bold">Date of Birth</label>
+                  <input type="date" name="date_of_birth" class="form-control" value="{{ profile.date_of_birth|date:'Y-m-d'|default:'' }}">
+                </div>
+                <div class="col-md-4 form-group">
+                  <label class="font-weight-bold">Gender</label>
+                  <select name="gender" class="form-control">
+                    <option value="">-- Select Gender --</option>
+                    <option value="male" {% if profile.gender == 'male' %}selected{% endif %}>Male</option>
+                    <option value="female" {% if profile.gender == 'female' %}selected{% endif %}>Female</option>
+                    <option value="other" {% if profile.gender == 'other' %}selected{% endif %}>Other</option>
+                  </select>
+                </div>
+
+                <!-- Academic Program (Read Only) -->
+                <div class="col-md-6 form-group">
+                  <label class="font-weight-bold">Innovation Hub Track</label>
+                  <input class="form-control bg-light" value="{{ profile.course.name|default:'Not selected' }}" disabled>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label class="font-weight-bold">Assigned Cohort / Batch</label>
+                  <input class="form-control bg-light" value="{{ profile.batch.name|default:'Not selected' }}" disabled>
+                </div>
+
+                <!-- Parent / Guardian Information -->
+                <div class="col-12 mt-3 mb-2">
+                  <h6 class="font-weight-bold text-success mb-2">
+                    <i class="fas fa-user-friends mr-1"></i> Parent / Guardian Contact Details
+                  </h6>
+                  <small class="text-muted d-block mb-3">
+                    Arrival, departure, and attendance alerts from the kiosk scanner will be routed to this sponsor.
+                  </small>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label class="font-weight-bold">Parent / Guardian Full Name</label>
+                  <input type="text" name="parent_name" class="form-control" value="{{ profile.parent.name|default:profile.parent_name|default:'' }}" placeholder="e.g. Mr. Chinedu Okafor">
+                </div>
+                <div class="col-md-6 form-group">
+                  <label class="font-weight-bold">Relationship</label>
+                  <select name="relationship_to_parent" class="form-control">
+                    <option value="father" {% if profile.relationship_to_parent == 'father' %}selected{% endif %}>Father</option>
+                    <option value="mother" {% if profile.relationship_to_parent == 'mother' %}selected{% endif %}>Mother</option>
+                    <option value="guardian" {% if profile.relationship_to_parent == 'guardian' %}selected{% endif %}>Guardian</option>
+                    <option value="sponsor" {% if profile.relationship_to_parent == 'sponsor' %}selected{% endif %}>Sponsor</option>
+                    <option value="sibling" {% if profile.relationship_to_parent == 'sibling' %}selected{% endif %}>Sibling</option>
+                  </select>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label class="font-weight-bold">Parent Phone / WhatsApp Number</label>
+                  <input type="text" name="parent_phone" class="form-control" value="{{ profile.parent.phone_number|default:profile.parent_phone|default:'' }}" placeholder="e.g. 08012345678">
+                </div>
+                <div class="col-md-6 form-group">
+                  <label class="font-weight-bold">Parent Email Address</label>
+                  <input type="email" name="parent_email" class="form-control" value="{{ profile.parent.email|default:'' }}" placeholder="parent@example.com">
+                </div>
+              </div>
+
+            </div>
+            <div class="card-footer bg-light d-flex justify-content-between align-items-center" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+              <a href="{% url 'student_profile' %}" class="btn btn-secondary font-weight-bold" style="border-radius: 8px;">Cancel</a>
+              <button class="btn btn-primary font-weight-bold px-4" type="submit" style="border-radius: 8px;">
+                <i class="fas fa-save mr-1"></i> Save Profile & Sync ID
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-      <form method="post">
-        {% csrf_token %}
-        <div class="card-body">
-          <div class="form-group">
-            <label for="id_phone">Phone</label>
-            <input id="id_phone" name="phone" class="form-control" value="{{ profile.phone }}" placeholder="Phone number">
-          </div>
-          <div class="form-group">
-            <label>Course</label>
-            <input class="form-control" value="{{ profile.course.name|default:'Not selected' }}" disabled>
-          </div>
-          <div class="form-group">
-            <label>Batch</label>
-            <input class="form-control" value="{{ profile.batch.name|default:'Not selected' }}" disabled>
-          </div>
-        </div>
-        <div class="card-footer">
-          <button class="btn btn-primary" type="submit">Save Profile</button>
-          <a href="{% url 'student_profile' %}" class="btn btn-secondary">Cancel</a>
-        </div>
-      </form>
     </div>
   </div>
 </section>

@@ -55,6 +55,11 @@ def complete_profile(request):
             form.save()
             profile.onboarding_stage = 'finished'
             profile.save()
+            try:
+                from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+                AttendanceSyncService.sync_or_register_student(profile)
+            except Exception:
+                pass
             return redirect(get_dashboard_url_name(profile))
     else:
         form = ProfileCompletionForm(instance=profile)

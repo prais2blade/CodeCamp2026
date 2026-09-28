@@ -47,6 +47,7 @@ class Subject(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     instructor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'profile__role': 'instructor'})
+    is_compulsory = models.BooleanField(default=True, help_text="Compulsory module automatically enrolled for all students.")
 
     def __str__(self):
         return f"{self.name} ({self.course.name})"

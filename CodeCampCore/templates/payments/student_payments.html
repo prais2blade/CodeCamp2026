@@ -267,37 +267,38 @@
   </div>
 
   <!-- 🏦 BANK ACCOUNT TRANSFER INSTRUCTIONS -->
-  <div class="bank-details-card mb-4">
+  <!-- 🏦 BANK ACCOUNT TRANSFER INSTRUCTIONS -->
+  <div class="bank-details-card mb-4" style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 1.5px solid #c4b5fd; border-radius: 16px; padding: 24px;">
     <div class="row align-items-center">
       <div class="col-lg-8">
         <h5 class="font-weight-bold" style="color: #4c1d95;">
-          <i class="fas fa-university mr-2"></i> Official CodeCamp Innovation Hub Bank Accounts
+          <i class="fas fa-university mr-2 text-primary"></i> Official CodeCamp Innovation Hub Bank Account
         </h5>
-        <p class="text-muted small mb-2">
-          Make direct deposits or mobile transfers to the official academy accounts below, then click <strong>"Submit Bank Payment Slip"</strong> to upload your proof of payment.
+        <p class="text-muted small mb-3">
+          Make direct deposits or mobile transfers to the official academy account below, then click <strong>"Submit Bank Payment Slip"</strong> to upload your proof of payment for immediate clearance.
         </p>
-        <div class="row mt-3">
-          <div class="col-md-6 mb-2">
-            <div class="bg-white p-3 rounded border">
+        <div class="row">
+          <div class="col-md-7 mb-2">
+            <div class="bg-white p-3 rounded shadow-sm border" style="border-left: 5px solid #6366f1 !important;">
               <div class="small text-muted font-weight-bold text-uppercase">Account Name</div>
-              <div class="font-weight-bold text-dark">CODECAMP INNOVATION HUB</div>
-              <div class="small text-muted font-weight-bold text-uppercase mt-2">Bank & Account Number</div>
-              <div class="font-weight-bold text-primary" style="font-size: 1.1rem;">GTBank &bull; 0123456789</div>
+              <div class="font-weight-bold text-dark" style="font-size: 1.05rem;">Codecamp Innovation Hub</div>
+              <div class="small text-muted font-weight-bold text-uppercase mt-2">Bank Name</div>
+              <div class="font-weight-bold text-primary" style="font-size: 1.05rem;">Moniepoint Microfinance Bank</div>
+              <div class="small text-muted font-weight-bold text-uppercase mt-2">Account Number</div>
+              <div class="font-weight-bold text-success font-monospace" style="font-size: 1.45rem; letter-spacing: 1px;">7032192478</div>
             </div>
           </div>
-          <div class="col-md-6 mb-2">
-            <div class="bg-white p-3 rounded border">
-              <div class="small text-muted font-weight-bold text-uppercase">Alternate Bank</div>
-              <div class="font-weight-bold text-dark">CODECAMP ENTERPRISE</div>
-              <div class="small text-muted font-weight-bold text-uppercase mt-2">Bank & Account Number</div>
-              <div class="font-weight-bold text-primary" style="font-size: 1.1rem;">Zenith Bank &bull; 1029384756</div>
+          <div class="col-md-5 mb-2">
+            <div class="bg-white p-3 rounded shadow-sm border h-100 d-flex flex-column justify-content-center">
+              <div class="small text-muted font-weight-bold text-uppercase mb-1"><i class="fas fa-info-circle text-info mr-1"></i> Instant Verification</div>
+              <p class="small text-muted mb-0">Use your <strong>Student ID</strong> or <strong>Full Name</strong> as payment description/narration.</p>
             </div>
           </div>
         </div>
       </div>
       <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
-        <button type="button" class="btn btn-primary btn-lg font-weight-bold shadow-sm" data-toggle="modal" data-target="#uploadProofModal">
-          <i class="fas fa-paperclip mr-2"></i> Upload Payment Proof
+        <button type="button" class="btn btn-primary btn-lg font-weight-bold shadow-sm" data-toggle="modal" data-target="#uploadProofModal" style="border-radius: 10px;">
+          <i class="fas fa-paperclip mr-2"></i> Submit Bank Slip
         </button>
       </div>
     </div>
@@ -378,7 +379,7 @@
           <div class="form-group">
             <label class="font-weight-bold text-dark">Transaction Reference / Bank Session ID / Notes</label>
             <input type="text" name="notes" class="form-control"
-                   placeholder="e.g. GTBank Transfer ref: 090264826 or depositor name: John Doe">
+                   placeholder="e.g. Moniepoint Transfer ref: 090264826 or depositor name: John Doe">
           </div>
         </div>
 

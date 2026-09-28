@@ -441,8 +441,19 @@
           <div class="detail"><i class="fas fa-phone mr-1 text-muted"></i> {{ payment.student.profile.phone }}</div>
         {% endif %}
         <div class="detail" style="font-size: 0.78rem; color: #64748b; margin-top: 4px;">
-          Student ID: <strong>#STU-{{ payment.student.id }}</strong>
+          Student ID: <strong>{% if payment.student.profile.external_attendance_id %}{{ payment.student.profile.external_attendance_id }}{% else %}CDCP-{{ payment.student.id|stringformat:"06d" }}{% endif %}</strong>
         </div>
+        {% if payment.student.profile.parent or payment.student.profile.parent_name %}
+          <div class="detail" style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--cc-border);">
+            <span class="text-muted" style="font-size: 0.76rem; text-transform: uppercase; font-weight: 700; display: block; color: var(--cc-purple-primary);">Parent / Sponsor:</span>
+            <strong style="color: var(--cc-text);">{{ payment.student.profile.parent_display }}</strong>
+            {% if payment.student.profile.parent.phone_number or payment.student.profile.parent_phone %}
+              <div style="font-size: 0.8rem; color: #4b5563;">
+                <i class="fas fa-phone-alt mr-1 text-muted" style="font-size: 0.75rem;"></i> {{ payment.student.profile.parent.phone_number|default:payment.student.profile.parent_phone }}
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
       </div>
 
       <div class="bill-block">
@@ -538,6 +549,7 @@
     <div class="receipt-footer">
       <div class="audit-note">
         <strong>Notice:</strong> This official digital receipt serves as valid proof of payment for CodeCamp Innovation Hub programs.
+        Bank: Moniepoint Microfinance Bank &bull; Acct: 7032192478 (Codecamp Innovation Hub).
         System-generated on {{ receipt.issued_date|date:"Y-m-d H:i:s" }}.
         Audit Hash: <code>{{ receipt.reference }}</code>
       </div>

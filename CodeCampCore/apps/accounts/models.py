@@ -14,6 +14,46 @@ ONBOARDING_STAGES = [
 ]
 
 
+class Parent(models.Model):
+    TITLE_CHOICES = [
+        ('Mr', 'Mr.'),
+        ('Mrs', 'Mrs.'),
+        ('Ms', 'Ms.'),
+        ('Dr', 'Dr.'),
+        ('Engr', 'Engr.'),
+        ('Chief', 'Chief'),
+        ('Pastor', 'Pastor'),
+        ('Alhaji', 'Alhaji'),
+        ('Hajiya', 'Hajiya'),
+    ]
+
+    title = models.CharField(max_length=20, choices=TITLE_CHOICES, default='Mr', blank=True)
+    full_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=25, db_index=True)
+    whatsapp_number = models.CharField(max_length=25, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['full_name']
+        verbose_name = 'Parent / Guardian'
+        verbose_name_plural = 'Parents / Guardians'
+
+    @property
+    def name(self):
+        return self.full_name
+
+    @name.setter
+    def name(self, val):
+        self.full_name = val
+
+    def __str__(self):
+        title_prefix = f"{self.title} " if self.title else ""
+        return f"{title_prefix}{self.full_name} ({self.phone_number})"
+
+
 class Profile(models.Model):
     ROLE_CHOICES = [
         ('student', 'Student'),
@@ -89,12 +129,64 @@ class Profile(models.Model):
         help_text="Curriculum subjects this student is enrolled in."
     )
 
+    RELATIONSHIP_CHOICES = [
+        ('Father', 'Father'),
+        ('Mother', 'Mother'),
+        ('Guardian', 'Guardian'),
+        ('Sponsor', 'Sponsor / Relative'),
+        ('Self', 'Self (Independent Adult)'),
+    ]
+
+    GENDER_CHOICES = [
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+        ('Other', 'Prefer not to say'),
+    ]
+
+    # Parent relationship & Personal bio
+    parent = models.ForeignKey(
+        'Parent',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='children',
+        help_text="Parent or guardian of this student."
+    )
+    relationship_to_parent = models.CharField(
+        max_length=30,
+        choices=RELATIONSHIP_CHOICES,
+        default='Guardian',
+        blank=True
+    )
+    date_of_birth = models.DateField(null=True, blank=True, help_text="Student's date of birth.")
+    gender = models.CharField(max_length=15, choices=GENDER_CHOICES, blank=True)
+    id_card_approved = models.BooleanField(
+        default=False,
+        help_text="Whether the student's passport and parameters are approved for official ID Card generation."
+    )
+
+    @property
+    def has_custom_avatar(self):
+        return bool(self.avatar and self.avatar.name and not self.avatar.name.endswith('default.png'))
+
+    @property
+    def parent_display(self):
+        if self.parent:
+            title_prefix = f"{self.parent.title} " if self.parent.title else ""
+            return f"{title_prefix}{self.parent.full_name}".strip()
+        return None
+
     def enroll_in_course_subjects(self, subject_ids=None):
-        """Enrolls student in specified subjects or all core subjects of their course."""
-        if subject_ids is not None:
+        """Enrolls student in specified subjects and ensures all compulsory subjects are always included."""
+        if self.course:
+            compulsory_ids = set(self.course.subjects.filter(is_compulsory=True).values_list('id', flat=True))
+            if subject_ids is not None:
+                all_ids = compulsory_ids.union(set(int(sid) for sid in subject_ids if str(sid).isdigit()))
+                self.enrolled_subjects.set(all_ids)
+            else:
+                self.enrolled_subjects.set(self.course.subjects.all())
+        elif subject_ids is not None:
             self.enrolled_subjects.set(subject_ids)
-        elif self.course:
-            self.enrolled_subjects.set(self.course.subjects.all())
 
     @property
     def tutor_display(self):

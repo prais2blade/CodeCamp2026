@@ -15,7 +15,7 @@ urlpatterns = [
     path('verify/<uuid:token>/', views.verify_email, name='verify_email'),
     path('resend-verification/', views.resend_verification_email, name='resend_verification'),
     path('verify-email-sent/', views.verify_email_sent, name='verify_email_sent'),
-
+    path('api/check-verification-status/', views.check_verification_status, name='check_verification_status'),
 
     # Dashboards
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
@@ -29,11 +29,15 @@ urlpatterns = [
     path('admin/students/summer-bulk-deactivate/', views.admin_summer_bulk_deactivate, name='admin_summer_bulk_deactivate'),
     path('admin/students/summer-bulk-activate/', views.admin_summer_bulk_activate, name='admin_summer_bulk_activate'),
     path('admin/students/<int:profile_id>/batch/', views.admin_student_update_batch, name='admin_student_update_batch'),
+    path('admin/students/<int:profile_id>/passport/', views.admin_upload_student_passport, name='admin_upload_student_passport'),
+    path('admin/students/<int:profile_id>/id-card/', views.admin_download_student_id_card, name='admin_download_student_id_card'),
+    path('student/id-card/download/', views.student_download_id_card, name='student_download_id_card'),
     path('admin/sync-attendance/', views.admin_sync_attendance, name='admin_sync_attendance'),
     path('admin/students/<int:profile_id>/toggle-status/', views.admin_student_toggle_status, name='admin_student_toggle_status'),
     path('admin/students/<int:profile_id>/toggle-summer-status/', views.admin_student_toggle_summer_status, name='admin_student_toggle_summer_status'),
     path('admin/courses/create/', views.admin_course_create, name='admin_course_create'),
     path('admin/courses/<int:course_id>/toggle/', views.admin_course_toggle_publish, name='admin_course_toggle_publish'),
+    path('admin/courses/<int:course_id>/delete/', views.admin_course_delete, name='admin_course_delete'),
     path('admin/batches/create/', views.admin_batch_create, name='admin_batch_create'),
     path('admin/batches/<int:batch_id>/toggle/', views.admin_batch_toggle_publish, name='admin_batch_toggle_publish'),
     path('admin/payments/record/', views.admin_payment_record, name='admin_payment_record'),

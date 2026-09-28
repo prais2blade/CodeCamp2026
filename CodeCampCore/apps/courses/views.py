@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -9,26 +10,78 @@ from .forms import CourseForm, SubjectForm
 from apps.accounts.decorators import role_required, payment_required
 from apps.accounts.models import Profile, Attendance
 from apps.scheduling.models import Batch
+from apps.payments.models import Payment
 from django.db.models import Q, Avg, Count
 from django.utils import timezone
-
 
 
 @login_required
 @role_required('student')
 def choose_course(request):
+    """
+    Allows a student to select a course track, curriculum subjects (compulsory vs selective),
+    and automatically joins an active cohort. Locks details unless 'change' is requested.
+    """
+    profile = request.user.profile
+    action = request.GET.get('action', '')
+
     if request.method == 'POST':
         course_id = request.POST.get('course_id')
+        delivery_mode = request.POST.get('delivery_mode', 'onsite')
+
         if course_id:
-            profile = request.user.profile
-            profile.course_id = course_id
+            course = get_object_or_404(Course, id=course_id)
+            profile.course = course
+
+            # Auto-join active cohort for this course if not already assigned to a batch in this course
+            if not profile.batch or profile.batch.course_id != course.id:
+                batch = Batch.objects.filter(course=course, mode=delivery_mode, is_published=True).first()
+                if not batch:
+                    batch = Batch.objects.filter(course=course, is_published=True).first()
+                if batch:
+                    profile.batch = batch
+
             profile.save()
+
+            # Enroll in subjects: compulsory subjects are always auto-enrolled by model
             selected_subjs = request.POST.getlist('subject_ids')
             profile.enroll_in_course_subjects(selected_subjs if selected_subjs else None)
-            messages.success(request, "Course and curriculum subjects enrolled.")
-            return redirect('choose_batch')
+
+            # Sync updated course and details with Attendance System
+            try:
+                from apps.accounts.services.attendance_sync_service import AttendanceSyncService
+                AttendanceSyncService.sync_or_register_student(profile)
+            except Exception:
+                pass
+
+            # Auto create or update pending payment invoice if fee applies
+            Payment.objects.get_or_create(
+                student=request.user,
+                course=course,
+                defaults={
+                    'batch': profile.batch,
+                    'amount_due': course.fee,
+                    'amount_paid': Decimal('0.00'),
+                    'monthly_payment': Decimal('35000.00') if course.fee >= 35000 else course.fee,
+                    'status': 'pending'
+                }
+            )
+
+            messages.success(request, f"🎉 You have successfully enrolled in '{course.name}'! Your cohort and curriculum modules are now locked.")
+            return redirect('choose_course')
+
     courses = Course.objects.filter(is_published=True).prefetch_related('subjects')
-    return render(request, 'courses/choose_course.html', {'courses': courses})
+    current_enrolled_subject_ids = set(profile.enrolled_subjects.values_list('id', flat=True)) if profile.course else set()
+
+    context = {
+        'profile': profile,
+        'courses': courses,
+        'current_course': profile.course,
+        'current_batch': profile.batch,
+        'current_enrolled_subject_ids': current_enrolled_subject_ids,
+        'is_locked': bool(profile.course and action != 'change'),
+    }
+    return render(request, 'courses/choose_course.html', context)
 
 
 @login_required
@@ -50,9 +103,11 @@ def manage_courses(request):
         return redirect('login')
 
     courses = Course.objects.all().order_by('-created_at')
+    base_template = "layouts/admin_base.html" if request.user.is_superuser else "layouts/hod_base.html"
 
     return render(request, 'courses/manage_courses.html', {
-        'courses': courses
+        'courses': courses,
+        'base_template': base_template,
     })
 
 
@@ -62,12 +117,36 @@ def toggle_course_status(request, course_id):
         messages.error(request, "Only admin can change course status.")
         return redirect('manage_courses')
 
-    course = Course.objects.get(id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     course.is_published = not course.is_published
     course.save()
 
     state = "published" if course.is_published else "deactivated"
     messages.success(request, f"Course '{course.name}' {state}.")
+
+    return redirect('manage_courses')
+
+
+@login_required
+def course_delete(request, course_id):
+    """Deletes a course in case of creation error or retirement."""
+    if not request.user.is_superuser:
+        messages.error(request, "Only admin can delete courses.")
+        return redirect('manage_courses')
+
+    course = get_object_or_404(Course, id=course_id)
+    if request.method == "POST":
+        course_name = course.name
+        enrolled_count = course.profiles.count()
+        if enrolled_count > 0:
+            messages.warning(
+                request,
+                f"Course '{course_name}' had {enrolled_count} student(s) unlinked before deletion."
+            )
+            course.profiles.update(course=None, batch=None)
+        course.delete()
+        messages.success(request, f"Course '{course_name}' was successfully deleted.")
+        return redirect('manage_courses')
 
     return redirect('manage_courses')
 
@@ -722,6 +801,7 @@ def api_course_subjects(request, course_id):
             'id': s.id,
             'name': s.name,
             'description': s.description,
+            'is_compulsory': s.is_compulsory,
             'tutor_id': tutor.id if tutor else None,
             'tutor_name': (tutor.get_full_name() or tutor.username) if tutor else 'Unassigned'
         })
@@ -733,6 +813,7 @@ def api_course_subjects(request, course_id):
 def student_enroll_subjects(request):
     """
     Student interface to review and update enrolled subjects within their chosen course.
+    Compulsory modules are auto-selected and locked; selective modules can be chosen.
     """
     profile = request.user.profile
     course = profile.course
@@ -740,23 +821,24 @@ def student_enroll_subjects(request):
         messages.info(request, "Please choose a course first.")
         return redirect('choose_course')
 
+    action = request.GET.get('action', '')
+
     if request.method == "POST":
         selected_ids = request.POST.getlist('subject_ids')
-        if not selected_ids:
-            messages.warning(request, "Please select at least one curriculum subject.")
-        else:
-            profile.enrolled_subjects.set(selected_ids)
-            messages.success(request, "🎉 Your enrolled curriculum subjects have been updated!")
-            return redirect('student_weekly_gradebook')
+        profile.enroll_in_course_subjects(selected_ids)
+        messages.success(request, "🎉 Your enrolled curriculum subjects have been updated and locked!")
+        return redirect('student_enroll_subjects')
 
     enrolled_ids = set(profile.enrolled_subjects.values_list('id', flat=True))
-    all_subjects = course.subjects.all().order_by('name')
+    all_subjects = course.subjects.all().order_by('-is_compulsory', 'name')
+    has_enrolled = profile.enrolled_subjects.exists()
 
     context = {
         'course': course,
         'profile': profile,
         'all_subjects': all_subjects,
         'enrolled_ids': enrolled_ids,
+        'is_locked': bool(has_enrolled and action != 'change'),
     }
     return render(request, 'courses/student_enroll_subjects.html', context)
 

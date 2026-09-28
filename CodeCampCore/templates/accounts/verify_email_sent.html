@@ -1,24 +1,117 @@
 {% extends 'base.html' %}
-{% block title %}Verify Email{% endblock %}
+{% load static %}
+{% block title %}Verify Email | CodeCamp Innovation Hub{% endblock %}
 
 {% block content %}
 <style>
-    body { background: linear-gradient(135deg, #004e92, #000428); }
+    body {
+        background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.45), rgba(30, 27, 75, 0.9)),
+                    linear-gradient(135deg, #1e1b4b, #31104b, #0f172a);
+        min-height: 100vh;
+    }
+    .verify-box {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(16px);
+        border-radius: 20px;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+        max-width: 520px;
+        width: 100%;
+        padding: 40px 35px;
+    }
+    .pulse-ring {
+        display: inline-block;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: rgba(99, 102, 241, 0.15);
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .pulse-ring i {
+        line-height: 72px;
+        font-size: 32px;
+        color: #4f46e5;
+    }
+    .pulse-ring::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        border-radius: 50%;
+        border: 2px solid #6366f1;
+        animation: pulse 2s infinite ease-out;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(1.4); opacity: 0; }
+    }
+    .status-detector {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-top: 20px;
+        font-size: 13px;
+        color: #475569;
+    }
 </style>
 
-<div class="d-flex justify-content-center align-items-center" style="min-height: 92vh;">
-    <div class="auth-card text-center">
-        <h3>Email Verification Sent ✅</h3>
-        <p class="mt-2">We sent a verification link to your email.</p>
+<div class="d-flex justify-content-center align-items-center" style="min-height: 92vh; padding: 20px 15px;">
+    <div class="verify-box text-center">
+        <div class="pulse-ring" id="verifyPulseIcon">
+            <i class="fas fa-envelope-open-text"></i>
+        </div>
 
-        <p class="mt-3 text-muted">Didn’t receive it?</p>
-        <a href="{% url 'resend_verification' %}" class="btn btn-outline-light">
-            Resend Email
-        </a>
+        <h3 class="font-weight-bold text-dark mb-2">Check Your Email</h3>
+        <p class="text-muted mb-3" style="font-size: 15px;">
+            We have sent an instant verification link to your email address. Click the link on <strong>any device</strong> (mobile phone, laptop, or tablet).
+        </p>
 
-        <div class="mt-4">
-            <a href="{% url 'login' %}" class="text-light">Back to Login</a>
+        <div class="status-detector d-flex align-items-center justify-content-center" id="statusDetector">
+            <span class="spinner-grow spinner-grow-sm text-primary mr-2" role="status" style="width: 12px; height: 12px;"></span>
+            <span>Listening for verification... Auto-directing on confirmation.</span>
+        </div>
+
+        <div class="mt-4 pt-3 border-top d-flex flex-column flex-sm-row justify-content-center align-items-center" style="gap: 12px;">
+            <a href="{% url 'resend_verification' %}" class="btn btn-outline-primary btn-sm font-weight-bold px-3 py-2" style="border-radius: 8px;">
+                <i class="fas fa-redo-alt mr-1"></i> Resend Verification Email
+            </a>
+            <a href="{% url 'login' %}" class="btn btn-link btn-sm text-secondary font-weight-bold">
+                Back to Login
+            </a>
         </div>
     </div>
 </div>
+
+<script>
+    // Real-time verification polling: checks if user verified on mobile or another tab/device
+    (function pollVerification() {
+        const intervalId = setInterval(function() {
+            fetch("{% url 'check_verification_status' %}")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.verified && data.redirect_url) {
+                        clearInterval(intervalId);
+                        const statusBox = document.getElementById("statusDetector");
+                        const icon = document.getElementById("verifyPulseIcon");
+                        if (statusBox) {
+                            statusBox.className = "status-detector alert-success text-success font-weight-bold";
+                            statusBox.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Verified! Redirecting to your dashboard...';
+                        }
+                        if (icon) {
+                            icon.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+                        }
+                        setTimeout(function() {
+                            window.location.href = data.redirect_url;
+                        }, 800);
+                    }
+                })
+                .catch(() => {
+                    // Ignore network glitches during poll
+                });
+        }, 2500);
+    })();
+</script>
 {% endblock %}

@@ -585,6 +585,8 @@
                 </th>
                 <th style="width: 130px;">Student ID</th>
                 <th>Student</th>
+                <th>Parent / Sponsor</th>
+                <th>ID Card & Photo</th>
                 <th>Enrolled Programme</th>
                 <th>Cohort Start</th>
                 <th>Assigned Cohort</th>
@@ -605,17 +607,21 @@
                       <i class="fas fa-id-badge mr-1"></i>{{ s.external_attendance_id }}
                     </span>
                   {% else %}
-                    <span class="badge badge-light border font-mono font-weight-bold text-muted px-2 py-1 shadow-2xs" title="Database ID (Not Synced)">
-                      #STU-{{ s.user.id }}
+                    <span class="badge badge-light border font-mono font-weight-bold text-primary px-2 py-1 shadow-2xs" title="Official Student ID">
+                      <i class="fas fa-id-badge mr-1"></i>CDCP-{{ s.user.id|stringformat:"06d" }}
                     </span>
                   {% endif %}
                 </td>
                 <td>
                   <div class="d-flex align-items-center">
-                    <div class="mr-3 font-weight-bold text-white rounded-circle d-flex align-items-center justify-content-center"
-                         style="width: 40px; height: 40px; background: linear-gradient(135deg, #4f46e5, #06b6d4);">
-                      {{ s.user.first_name|first|default:s.user.username|first|upper }}
-                    </div>
+                    {% if s.has_custom_avatar %}
+                      <img src="{{ s.avatar.url }}" alt="{{ s.user.first_name }}" class="rounded-circle mr-3 shadow-2xs" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #4f46e5;">
+                    {% else %}
+                      <div class="mr-3 font-weight-bold text-white rounded-circle d-flex align-items-center justify-content-center"
+                           style="width: 40px; height: 40px; background: linear-gradient(135deg, #4f46e5, #06b6d4);">
+                        {{ s.user.first_name|first|default:s.user.username|first|upper }}
+                      </div>
+                    {% endif %}
                     <div>
                       <div class="font-weight-bold text-dark">
                         {{ s.user.get_full_name|default:s.user.username }}
@@ -626,6 +632,36 @@
                       </div>
                     </div>
                   </div>
+                </td>
+                <td>
+                  {% if s.parent %}
+                    <div class="font-weight-bold text-dark">{{ s.parent.name }}</div>
+                    <div class="small text-muted">
+                      {% if s.parent.whatsapp_number %}
+                        <a href="https://wa.me/{{ s.parent.whatsapp_number|cut:' '|cut:'+' }}" target="_blank" class="text-success font-weight-bold" title="Message via WhatsApp">
+                          <i class="fab fa-whatsapp mr-1"></i>{{ s.parent.whatsapp_number }}
+                        </a>
+                      {% elif s.parent.phone_number %}
+                        <i class="fas fa-phone mr-1"></i>{{ s.parent.phone_number }}
+                      {% endif %}
+                    </div>
+                  {% elif s.parent_name %}
+                    <div class="font-weight-bold text-dark">{{ s.parent_name }}</div>
+                    <div class="small text-muted"><i class="fas fa-phone mr-1"></i>{{ s.parent_phone }}</div>
+                  {% else %}
+                    <span class="badge badge-light text-muted border px-2 py-1">Self / None</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.has_custom_avatar %}
+                    <a href="{% url 'admin_download_student_id_card' s.id %}" target="_blank" class="badge badge-success font-weight-bold px-2 py-1 shadow-2xs text-decoration-none" title="Download Official Vector ID Card PDF">
+                      <i class="fas fa-id-card mr-1"></i> ID Card Ready
+                    </a>
+                  {% else %}
+                    <button type="button" class="btn btn-xs badge badge-warning text-dark font-weight-bold px-2 py-1 border-0" data-toggle="modal" data-target="#idCardModal{{ s.id }}" title="Click to upload passport photograph">
+                      <i class="fas fa-exclamation-triangle mr-1"></i> Missing Photo
+                    </button>
+                  {% endif %}
                 </td>
                 <td>
                   {% if s.course %}
@@ -691,7 +727,14 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle font-weight-bold" data-toggle="dropdown">
                       Manage
                     </button>
-                    <div class="dropdown-menu dropdown-menu-right shadow border-0" style="border-radius: 12px; min-width: 210px;">
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0" style="border-radius: 12px; min-width: 220px;">
+                      <!-- ID Card & Passport Modal Trigger -->
+                      <a class="dropdown-item font-weight-bold text-primary" href="#" data-toggle="modal" data-target="#idCardModal{{ s.id }}">
+                        <i class="fas fa-id-card mr-2 text-primary"></i> 🪪 ID Card & Passport
+                      </a>
+
+                      <div class="dropdown-divider"></div>
+
                       <!-- Quick Toggle Summer / Main Term Status -->
                       <form action="{% url 'admin_student_toggle_summer_status' s.id %}" method="POST" class="d-inline">
                         {% csrf_token %}
@@ -729,6 +772,79 @@
                           {% endif %}
                         </button>
                       </form>
+                    </div>
+                  </div>
+
+                  <!-- Quick Modal for ID Card & Passport Control Center -->
+                  <div class="modal fade text-left" id="idCardModal{{ s.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content" style="border-radius: 16px;">
+                        <div class="modal-header bg-dark text-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                          <h5 class="modal-title font-weight-bold">
+                            <i class="fas fa-id-card text-warning mr-2"></i> ID Card & Passport: {{ s.user.get_full_name|default:s.user.username }}
+                          </h5>
+                          <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body p-4">
+                          <!-- Profile & ID summary -->
+                          <div class="d-flex align-items-center mb-4 p-3 bg-light rounded" style="border: 1px solid #e2e8f0;">
+                            <div class="mr-3 text-center">
+                              {% if s.has_custom_avatar %}
+                                <img src="{{ s.avatar.url }}" alt="Passport" class="rounded-circle shadow-sm" style="width: 72px; height: 72px; object-fit: cover; border: 3px solid #4f46e5;">
+                              {% else %}
+                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 72px; height: 72px; font-size: 1.5rem; font-weight: bold;">
+                                  {{ s.user.first_name|first|default:s.user.username|first|upper }}
+                                </div>
+                              {% endif %}
+                            </div>
+                            <div>
+                              <h6 class="font-weight-bold mb-1 text-dark">{{ s.user.get_full_name|default:s.user.username }}</h6>
+                              <div class="font-mono text-primary font-weight-bold small mb-1">
+                                <i class="fas fa-id-badge mr-1"></i>{% if s.external_attendance_id %}{{ s.external_attendance_id }}{% else %}CDCP-{{ s.user.id|stringformat:"06d" }}{% endif %}
+                              </div>
+                              <div class="small text-muted">
+                                Program: <strong>{{ s.course.name|default:"Not enrolled" }}</strong>
+                              </div>
+                              {% if s.parent or s.parent_name %}
+                              <div class="small text-muted">
+                                Parent / Sponsor: <strong>{{ s.parent_display }}</strong> ({{ s.parent.phone_number|default:s.parent_phone }})
+                              </div>
+                              {% endif %}
+                            </div>
+                          </div>
+
+                          <!-- Upload Passport Form -->
+                          <form action="{% url 'admin_upload_student_passport' s.id %}" method="POST" enctype="multipart/form-data" class="mb-4">
+                            {% csrf_token %}
+                            <div class="form-group mb-2">
+                              <label class="font-weight-bold text-dark">
+                                <i class="fas fa-camera mr-1 text-primary"></i> {% if s.has_custom_avatar %}Replace Passport Photograph{% else %}Upload Student Passport Photograph{% endif %}
+                              </label>
+                              <input type="file" name="avatar" class="form-control-file border p-2 rounded bg-white" accept="image/*" required>
+                              <small class="form-text text-muted">Upload a clear front-facing passport photograph (JPG/PNG). This will instantly sync to the attendance kiosk and update the official print ID card.</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm font-weight-bold">
+                              <i class="fas fa-cloud-upload-alt mr-1"></i> Upload & Sync Photograph
+                            </button>
+                          </form>
+
+                          <hr>
+
+                          <!-- ID Card Download Section -->
+                          <div class="bg-light p-3 rounded d-flex justify-content-between align-items-center border">
+                            <div>
+                              <div class="font-weight-bold text-dark"><i class="fas fa-print mr-1 text-primary"></i> Print-Ready Vector ID Card</div>
+                              <small class="text-muted">Standard CR100 landscape (98.5mm x 67mm) PDF with high-res QR code.</small>
+                            </div>
+                            <a href="{% url 'admin_download_student_id_card' s.id %}" target="_blank" class="btn btn-success font-weight-bold shadow-sm">
+                              <i class="fas fa-download mr-1"></i> Download PDF
+                            </a>
+                          </div>
+                        </div>
+                        <div class="modal-footer bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -848,7 +964,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="9" class="text-center py-5 text-muted">
+                <td colspan="11" class="text-center py-5 text-muted">
                   <i class="fas fa-user-graduate fa-3x mb-3 text-muted"></i>
                   <h5>No students registered yet.</h5>
                   <p>Click "Enroll Student" above to add students to the 2026 intake.</p>
@@ -889,13 +1005,22 @@
                   <span class="course-badge {% if c.is_published %}badge-success{% else %}badge-secondary{% endif %}">
                     {% if c.is_published %}● Public Admissions Open{% else %}● Hidden / Draft{% endif %}
                   </span>
-                  <form action="{% url 'admin_course_toggle_publish' c.id %}" method="POST" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-xs btn-outline-secondary font-weight-bold"
-                            title="Toggle admission intake status">
-                      {% if c.is_published %}Hide{% else %}Publish{% endif %}
-                    </button>
-                  </form>
+                  <div class="d-flex align-items-center" style="gap: 5px;">
+                    <form action="{% url 'admin_course_toggle_publish' c.id %}" method="POST" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-xs btn-outline-secondary font-weight-bold"
+                              title="Toggle admission intake status">
+                        {% if c.is_published %}Hide{% else %}Publish{% endif %}
+                      </button>
+                    </form>
+                    <form action="{% url 'admin_course_delete' c.id %}" method="POST" class="d-inline"
+                          onsubmit="return confirm('Are you sure you want to permanently delete \'{{ c.name|escapejs }}\'? Any error creating this course will be cleared.');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-xs btn-outline-danger font-weight-bold" title="Delete Programme">
+                        <i class="fas fa-trash-alt mr-1"></i>Delete
+                      </button>
+                    </form>
+                  </div>
                 </div>
 
                 <h4 class="font-weight-bold text-dark mb-1" style="font-size: 1.15rem;">{{ c.name }}</h4>
@@ -1648,10 +1773,13 @@
         </h5>
         <button type="button" class="close" data-dismiss="modal">&times;</button>
       </div>
-      <form action="{% url 'admin_student_create' %}" method="POST">
+      <form action="{% url 'admin_student_create' %}" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="modal-body">
           <div class="row">
+            <div class="col-12 mb-2">
+              <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-user-graduate mr-1"></i> Student Information</h6>
+            </div>
             <div class="col-md-6 form-group">
               <label class="font-weight-bold">Username *</label>
               <input type="text" name="username" class="form-control" placeholder="e.g. emeka.dev" required>
@@ -1668,13 +1796,75 @@
               <label class="font-weight-bold">Last Name</label>
               <input type="text" name="last_name" class="form-control" placeholder="Okafor">
             </div>
-            <div class="col-md-6 form-group">
+            <div class="col-md-4 form-group">
               <label class="font-weight-bold">Phone Number</label>
               <input type="text" name="phone" class="form-control" placeholder="+234 800 000 0000">
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Date of Birth</label>
+              <input type="date" name="date_of_birth" class="form-control">
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Gender</label>
+              <select name="gender" class="form-control">
+                <option value="">-- Select Gender --</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
             </div>
             <div class="col-md-6 form-group">
               <label class="font-weight-bold">Temporary Password</label>
               <input type="text" name="password" class="form-control" value="CodeCamp2026!">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Passport Photo (Optional)</label>
+              <input type="file" name="avatar" class="form-control-file border p-1 rounded bg-white" accept="image/*">
+            </div>
+
+            <div class="col-12 mt-3 mb-2">
+              <h6 class="font-weight-bold text-success mb-2"><i class="fas fa-user-friends mr-1"></i> Parent / Guardian Information (Optional)</h6>
+              <small class="text-muted d-block mb-2">If enrolling multiple siblings, use the same parent phone number to link them automatically.</small>
+            </div>
+            <div class="col-md-3 form-group">
+              <label class="font-weight-bold">Parent Title</label>
+              <select name="parent_title" class="form-control">
+                <option value="Mr.">Mr.</option>
+                <option value="Mrs.">Mrs.</option>
+                <option value="Chief">Chief</option>
+                <option value="Dr.">Dr.</option>
+                <option value="Engr.">Engr.</option>
+                <option value="Prof.">Prof.</option>
+                <option value="Alhaji">Alhaji</option>
+                <option value="Hajia">Hajia</option>
+                <option value="Pastor">Pastor</option>
+              </select>
+            </div>
+            <div class="col-md-5 form-group">
+              <label class="font-weight-bold">Parent / Guardian Full Name</label>
+              <input type="text" name="parent_name" class="form-control" placeholder="e.g. Mr. Chinedu Okafor">
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="font-weight-bold">Relationship</label>
+              <select name="relationship" class="form-control">
+                <option value="father">Father</option>
+                <option value="mother">Mother</option>
+                <option value="guardian">Guardian</option>
+                <option value="sponsor">Sponsor</option>
+                <option value="sibling">Sibling</option>
+              </select>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Parent Phone / WhatsApp</label>
+              <input type="text" name="parent_phone" class="form-control" placeholder="e.g. 08012345678">
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="font-weight-bold">Parent Email Address</label>
+              <input type="email" name="parent_email" class="form-control" placeholder="parent@example.com">
+            </div>
+
+            <div class="col-12 mt-3 mb-2">
+              <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-graduation-cap mr-1"></i> Academic Program & Cohort</h6>
             </div>
             <div class="col-md-6 form-group">
               <label class="font-weight-bold">Programme / Course *</label>
