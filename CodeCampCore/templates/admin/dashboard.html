@@ -2129,40 +2129,63 @@
           <div class="row">
             <div class="col-md-6 form-group mb-3">
               <label class="font-weight-bold text-dark">Billing Month / Period *</label>
-              <select name="billing_month" class="form-control font-weight-bold">
-                <option value="August 2026 (Summer Lump Sum)">🏖️ August 2026 (Summer Lump Sum / Backlog)</option>
-                <option value="September 2026" selected>📅 September 2026 (New Session)</option>
-                <option value="October 2026">📅 October 2026</option>
+              <select name="billing_month" id="billingMonthSelectAdmin" class="form-control font-weight-bold" onchange="document.getElementById('customPeriodInputAdmin').style.display = (this.value === 'CUSTOM') ? 'block' : 'none';">
+                <optgroup label="Historical Backlog / Lump Sum (Before Sept)">
+                  <option value="Feb - Aug 2026 (Backlog Lump Sum)" selected>🏛️ Feb - Aug 2026 (Backlog Lump Sum)</option>
+                  <option value="August 2026 (Summer Lump Sum)">🏖️ August 2026 (Summer Lump Sum)</option>
+                  <option value="August 2026">📅 August 2026</option>
+                  <option value="July 2026">📅 July 2026</option>
+                  <option value="June 2026">📅 June 2026</option>
+                  <option value="May 2026">📅 May 2026</option>
+                  <option value="April 2026">📅 April 2026</option>
+                  <option value="March 2026">📅 March 2026</option>
+                  <option value="February 2026">📅 February 2026</option>
+                </optgroup>
+                <optgroup label="Current Term">
+                  <option value="September 2026">📅 September 2026 (Current Term)</option>
+                  <option value="October 2026">📅 October 2026</option>
+                  <option value="November 2026">📅 November 2026</option>
+                  <option value="December 2026">📅 December 2026</option>
+                </optgroup>
+                <option value="CUSTOM">✏️ Custom Period / Other...</option>
               </select>
-              <small class="form-text text-muted">Select August to record historical summer fees.</small>
+              <input type="text" name="custom_billing_month" id="customPeriodInputAdmin" class="form-control mt-2" placeholder="Type custom billing period e.g. Summer Camp 2026" style="display: none;">
+              <small class="form-text text-muted">Select 'Feb - Aug 2026' for students who paid historical fees.</small>
             </div>
             <div class="col-md-6 form-group mb-3">
               <label class="font-weight-bold text-dark">Bank Payment Date</label>
               <input type="date" name="bank_payment_date" class="form-control font-weight-bold">
-              <small class="form-text text-muted">Actual date funds were received.</small>
+              <small class="form-text text-muted">Actual date funds were received in bank.</small>
             </div>
           </div>
 
           <div class="row">
             <div class="col-md-6 form-group mb-3">
               <label class="font-weight-bold text-dark">Payment Amount (₦) *</label>
-              <input type="number" step="0.01" min="1" name="amount" class="form-control form-control-lg font-weight-bold text-success" value="35000" required>
-              <small class="form-text text-muted">Standard monthly tuition is ₦35,000.</small>
+              <input type="number" step="0.01" min="1" name="amount" class="form-control form-control-lg font-weight-bold text-success" placeholder="e.g. 150000" required>
+              <small class="form-text text-muted">Lump sum or installment amount paid.</small>
             </div>
             <div class="col-md-6 form-group mb-3">
-              <label class="font-weight-bold text-dark">Payment Method</label>
+              <label class="font-weight-bold text-dark">Total Agreed Due (₦) <span class="badge badge-light border">Optional</span></label>
+              <input type="number" step="0.01" min="0" name="amount_due" class="form-control form-control-lg font-weight-bold" placeholder="Defaults to amount paid">
+              <small class="form-text text-muted">Leave blank if paid in full, or enter total backlog due.</small>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark">Payment Channel</label>
               <select name="payment_method" class="form-control font-weight-bold">
-                <option value="Bank Transfer">Bank Transfer (NIP/EFT)</option>
+                <option value="Bank Transfer" selected>Bank Transfer (NIP/EFT)</option>
                 <option value="Bank Deposit Slip">Bank Deposit (Teller)</option>
                 <option value="POS Terminal">POS Terminal</option>
                 <option value="Cash">Cash at Desk</option>
               </select>
             </div>
-          </div>
-
-          <div class="form-group mb-3">
-            <label class="font-weight-bold text-dark">Audit Notes / Reference</label>
-            <input type="text" name="notes" class="form-control" placeholder="e.g. Summer camp backlog lump sum payment">
+            <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark">Audit Notes / Reference</label>
+              <input type="text" name="notes" class="form-control" placeholder="e.g. Backlog tuition payment covering Feb-Aug 2026">
+            </div>
           </div>
         </div>
         <div class="modal-footer bg-light px-4 py-3">

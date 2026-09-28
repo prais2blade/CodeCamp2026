@@ -199,6 +199,8 @@ def debtors_ledger(request):
     available_months = list(Payment.objects.values_list('billing_month', flat=True).distinct().order_by('-billing_month'))
     if 'September 2026' not in available_months:
         available_months.insert(0, 'September 2026')
+    if 'Feb - Aug 2026 (Backlog Lump Sum)' not in available_months:
+        available_months.append('Feb - Aug 2026 (Backlog Lump Sum)')
 
     # Filtered aggregation summary
     filtered_gross = payments_qs.aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
@@ -249,6 +251,11 @@ def record_payment(request):
         issue_receipt = request.POST.get('issue_receipt', 'on') in ['on', 'true', 'True', '1']
 
         billing_month = request.POST.get('billing_month', 'September 2026').strip() or 'September 2026'
+        custom_billing_month = request.POST.get('custom_billing_month', '').strip()
+        if billing_month == 'CUSTOM' and custom_billing_month:
+            billing_month = custom_billing_month
+
+        amount_due_raw = request.POST.get('amount_due', '').strip()
         bank_date_raw = request.POST.get('bank_payment_date', '').strip()
         payment_proof_file = request.FILES.get('payment_proof')
 
@@ -270,21 +277,44 @@ def record_payment(request):
         payment = None
         if payment_id:
             payment = get_object_or_404(Payment, id=payment_id)
+            if billing_month and billing_month != 'CUSTOM':
+                payment.billing_month = billing_month
+            if amount_due_raw:
+                try:
+                    payment.amount_due = Decimal(amount_due_raw)
+                except Exception:
+                    pass
         elif student_id:
             student = get_object_or_404(User, id=student_id)
             payment = Payment.objects.filter(student=student, billing_month=billing_month).first()
             if not payment:
-                # If no payment record exists for this month yet, create one using student's course fee
+                # If no payment record exists for this month yet, create one
                 course = getattr(student.profile, 'course', None)
-                course_fee = course.fee if course and hasattr(course, 'fee') else Decimal('50000.00')
+                if amount_due_raw:
+                    try:
+                        due_val = Decimal(amount_due_raw)
+                    except Exception:
+                        due_val = amount
+                else:
+                    course_fee = course.fee if course and hasattr(course, 'fee') else Decimal('50000.00')
+                    if 'backlog' in billing_month.lower() or 'lump sum' in billing_month.lower():
+                        due_val = max(course_fee, amount)
+                    else:
+                        due_val = course_fee
+
                 payment = Payment.objects.create(
                     student=student,
                     course=course,
                     batch=getattr(student.profile, 'batch', None),
-                    amount_due=course_fee,
+                    amount_due=due_val,
                     amount_paid=Decimal('0.00'),
                     billing_month=billing_month,
                 )
+            elif amount_due_raw:
+                try:
+                    payment.amount_due = Decimal(amount_due_raw)
+                except Exception:
+                    pass
 
         if not payment:
             messages.error(request, "No valid tuition account found for this student.")

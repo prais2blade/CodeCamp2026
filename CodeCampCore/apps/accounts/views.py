@@ -1584,6 +1584,8 @@ def admin_dashboard(request):
     available_billing_months = list(Payment.objects.values_list('billing_month', flat=True).distinct().order_by('-billing_month'))
     if 'September 2026' not in available_billing_months:
         available_billing_months.insert(0, 'September 2026')
+    if 'Feb - Aug 2026 (Backlog Lump Sum)' not in available_billing_months:
+        available_billing_months.append('Feb - Aug 2026 (Backlog Lump Sum)')
     recent_receipts = Receipt.objects.all().select_related('payment__student', 'payment__course').order_by('-issued_date')[:25]
 
     # Live Attendance Log

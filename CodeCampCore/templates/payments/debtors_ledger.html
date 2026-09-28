@@ -471,8 +471,28 @@
 
           <div class="row">
             <div class="col-md-6 form-group mb-3">
-              <label class="font-weight-bold text-dark small text-uppercase">Billing Month <span class="text-danger">*</span></label>
-              <input type="text" name="billing_month" class="form-control font-weight-bold" value="{{ month_filter|default:'September 2026' }}" required>
+              <label class="font-weight-bold text-dark small text-uppercase">Billing Period / Month <span class="text-danger">*</span></label>
+              <select name="billing_month" id="debtorsBillingMonth" class="form-control font-weight-bold" onchange="document.getElementById('customDebtorsPeriodInput').style.display = (this.value === 'CUSTOM') ? 'block' : 'none';">
+                <optgroup label="Historical Backlog / Lump Sum (Before Sept)">
+                  <option value="Feb - Aug 2026 (Backlog Lump Sum)">🏛️ Feb - Aug 2026 (Backlog Lump Sum)</option>
+                  <option value="August 2026 (Summer Lump Sum)">🏖️ August 2026 (Summer Lump Sum)</option>
+                  <option value="August 2026">📅 August 2026</option>
+                  <option value="July 2026">📅 July 2026</option>
+                  <option value="June 2026">📅 June 2026</option>
+                  <option value="May 2026">📅 May 2026</option>
+                  <option value="April 2026">📅 April 2026</option>
+                  <option value="March 2026">📅 March 2026</option>
+                  <option value="February 2026">📅 February 2026</option>
+                </optgroup>
+                <optgroup label="Current Academic Term">
+                  <option value="September 2026" {% if month_filter == 'September 2026' or not month_filter %}selected{% endif %}>📅 September 2026 (Current Term)</option>
+                  <option value="October 2026">📅 October 2026</option>
+                  <option value="November 2026">📅 November 2026</option>
+                  <option value="December 2026">📅 December 2026</option>
+                </optgroup>
+                <option value="CUSTOM">✏️ Custom Period / Other...</option>
+              </select>
+              <input type="text" name="custom_billing_month" id="customDebtorsPeriodInput" class="form-control mt-2" placeholder="e.g. Summer Camp 2026 or Backlog 2026" style="display: none;">
             </div>
             <div class="col-md-6 form-group mb-3">
               <label class="font-weight-bold text-dark small text-uppercase">Bank Payment Date</label>
@@ -486,8 +506,16 @@
               <input type="number" step="0.01" min="1" name="amount" class="form-control font-weight-bold" placeholder="50000.00" required>
             </div>
             <div class="col-md-6 form-group mb-3">
+              <label class="font-weight-bold text-dark small text-uppercase">Total Agreed Due (₦) <span class="badge badge-light border">Optional</span></label>
+              <input type="number" step="0.01" min="0" name="amount_due" class="form-control font-weight-bold" placeholder="Defaults to amount paid">
+              <small class="form-text text-muted">Leave blank if paid in full, or enter total backlog due.</small>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 form-group mb-3">
               <label class="font-weight-bold text-dark small text-uppercase">Payment Channel</label>
-              <select name="payment_method" class="form-control">
+              <select name="payment_method" class="form-control font-weight-bold">
                 <option value="Bank Transfer">Bank Transfer (EFT/NIP)</option>
                 <option value="Bank Deposit Slip">Bank Deposit (Teller)</option>
                 <option value="POS Terminal">POS Terminal</option>
@@ -495,7 +523,6 @@
                 <option value="Online">Online Payment Gateway</option>
               </select>
             </div>
-          </div>
 
           <div class="row">
             <div class="col-md-6 form-group mb-3">
@@ -549,8 +576,27 @@ function populatePaymentModal(btn) {
   document.getElementById('modalBalance').textContent = '₦' + balance;
 
   if (billingMonth) {
-    var monthInput = document.querySelector('#recordPaymentModal input[name="billing_month"]');
-    if (monthInput) monthInput.value = billingMonth;
+    var monthSelect = document.getElementById('debtorsBillingMonth');
+    var customInput = document.getElementById('customDebtorsPeriodInput');
+    if (monthSelect) {
+      var found = false;
+      for (var i = 0; i < monthSelect.options.length; i++) {
+        if (monthSelect.options[i].value === billingMonth) {
+          monthSelect.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        monthSelect.value = 'CUSTOM';
+        if (customInput) {
+          customInput.style.display = 'block';
+          customInput.value = billingMonth;
+        }
+      } else if (customInput) {
+        customInput.style.display = 'none';
+      }
+    }
   }
 
   var selectWrapper = document.getElementById('studentSelectWrapper');
