@@ -1883,6 +1883,37 @@ def admin_download_student_id_card(request, profile_id):
 
 
 @login_required
+def admin_bulk_download_id_cards(request):
+    """Allows administrators to download all or filtered student ID cards in print-ready A4 3x3 format."""
+    if not (request.user.is_superuser or getattr(request.user, 'profile', None) and request.user.profile.role in ['hod', 'accountant']):
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    profiles = Profile.objects.filter(role='student').select_related('user', 'course', 'batch').order_by('user__first_name', 'user__last_name')
+
+    course_id = request.GET.get('course_id')
+    if course_id:
+        profiles = profiles.filter(course_id=course_id)
+
+    batch_id = request.GET.get('batch_id')
+    if batch_id:
+        profiles = profiles.filter(batch_id=batch_id)
+
+    status_filter = request.GET.get('status')
+    if status_filter:
+        profiles = profiles.filter(student_status=status_filter)
+
+    selected_ids = request.POST.getlist('selected_profiles') or request.GET.getlist('selected_profiles')
+    if selected_ids:
+        profiles = profiles.filter(id__in=selected_ids)
+
+    from apps.accounts.services.id_card_service import IDCardService
+    pdf_buffer = IDCardService.generate_bulk_id_cards_pdf(list(profiles))
+    filename = f"CodeCamp_Student_ID_Cards_A4_{timezone.localdate().strftime('%Y%m%d')}.pdf"
+    return FileResponse(pdf_buffer, as_attachment=True, filename=filename, content_type='application/pdf')
+
+
+@login_required
 def student_download_id_card(request):
     """Allows logged-in students to download their official ID Card PDF."""
     profile = getattr(request.user, 'profile', None)

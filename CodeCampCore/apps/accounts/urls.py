@@ -31,6 +31,7 @@ urlpatterns = [
     path('admin/students/<int:profile_id>/batch/', views.admin_student_update_batch, name='admin_student_update_batch'),
     path('admin/students/<int:profile_id>/passport/', views.admin_upload_student_passport, name='admin_upload_student_passport'),
     path('admin/students/<int:profile_id>/id-card/', views.admin_download_student_id_card, name='admin_download_student_id_card'),
+    path('admin/students/bulk-id-cards/', views.admin_bulk_download_id_cards, name='admin_bulk_download_id_cards'),
     path('student/id-card/download/', views.student_download_id_card, name='student_download_id_card'),
     path('admin/sync-attendance/', views.admin_sync_attendance, name='admin_sync_attendance'),
     path('admin/students/<int:profile_id>/toggle-status/', views.admin_student_toggle_status, name='admin_student_toggle_status'),
