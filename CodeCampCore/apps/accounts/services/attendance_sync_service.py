@@ -9,7 +9,7 @@ import re
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from apps.accounts.models import Profile
+from apps.accounts.models import Profile, Parent
 
 logger = logging.getLogger("attendance_sync")
 User = get_user_model()
@@ -737,17 +737,217 @@ class AttendanceSyncService:
             return {"success": False, "error": str(exc)}
 
     @classmethod
+    def sync_parents(cls, db_path=None, connection=None):
+        """
+        Pulls registered parent/guardian records from the attendance system
+        and links them to their respective student Profiles in CodeCampCore.
+        Supports SQLite (via path or connection) and PostgreSQL (via connection).
+        """
+        should_close = False
+        conn = connection
+        if conn is None:
+            db_path = db_path or cls.get_attendance_db_path()
+            if not db_path or not os.path.exists(db_path):
+                return {"count": 0, "error": "Attendance database not found"}
+            try:
+                conn = sqlite3.connect(db_path, timeout=5)
+                should_close = True
+            except Exception as exc:
+                return {"count": 0, "error": str(exc)}
+
+        parents_created = 0
+        parents_linked = 0
+        students_matched = 0
+        updated_roster = []
+
+        try:
+            cursor = conn.cursor()
+            query = """
+                SELECT 
+                    s.id as student_row_id,
+                    s.student_id,
+                    s.first_name,
+                    s.last_name,
+                    s.parent_name,
+                    p.id as parent_id,
+                    p.title,
+                    p.full_name,
+                    p.phone_number,
+                    p.whatsapp_number,
+                    p.email,
+                    sp.relationship
+                FROM students_student s
+                LEFT JOIN students_studentparent sp ON s.id = sp.student_id
+                LEFT JOIN students_parent p ON sp.parent_id = p.id
+                ORDER BY s.id ASC
+            """
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            for row in rows:
+                if isinstance(row, dict):
+                    student_row_id = row.get("student_row_id")
+                    student_id = row.get("student_id")
+                    fn = row.get("first_name")
+                    ln = row.get("last_name")
+                    s_parent_name = row.get("parent_name")
+                    p_id = row.get("parent_id")
+                    p_title = row.get("title")
+                    p_full_name = row.get("full_name")
+                    p_phone = row.get("phone_number")
+                    p_whatsapp = row.get("whatsapp_number")
+                    p_email = row.get("email")
+                    sp_rel = row.get("relationship")
+                else:
+                    (student_row_id, student_id, fn, ln, s_parent_name,
+                     p_id, p_title, p_full_name, p_phone, p_whatsapp, p_email, sp_rel) = row
+
+                fn = (fn or "").strip()
+                ln = (ln or "").strip()
+                student_id = (student_id or "").strip()
+
+                # Find student profile in CodeCampCore
+                q = Profile.objects.filter(role="student")
+                profile = None
+
+                # 1. Match by external_attendance_id
+                if student_id:
+                    profile = q.filter(external_attendance_id__iexact=student_id).first()
+
+                # 2. Match by names
+                if not profile and fn and ln:
+                    profile = q.filter(user__first_name__iexact=fn, user__last_name__iexact=ln).first()
+
+                # 3. Match by username
+                if not profile and fn and ln:
+                    normalized_user = f"{fn.lower()}.{ln.lower()}"
+                    combo_user = f"{fn.lower()}{ln.lower()}"
+                    profile = q.filter(user__username__in=[normalized_user, combo_user]).first()
+
+                # 4. Partial full name matching
+                if not profile and fn:
+                    for s in q.select_related("user"):
+                        full_name = s.user.get_full_name().lower()
+                        if fn.lower() in full_name and (not ln or ln.lower() in full_name):
+                            profile = s
+                            break
+
+                if not profile:
+                    continue
+
+                students_matched += 1
+
+                # Normalize parent information
+                effective_name = (p_full_name or s_parent_name or "").strip()
+                effective_phone = (p_phone or profile.phone or "").strip()
+                effective_whatsapp = (p_whatsapp or effective_phone or "").strip()
+                effective_email = (p_email or "").strip().lower()
+                effective_title = (p_title or "Mr").strip().replace(".", "").title()
+                allowed_titles = {'Mr', 'Mrs', 'Ms', 'Dr', 'Engr', 'Chief', 'Pastor', 'Alhaji', 'Hajiya'}
+                if effective_title not in allowed_titles:
+                    effective_title = "Mr"
+
+                effective_rel = (sp_rel or "Guardian").strip().capitalize()
+                allowed_rels = {'Father', 'Mother', 'Guardian', 'Sponsor', 'Self'}
+                if effective_rel not in allowed_rels:
+                    if 'dad' in effective_rel.lower() or 'father' in effective_rel.lower():
+                        effective_rel = 'Father'
+                    elif 'mom' in effective_rel.lower() or 'mother' in effective_rel.lower():
+                        effective_rel = 'Mother'
+                    else:
+                        effective_rel = 'Guardian'
+
+                if not effective_name and not effective_phone:
+                    continue
+
+                # Locate or create Parent in CodeCampCore
+                parent_obj = None
+                if effective_phone:
+                    parent_obj = Parent.objects.filter(phone_number=effective_phone).first()
+
+                if not parent_obj and effective_email:
+                    parent_obj = Parent.objects.filter(email=effective_email).first()
+
+                if not parent_obj and effective_name:
+                    parent_obj = Parent.objects.filter(full_name__iexact=effective_name).first()
+
+                created = False
+                if not parent_obj:
+                    parent_obj = Parent.objects.create(
+                        title=effective_title,
+                        full_name=effective_name or f"{profile.user.get_full_name() or profile.user.username} Guardian",
+                        phone_number=effective_phone or f"080{profile.user.id:08d}",
+                        whatsapp_number=effective_whatsapp or effective_phone,
+                        email=effective_email,
+                    )
+                    created = True
+                    parents_created += 1
+                else:
+                    changed = False
+                    if not parent_obj.phone_number and effective_phone:
+                        parent_obj.phone_number = effective_phone
+                        changed = True
+                    if not parent_obj.whatsapp_number and effective_whatsapp:
+                        parent_obj.whatsapp_number = effective_whatsapp
+                        changed = True
+                    if not parent_obj.email and effective_email:
+                        parent_obj.email = effective_email
+                        changed = True
+                    if parent_obj.title == 'Mr' and effective_title != 'Mr':
+                        parent_obj.title = effective_title
+                        changed = True
+                    if changed:
+                        parent_obj.save()
+
+                # Link parent to profile
+                if profile.parent_id != parent_obj.id or profile.relationship_to_parent != effective_rel:
+                    profile.parent = parent_obj
+                    profile.relationship_to_parent = effective_rel
+                    profile.save(update_fields=['parent', 'relationship_to_parent'])
+                    parents_linked += 1
+
+                updated_roster.append({
+                    "student_id": profile.external_attendance_id or student_id,
+                    "student_name": profile.user.get_full_name() or profile.user.username,
+                    "parent_name": parent_obj.full_name,
+                    "parent_phone": parent_obj.phone_number,
+                    "parent_email": parent_obj.email,
+                    "relationship": effective_rel,
+                    "created": created,
+                })
+
+            return {
+                "success": True,
+                "attendance_students_count": len(rows),
+                "students_matched": students_matched,
+                "parents_created": parents_created,
+                "parents_linked": parents_linked,
+                "updated_roster": updated_roster,
+            }
+        except Exception as exc:
+            logger.error(f"Error syncing parents: {exc}")
+            return {"success": False, "error": str(exc)}
+        finally:
+            if should_close and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+    @classmethod
     def sync_all(cls):
         """
         Runs comprehensive two-way synchronization:
         1. Syncs faculty tutors.
         2. Pulls official student IDs from attendance system into CodeCampCore.
-        3. Pushes/registers any students in CodeCampCore missing CDCP- IDs into the attendance system.
-        4. Updates class/active status details across both systems.
+        3. Pulls parent/guardian records and links them to students in CodeCampCore.
+        4. Pushes/registers any students in CodeCampCore missing CDCP- IDs into the attendance system.
+        5. Updates class/active status details across both systems.
         """
         db_path = cls.get_attendance_db_path()
         tutor_res = cls.sync_tutors(db_path)
         pull_student_res = cls.sync_student_ids(db_path)
+        parent_res = cls.sync_parents(db_path)
 
         # Push / Backfill sync: ensure every single CodeCampCore student has an official CDCP- ID and attendance record
         pushed_count = 0
@@ -764,5 +964,6 @@ class AttendanceSyncService:
             "db_path": db_path,
             "tutors": tutor_res,
             "students": pull_student_res,
+            "parents": parent_res,
             "pushed_students_count": pushed_count,
         }

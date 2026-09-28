@@ -10,7 +10,7 @@ from django.utils.text import slugify
 from django.utils import timezone
 
 from apps.tenants.models import Tenant
-from apps.accounts.models import Profile, Attendance
+from apps.accounts.models import Profile, Attendance, Parent
 from apps.courses.models import Course, Subject
 from apps.scheduling.models import Batch
 
@@ -224,7 +224,7 @@ class Command(BaseCommand):
 
         if not db_conn:
             self.stderr.write(self.style.ERROR(
-                "❌ Could not find active Attendance database with student records!\n"
+                "[ERROR] Could not find active Attendance database with student records!\n"
                 "Checked SQLite candidates and PostgreSQL attendance_db.\n"
                 "Please specify path via: --attendance-db <path> OR postgres via --pg-dbname <name>"
             ))
@@ -233,7 +233,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.MIGRATE_HEADING(
             f"=== Transferring Attendance Students to Main Portal ({'DRY RUN' if dry_run else 'LIVE TRANSACTION'}) ==="
         ))
-        self.stdout.write(self.style.SUCCESS(f"✅ Connected to Attendance Source: {db_description}"))
+        self.stdout.write(self.style.SUCCESS(f"[OK] Connected to Attendance Source: {db_description}"))
         self.stdout.write(f"Temporary Password for all transferred students: {temp_password}\n")
 
         # 2. Resolve Academy Tenant
@@ -241,7 +241,7 @@ class Command(BaseCommand):
         try:
             tenant = Tenant.objects.filter(is_default=True).first() or Tenant.objects.first()
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f"⚠️ Tenant resolution skipped (table or record not found: {e})"))
+            self.stdout.write(self.style.WARNING(f"Tenant resolution skipped: {e}"))
 
         # 3. Resolve Courses & Batches for Mapping
         default_course = None
@@ -254,7 +254,7 @@ class Command(BaseCommand):
             web_course = Course.objects.filter(name__icontains="web").first() or default_course
             innovators_course = Course.objects.filter(name__icontains="innovator").first() or default_course
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f"⚠️ Course resolution skipped: {e}"))
+            self.stdout.write(self.style.WARNING(f"Course resolution skipped: {e}"))
 
         cur = db_conn.cursor()
 
@@ -270,9 +270,13 @@ class Command(BaseCommand):
                 tc.name as teaching_class_name,
                 s.gender,
                 s.is_active,
+                p.id as parent_id,
+                p.title as parent_title,
                 p.full_name as parent_name,
                 p.phone_number as parent_phone,
-                p.email as parent_email
+                p.whatsapp_number as parent_whatsapp,
+                p.email as parent_email,
+                sp.relationship as parent_relationship
             FROM students_student s
             LEFT JOIN students_teachingclass tc ON s.teaching_class_id = tc.id
             LEFT JOIN students_studentparent sp ON s.id = sp.student_id
@@ -295,9 +299,13 @@ class Command(BaseCommand):
                     '' as teaching_class_name,
                     '' as gender,
                     1 as is_active,
+                    NULL as parent_id,
+                    '' as parent_title,
                     '' as parent_name,
                     '' as parent_phone,
-                    '' as parent_email
+                    '' as parent_whatsapp,
+                    '' as parent_email,
+                    'Guardian' as parent_relationship
                 FROM students_student s
                 ORDER BY s.id ASC
             """
@@ -434,6 +442,44 @@ class Command(BaseCommand):
                     profile.batch = target_batch
                     profile.is_verified = True  # Immediately allowed to login
                     profile.onboarding_stage = "finished"  # Direct to dashboard
+
+                    # Link parent / guardian from attendance
+                    parent_name_val = (row["parent_name"] or "").strip()
+                    parent_phone_val = (row["parent_phone"] or "").strip()
+                    parent_email_val = (row["parent_email"] or "").strip().lower()
+                    parent_whatsapp_val = (row["parent_whatsapp"] or parent_phone_val).strip()
+                    parent_title_val = (row["parent_title"] or "Mr").strip().replace(".", "").title()
+                    if parent_title_val not in {'Mr', 'Mrs', 'Ms', 'Dr', 'Engr', 'Chief', 'Pastor', 'Alhaji', 'Hajiya'}:
+                        parent_title_val = "Mr"
+                    parent_rel_val = (row["parent_relationship"] or "Guardian").strip().capitalize()
+                    if parent_rel_val not in {'Father', 'Mother', 'Guardian', 'Sponsor', 'Self'}:
+                        if 'dad' in parent_rel_val.lower() or 'father' in parent_rel_val.lower():
+                            parent_rel_val = 'Father'
+                        elif 'mom' in parent_rel_val.lower() or 'mother' in parent_rel_val.lower():
+                            parent_rel_val = 'Mother'
+                        else:
+                            parent_rel_val = 'Guardian'
+
+                    if parent_name_val or parent_phone_val:
+                        parent_obj = None
+                        if parent_phone_val:
+                            parent_obj = Parent.objects.filter(phone_number=parent_phone_val).first()
+                        if not parent_obj and parent_email_val:
+                            parent_obj = Parent.objects.filter(email=parent_email_val).first()
+                        if not parent_obj and parent_name_val:
+                            parent_obj = Parent.objects.filter(full_name__iexact=parent_name_val).first()
+
+                        if not parent_obj:
+                            parent_obj = Parent.objects.create(
+                                title=parent_title_val,
+                                full_name=parent_name_val or f"{first_name} {last_name} Guardian",
+                                phone_number=parent_phone_val or phone or f"080{user.id:08d}",
+                                whatsapp_number=parent_whatsapp_val or parent_phone_val or phone or f"080{user.id:08d}",
+                                email=parent_email_val,
+                            )
+                        profile.parent = parent_obj
+                        profile.relationship_to_parent = parent_rel_val
+
                     profile.save()
 
                     transferred_roster.append({

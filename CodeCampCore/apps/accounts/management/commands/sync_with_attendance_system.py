@@ -19,11 +19,13 @@ class Command(BaseCommand):
         if db_path:
             res_tutors = AttendanceSyncService.sync_tutors(db_path)
             res_students = AttendanceSyncService.sync_student_ids(db_path)
+            res_parents = AttendanceSyncService.sync_parents(db_path)
             res = {
                 "success": True,
                 "db_path": db_path,
                 "tutors": res_tutors,
-                "students": res_students
+                "students": res_students,
+                "parents": res_parents,
             }
         else:
             res = AttendanceSyncService.sync_all()
@@ -34,11 +36,15 @@ class Command(BaseCommand):
 
         t_data = res.get("tutors", {})
         s_data = res.get("students", {})
+        p_data = res.get("parents", {})
 
         self.stdout.write(self.style.SUCCESS(
             f"[OK] Synchronized {s_data.get('students_matched', 0)} of {s_data.get('attendance_students_count', 0)} student IDs."
         ))
         self.stdout.write(self.style.SUCCESS(
             f"[OK] Synchronized {t_data.get('tutors_total', 0)} faculty tutors ({t_data.get('tutors_created', 0)} new, {t_data.get('tutors_updated', 0)} updated)."
+        ))
+        self.stdout.write(self.style.SUCCESS(
+            f"[OK] Synchronized parents: {p_data.get('parents_linked', 0)} students linked ({p_data.get('parents_created', 0)} new parents created)."
         ))
         self.stdout.write(self.style.SUCCESS("[OK] Zero tutor duplicates ensured!"))
