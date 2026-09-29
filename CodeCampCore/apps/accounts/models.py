@@ -251,6 +251,18 @@ class Profile(models.Model):
             return f"{title_prefix}{self.parent.full_name}".strip()
         return None
 
+    @property
+    def parent_name(self):
+        if self.parent:
+            return self.parent.full_name
+        return None
+
+    @property
+    def parent_phone(self):
+        if self.parent:
+            return self.parent.phone_number or self.parent.whatsapp_number
+        return None
+
     def enroll_in_course_subjects(self, subject_ids=None):
         """Enrolls student in specified subjects and ensures all compulsory subjects are always included."""
         if self.course:

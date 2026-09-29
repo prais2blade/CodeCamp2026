@@ -1544,6 +1544,7 @@ def admin_dashboard(request):
     total_active_students = Profile.objects.filter(role='student', student_status='active').count()
     total_inactive_students = Profile.objects.filter(role='student', student_status__in=['inactive', 'pending']).count()
     total_alumni_students = Profile.objects.filter(role='student', student_status__in=['alumni', 'summer_alumni', 'completed']).count()
+    total_summer_alumni = total_alumni_students
     total_pending_course_requests = Profile.objects.filter(role='student', course_approval_status='pending').count()
     pending_approval_students = [s for s in students if s.course_approval_status == 'pending']
     unassigned_students = [s for s in students if not s.course]
