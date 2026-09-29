@@ -42,7 +42,9 @@ def accountant_dashboard(request):
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    all_payments = Payment.objects.select_related('student', 'course', 'batch', 'verified_by').prefetch_related('receipts')
+    all_payments = Payment.objects.filter(
+        student__profile__student_status='active'
+    ).select_related('student', 'course', 'batch', 'verified_by').prefetch_related('receipts')
 
     # Financial KPIs
     total_gross = all_payments.aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
@@ -695,7 +697,9 @@ def manage_payments(request):
         month_filter = month_filter.strip()
     query = request.GET.get('q', '').strip()
 
-    payments_qs = Payment.objects.select_related('student', 'course', 'batch', 'verified_by').prefetch_related('receipts').order_by('-payment_date')
+    payments_qs = Payment.objects.filter(
+        student__profile__student_status='active'
+    ).select_related('student', 'course', 'batch', 'verified_by').prefetch_related('receipts').order_by('-payment_date')
 
     if status_filter == 'pending':
         payments_qs = payments_qs.filter(is_approved=False)
@@ -725,7 +729,7 @@ def manage_payments(request):
         available_months.insert(0, 'September 2026')
 
     # Metrics
-    all_p = Payment.objects.all()
+    all_p = Payment.objects.filter(student__profile__student_status='active')
     metrics_qs = all_p.filter(billing_month=month_filter) if month_filter else all_p
 
     pending_count = metrics_qs.filter(is_approved=False).count()

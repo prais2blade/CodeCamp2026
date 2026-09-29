@@ -2392,43 +2392,89 @@ def admin_student_toggle_summer_status(request, profile_id):
 
 @login_required
 def admin_summer_bulk_deactivate(request):
-    """Bulk transitions students to 'summer_alumni' from the Admin Dashboard."""
+    """Bulk deactivates students (sets to 'inactive' or 'summer_alumni') from the Admin Dashboard."""
     if not request.user.is_superuser:
         messages.error(request, "Access restricted to administrators.")
         return redirect('admin_dashboard')
 
     if request.method == "POST":
+        student_ids = request.POST.getlist('student_ids')
         target_batch_id = request.POST.get('batch_id')
         target_course_id = request.POST.get('course_id')
-        all_students = request.POST.get('all_students') == 'true'
+        scope = request.POST.get('scope')
+        all_students = (request.POST.get('all_students') == 'true') or (scope == 'all')
+        target_status = request.POST.get('target_status', 'inactive').strip()
+        if target_status not in ['inactive', 'summer_alumni', 'alumni', 'completed', 'withdrawn']:
+            target_status = 'inactive'
+        clear_payments = request.POST.get('clear_payments') in ['true', '1', 'on', 'yes']
 
-        qs = Profile.objects.filter(role='student')
-        if target_batch_id:
-            qs = qs.filter(batch_id=target_batch_id)
-        elif target_course_id:
-            qs = qs.filter(course_id=target_course_id)
-        elif not all_students:
-            qs = qs.filter(student_status='active')
+        if student_ids:
+            # Handles either Profile IDs or User IDs
+            qs = Profile.objects.filter(Q(id__in=student_ids) | Q(user_id__in=student_ids), role='student')
+        else:
+            qs = Profile.objects.filter(role='student')
+            if target_batch_id:
+                qs = qs.filter(batch_id=target_batch_id)
+            elif target_course_id:
+                qs = qs.filter(course_id=target_course_id)
+            elif not all_students:
+                qs = qs.filter(student_status='active')
 
         count = 0
+        user_ids = []
         for p in qs:
-            p.student_status = 'summer_alumni'
+            p.student_status = target_status
             p.has_paid = False
             p.save(update_fields=['student_status', 'has_paid'])
-            SummerCertificate.objects.get_or_create(
-                student=p.user,
-                defaults={
-                    'course': p.course,
-                    'title': f"Certificate of Completion - {p.course.name if p.course else 'Summer CodeCamp'}",
-                    'remarks': 'Successfully completed the intensive 2026 Summer Coding & Technology Camp.'
-                }
-            )
+            user_ids.append(p.user_id)
+            if target_status in ['summer_alumni', 'alumni']:
+                SummerCertificate.objects.get_or_create(
+                    student=p.user,
+                    defaults={
+                        'course': p.course,
+                        'title': f"Certificate of Completion - {p.course.name if p.course else 'Summer CodeCamp'}",
+                        'remarks': 'Successfully completed the intensive 2026 Summer Coding & Technology Camp.'
+                    }
+                )
             count += 1
 
+        if clear_payments and user_ids:
+            Payment.objects.filter(student_id__in=user_ids, is_approved=False).delete()
+
+        status_label = "Inactive" if target_status == 'inactive' else "Summer Alumni"
         messages.success(
             request,
-            f"🏖️ Successfully transitioned {count} student(s) to Summer Alumni! Their portal is gated to certificates and reports until they register and pay for the main term."
+            f"✅ Successfully deactivated {count} student(s) to '{status_label}'! They are now excluded from active billing until activated and reconciled."
         )
+        return redirect('/account/admin/dashboard/#students')
+
+    return redirect('admin_dashboard')
+
+
+@login_required
+def admin_bulk_deactivate_all(request):
+    """Immediately sets ALL students to 'inactive' and optionally clears unverified billing invoices."""
+    if not request.user.is_superuser:
+        messages.error(request, "Access restricted to administrators.")
+        return redirect('admin_dashboard')
+
+    if request.method == "POST":
+        clear_invoices = request.POST.get('clear_invoices') in ['true', '1', 'on', 'yes']
+        updated = Profile.objects.filter(role='student').update(
+            student_status='inactive',
+            has_paid=False
+        )
+        if clear_invoices:
+            Payment.objects.filter(is_approved=False).delete()
+            messages.success(
+                request,
+                f"✅ Successfully deactivated all {updated} students to 'Inactive' and cleared pending invoices! Billing is now completely empty until you activate and reconcile students individually."
+            )
+        else:
+            messages.success(
+                request,
+                f"✅ Successfully deactivated all {updated} students to 'Inactive'! They are now completely excluded from active billing until activated and reconciled."
+            )
         return redirect('/account/admin/dashboard/#students')
 
     return redirect('admin_dashboard')
